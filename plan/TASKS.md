@@ -162,8 +162,8 @@ Implement the full CSS foundation: global reset, CSS custom properties for dark 
 
 Implement the complete lobby experience: `client/index.html`, `client/js/app.js` (shared WJ namespace), `client/js/lobby.js`, and the static `client/join-required.html` error page.
 
-- [ ] Create `client/join-required.html`: minimal standalone HTML page (no external CSS, inline styles matching dark theme) with heading "Necesitas una invitación", paragraph "Tu link de invitación ha expirado o no es válido. Pide un nuevo link al administrador.", and a button linking back to `/`
-- [ ] Implement `client/js/app.js`:
+- [x] Create `client/join-required.html`: minimal standalone HTML page (no external CSS, inline styles matching dark theme) with heading "Necesitas una invitación", paragraph "Tu link de invitación ha expirado o no es válido. Pide un nuevo link al administrador.", and a button linking back to `/`
+- [x] Implement `client/js/app.js`:
   - Declare `window.WJ = {}` namespace at top of file
   - `WJ.STORAGE_KEYS`: object constant with keys `USERNAME: 'wj_username'`, `TOKEN: 'wj_token'`, `THEME: 'wj_theme'`, `ADMIN_SESSION: 'wj_admin_session'`
   - `WJ.username`: getter returning `localStorage.getItem(WJ.STORAGE_KEYS.USERNAME)`
@@ -180,7 +180,7 @@ Implement the complete lobby experience: `client/index.html`, `client/js/app.js`
   - `WJ.saveChatMessage(roomId, msg)`: loads history, pushes `msg`, splices to max 100, saves back to localStorage
   - `WJ.handleTokenParam()`: reads `new URLSearchParams(location.search).get('token')`, if present saves to `localStorage[WJ.STORAGE_KEYS.TOKEN]`, removes `?token=...` from URL via `history.replaceState`
   - `WJ.init()`: calls `WJ.applyTheme(WJ.theme)`, calls `WJ.handleTokenParam()`, returns early if no further action needed; exported to be called from each page's `DOMContentLoaded`
-- [ ] Implement `client/index.html`:
+- [x] Implement `client/index.html`:
   - Valid HTML5 document, `lang="es"`, charset UTF-8, viewport meta tag
   - `<title>WatchJunto</title>`
   - Link all CSS in `<head>`: `<link rel="stylesheet" href="css/main.css">`, `<link rel="stylesheet" href="css/lobby.css">`
@@ -190,7 +190,7 @@ Implement the complete lobby experience: `client/index.html`, `client/js/app.js`
   - Username setup `<dialog id="username-modal">` with `.modal` inner div: heading "¿Cómo te llamas?", `<input id="username-input" class="input" placeholder="Tu nombre de usuario" maxlength="20">`, `<button id="username-submit" class="btn btn-primary">Entrar</button>`; dialog opens automatically if no username in localStorage
   - Create room `<dialog id="create-room-modal">` with form: input `name` (text, required, max 40), input `maxUsers` (number, min 2 max 10, default 10), toggle `isOpen` (checkbox, default checked), submit button
   - At bottom of `<body>`: `<script src="js/app.js"></script>`, `<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>`, `<script src="js/lobby.js"></script>`
-- [ ] Implement `client/js/lobby.js`:
+- [x] Implement `client/js/lobby.js`:
   - `DOMContentLoaded` listener calls `WJ.init()`
   - Show/hide `#admin-badge` based on `WJ.isAdmin`
   - Show/hide `#create-room-btn` based on `WJ.isAdmin`
@@ -206,8 +206,8 @@ Implement the complete lobby experience: `client/index.html`, `client/js/app.js`
   - `#create-room-btn` click: opens `#create-room-modal`
   - Create room form submit: reads form fields, calls `fetch('/api/admin/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, maxUsers, isOpen }) })`, closes modal on success, logs error on 4xx/5xx
   - Handle `socket.on('connect_error', ...)` and `socket.on('error', ...)` with console logging
-- [ ] Build check: verify syntax with `node --check client/js/app.js && node --check client/js/lobby.js` and validate `client/index.html` is well-formed (check for unclosed tags manually or via `node -e "const d=require('fs').readFileSync('client/index.html','utf8'); console.log(d.includes('</html>') ? 'OK' : 'MISSING')"`)
-- [ ] Commit
+- [x] Build check: verify syntax with `node --check client/js/app.js && node --check client/js/lobby.js` and validate `client/index.html` is well-formed (check for unclosed tags manually or via `node -e "const d=require('fs').readFileSync('client/index.html','utf8'); console.log(d.includes('</html>') ? 'OK' : 'MISSING')"`)
+- [x] Commit
 
 ---
 
