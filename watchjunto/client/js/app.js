@@ -17,28 +17,28 @@ Object.defineProperty(WJ, 'theme', { get: () => localStorage.getItem(WJ.STORAGE_
 Object.defineProperty(WJ, 'isAdmin', { get: () => !!localStorage.getItem(WJ.STORAGE_KEYS.ADMIN_SESSION) });
 
 // Theme
-WJ.applyTheme = function(theme) {
+WJ.applyTheme = function (theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem(WJ.STORAGE_KEYS.THEME, theme);
 };
 
-WJ.toggleTheme = function() {
+WJ.toggleTheme = function () {
   const next = WJ.theme === 'dark' ? 'light' : 'dark';
   WJ.applyTheme(next);
 };
 
 // Security
-WJ.sanitize = function(str) {
+WJ.sanitize = function (str) {
   return String(str).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').slice(0, 500);
 };
 
 // Formatting
-WJ.formatTimestamp = function(ms) {
+WJ.formatTimestamp = function (ms) {
   return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
 // Clipboard with visual feedback
-WJ.copyToClipboard = function(text, buttonEl) {
+WJ.copyToClipboard = function (text, buttonEl) {
   return navigator.clipboard.writeText(text).then(() => {
     if (buttonEl) {
       const original = buttonEl.textContent;
@@ -49,9 +49,9 @@ WJ.copyToClipboard = function(text, buttonEl) {
 };
 
 // Chat localStorage helpers
-WJ.chatKey = function(roomId) { return 'wj_chat_' + roomId; };
+WJ.chatKey = function (roomId) { return 'wj_chat_' + roomId; };
 
-WJ.loadChatHistory = function(roomId) {
+WJ.loadChatHistory = function (roomId) {
   try {
     return JSON.parse(localStorage.getItem(WJ.chatKey(roomId)) || '[]');
   } catch (e) {
@@ -59,7 +59,7 @@ WJ.loadChatHistory = function(roomId) {
   }
 };
 
-WJ.saveChatMessage = function(roomId, msg) {
+WJ.saveChatMessage = function (roomId, msg) {
   const history = WJ.loadChatHistory(roomId);
   history.push(msg);
   if (history.length > 100) history.splice(0, history.length - 100);
@@ -67,7 +67,7 @@ WJ.saveChatMessage = function(roomId, msg) {
 };
 
 // Handle token in URL query param
-WJ.handleTokenParam = function() {
+WJ.handleTokenParam = function () {
   const params = new URLSearchParams(location.search);
   const token = params.get('token');
   if (token) {
@@ -79,7 +79,7 @@ WJ.handleTokenParam = function() {
 };
 
 // Initialize - call on DOMContentLoaded
-WJ.init = function() {
+WJ.init = function () {
   WJ.applyTheme(WJ.theme);
   WJ.handleTokenParam();
 };

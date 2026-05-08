@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WatchJunto — Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
+
 <body>
 
   <!-- Login Page -->
@@ -17,7 +21,8 @@
     <div class="admin-login-form card">
       <h2 style="margin-bottom:0.5rem">Panel de Administrador</h2>
       <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:1.5rem">WatchJunto</p>
-      <label style="font-size:0.875rem;color:var(--text-secondary);display:block;margin-bottom:0.25rem">Contraseña</label>
+      <label
+        style="font-size:0.875rem;color:var(--text-secondary);display:block;margin-bottom:0.25rem">Contraseña</label>
       <input id="admin-password" class="input" type="password" placeholder="Contraseña de administrador">
       <p id="login-error" class="hidden" style="color:var(--error);font-size:0.8125rem;margin-top:0.25rem"></p>
       <button id="admin-login-btn" class="btn btn-primary" style="margin-top:0.25rem;width:100%">Entrar</button>
@@ -62,19 +67,23 @@
       <!-- Active Rooms Section -->
       <section class="admin-section">
         <h2 class="admin-section-title">Salas activas</h2>
-        <table id="rooms-table" class="rooms-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Usuarios</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="rooms-tbody">
-            <tr><td colspan="4" class="empty-state">No hay salas</td></tr>
-          </tbody>
-        </table>
+        <div class="rooms-table-wrapper">
+          <table id="rooms-table" class="rooms-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Usuarios</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="rooms-tbody">
+              <tr>
+                <td colspan="4" class="empty-state">No hay salas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div style="margin-top:1rem">
           <button id="delete-all-btn" class="btn btn-danger">🗑 Eliminar todas las salas</button>
         </div>
@@ -85,7 +94,8 @@
         <h2 class="admin-section-title">Links de invitación</h2>
         <button id="generate-invite-btn" class="btn btn-primary">+ Generar link de invitación</button>
         <div id="invite-result" class="invite-result hidden" style="margin-top:0.75rem">
-          <input id="invite-url" type="text" readonly style="flex:1;background:transparent;border:none;color:var(--text-primary);font-size:0.875rem;outline:none">
+          <input id="invite-url" type="text" readonly
+            style="flex:1;background:transparent;border:none;color:var(--text-primary);font-size:0.875rem;outline:none">
           <button id="copy-invite-btn" class="btn btn-secondary">Copiar</button>
         </div>
       </section>
@@ -116,4 +126,5 @@
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="js/admin.js"></script>
 </body>
+
 </html>

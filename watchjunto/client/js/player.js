@@ -14,7 +14,7 @@ window.PlayerManager = {
   onPause: null,
   onSeek: null,
 
-  init: function(containerId) {
+  init: function (containerId) {
     this._containerId = containerId;
     if (!document.getElementById('yt-api-script')) {
       const script = document.createElement('script');
@@ -25,7 +25,7 @@ window.PlayerManager = {
     window.onYouTubeIframeAPIReady = () => PlayerManager._createPlayer();
   },
 
-  _createPlayer: function() {
+  _createPlayer: function () {
     PlayerManager._player = new YT.Player(PlayerManager._containerId, {
       width: '100%',
       height: '100%',
@@ -37,7 +37,7 @@ window.PlayerManager = {
     });
   },
 
-  _onReady: function(event) {
+  _onReady: function (event) {
     this._ready = true;
     this._queue.forEach(fn => fn());
     this._queue = [];
@@ -45,7 +45,7 @@ window.PlayerManager = {
     console.log('[WJ] YouTube player ready');
   },
 
-  _enqueue: function(fn) {
+  _enqueue: function (fn) {
     if (this._ready) {
       fn();
     } else {
@@ -53,7 +53,7 @@ window.PlayerManager = {
     }
   },
 
-  _onStateChange: function(event) {
+  _onStateChange: function (event) {
     if (event.data === YT.PlayerState.PLAYING && !this._isSyncing) {
       if (this.onPlay) this.onPlay(event.target.getCurrentTime());
     } else if (event.data === YT.PlayerState.PAUSED && !this._isSyncing) {
@@ -61,14 +61,14 @@ window.PlayerManager = {
     }
   },
 
-  _checkSeek: function() {
+  _checkSeek: function () {
     if (!this._ready || !this._player) return;
     try {
       const current = this._player.getCurrentTime();
       if (Math.abs(current - this._lastTime) > 1.5 &&
-          !this._isSyncing &&
-          this._player.getPlayerState() === YT.PlayerState.PAUSED &&
-          this.onSeek) {
+        !this._isSyncing &&
+        this._player.getPlayerState() === YT.PlayerState.PAUSED &&
+        this.onSeek) {
         this.onSeek(current);
       }
       this._lastTime = current;
@@ -77,14 +77,14 @@ window.PlayerManager = {
     }
   },
 
-  loadVideo: function(videoId) {
+  loadVideo: function (videoId) {
     this._lastTime = 0;
     this._enqueue(() => {
       PlayerManager._player.loadVideoById({ videoId: videoId, startSeconds: 0 });
     });
   },
 
-  play: function(time) {
+  play: function (time) {
     this._isSyncing = true;
     this._enqueue(() => {
       PlayerManager._player.seekTo(time, true);
@@ -93,7 +93,7 @@ window.PlayerManager = {
     setTimeout(() => { PlayerManager._isSyncing = false; }, 400);
   },
 
-  pause: function(time) {
+  pause: function (time) {
     this._isSyncing = true;
     this._enqueue(() => {
       PlayerManager._player.seekTo(time, true);
@@ -102,7 +102,7 @@ window.PlayerManager = {
     setTimeout(() => { PlayerManager._isSyncing = false; }, 400);
   },
 
-  seekTo: function(time) {
+  seekTo: function (time) {
     this._isSyncing = true;
     this._enqueue(() => {
       PlayerManager._player.seekTo(time, true);
@@ -110,17 +110,17 @@ window.PlayerManager = {
     setTimeout(() => { PlayerManager._isSyncing = false; }, 400);
   },
 
-  getCurrentTime: function() {
+  getCurrentTime: function () {
     if (!this._ready || !this._player) return 0;
     try { return this._player.getCurrentTime(); } catch (e) { return 0; }
   },
 
-  getState: function() {
+  getState: function () {
     if (!this._ready || !this._player) return -1;
     try { return this._player.getPlayerState(); } catch (e) { return -1; }
   },
 
-  extractVideoId: function(input) {
+  extractVideoId: function (input) {
     if (!input || typeof input !== 'string') return null;
     input = input.trim();
     // Try extracting from URL

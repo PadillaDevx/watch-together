@@ -174,18 +174,48 @@
   font-style: italic;
 }
 
+/* ── Responsive: tablet ──────────────────────────────────────── */
+@media (max-width: 1024px) and (min-width: 641px) {
+  .admin-layout {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
+
 /* ── Responsive: mobile ─────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 640px) {
+  .admin-layout {
+    padding: var(--space-md);
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+
   .create-room-form {
     grid-template-columns: 1fr;
   }
 
+  /* Scroll horizontal en la tabla */
+  .rooms-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .rooms-table {
     font-size: 0.8125rem;
+    min-width: 540px;
   }
 
   .rooms-table th,
   .rooms-table td {
     padding: 0.5rem 0.75rem;
+  }
+
+  .connection-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
   }
 }

@@ -56,6 +56,7 @@
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
 }
+
 .url-bar input {
   flex: 1;
 }
@@ -69,11 +70,17 @@
   align-items: stretch;
 }
 
+/* Solo el div del player y los iframes — NO el sync-pill ni placeholder */
 .player-container iframe,
-.player-container > div {
+.player-container > #yt-player {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* Evitar que el contenido se salga del player */
+.player-container {
+  overflow: hidden;
 }
 
 /* ── Placeholder shown before a video is loaded ─────────────── */
@@ -274,10 +281,44 @@
   margin: 0.75rem auto;
 }
 
+/* ── Responsive: tablet ─────────────────────────────────────── */
+@media (max-width: 1024px) and (min-width: 641px) {
+  .room-layout {
+    grid-template-columns: 1fr 260px;
+  }
+
+  .resync-btn {
+    display: none;
+  }
+}
+
 /* ── Responsive: mobile ─────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 640px) {
+  .room-navbar {
+    padding: 0 var(--space-sm);
+    gap: var(--space-sm);
+    height: 48px;
+  }
+
+  .resync-btn {
+    display: none;
+  }
+
   .room-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - 48px);
+    overflow: visible;
+  }
+
+  .player-area {
+    overflow: visible;
+  }
+
+  .player-container {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    flex: none;
   }
 
   .sidebar {
@@ -290,5 +331,6 @@
 
   .bottom-drawer {
     display: flex;
+    height: 55vh;
   }
 }

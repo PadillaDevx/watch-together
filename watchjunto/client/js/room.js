@@ -152,19 +152,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Init YouTube player ---
   PlayerManager.init('yt-player');
 
-  PlayerManager.onPlay = function(currentTime) {
+  PlayerManager.onPlay = function (currentTime) {
     if (!PlayerManager._isSyncing) {
       socket.emit('player-play', { roomId, currentTime });
     }
   };
 
-  PlayerManager.onPause = function(currentTime) {
+  PlayerManager.onPause = function (currentTime) {
     if (!PlayerManager._isSyncing) {
       socket.emit('player-pause', { roomId, currentTime });
     }
   };
 
-  PlayerManager.onSeek = function(currentTime) {
+  PlayerManager.onSeek = function (currentTime) {
     if (!PlayerManager._isSyncing) {
       socket.emit('player-seek', { roomId, currentTime });
     }
