@@ -215,7 +215,7 @@ Implement the complete lobby experience: `client/index.html`, `client/js/app.js`
 
 Implement the complete room experience: `client/room.html`, `client/js/player.js` (YouTube IFrame wrapper), and `client/js/room.js` (full sync engine + chat + user list).
 
-- [ ] Implement `client/js/player.js`:
+- [x] Implement `client/js/player.js`:
   - Declare `window.PlayerManager = {}` (plain object, not a class)
   - Internal state properties: `_player: null`, `_ready: false`, `_queue: []`, `_isSyncing: false`, `_lastTime: 0`, `_seekPollInterval: null`, `_containerId: null`
   - Public callback properties (set by room.js): `PlayerManager.onPlay = null`, `PlayerManager.onPause = null`, `PlayerManager.onSeek = null`
@@ -234,7 +234,7 @@ Implement the complete room experience: `client/room.html`, `client/js/player.js
   - `PlayerManager.getCurrentTime()`: returns `_ready ? _player.getCurrentTime() : 0`
   - `PlayerManager.getState()`: returns `_ready ? _player.getPlayerState() : -1`
   - `PlayerManager.extractVideoId(input)`: applies regex `(?:youtu\.be\/|[?&]v=)([a-zA-Z0-9_-]{11})` to extract ID from full URL; if no match and input is exactly 11 chars matching `[a-zA-Z0-9_-]{11}` treat as raw ID; returns `videoId` string or `null`
-- [ ] Implement `client/room.html`:
+- [x] Implement `client/room.html`:
   - Valid HTML5, `lang="es"`, charset UTF-8, viewport meta
   - `<title>WatchJunto — Sala</title>`
   - Link CSS: `css/main.css`, `css/room.css`
@@ -246,7 +246,7 @@ Implement the complete room experience: `client/room.html`, `client/js/player.js
   - `<div id="bottom-drawer" class="bottom-drawer">` with same tabs/chat structure as sidebar (duplicate for mobile)
   - `<div id="error-overlay" class="overlay-error hidden">` with `<h2 id="error-title">Error</h2>`, `<p id="error-message"></p>`, `<a href="/" class="btn btn-primary">← Volver al lobby</a>`
   - At bottom: `<script src="js/app.js"></script>`, `<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>`, `<script src="js/player.js"></script>`, `<script src="js/room.js"></script>`
-- [ ] Implement `client/js/room.js`:
+- [x] Implement `client/js/room.js`:
   - `DOMContentLoaded` listener: calls `WJ.init()`, reads `roomId = new URLSearchParams(location.search).get('roomId')`, if no `roomId` shows error overlay with "Sala no encontrada"
   - Initialize Socket.IO: `const socket = io()`
   - Call `PlayerManager.init('yt-player')`
@@ -274,8 +274,8 @@ Implement the complete room experience: `client/room.html`, `client/js/player.js
   - `#chat-fab` click: toggles `#bottom-drawer` class `open`
   - `window.addEventListener('beforeunload', () => socket.emit('leave-room', { roomId }))`
   - Update `#room-title` from `room-list` event (find room by roomId, show its name) or from `sync-state` if room name is included
-- [ ] Build check: verify syntax with `node --check client/js/player.js && node --check client/js/room.js` and validate `client/room.html` has closing `</html>` tag
-- [ ] Commit
+- [x] Build check: verify syntax with `node --check client/js/player.js && node --check client/js/room.js` and validate `client/room.html` has closing `</html>` tag
+- [x] Commit
 
 ---
 
