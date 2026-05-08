@@ -283,7 +283,7 @@ Implement the complete room experience: `client/room.html`, `client/js/player.js
 
 Implement the complete admin panel: `client/admin.html` and `client/js/admin.js` with full room management, invite generation, and live connection monitoring.
 
-- [ ] Implement `client/admin.html`:
+- [x] Implement `client/admin.html`:
   - Valid HTML5, `lang="es"`, charset UTF-8, viewport meta
   - `<title>WatchJunto — Admin</title>`
   - Link CSS: `css/main.css`, `css/admin.css`
@@ -296,9 +296,9 @@ Implement the complete admin panel: `client/admin.html` and `client/js/admin.js`
     - `<section class="admin-section">` for "Conexiones activas": `<button id="refresh-connections-btn" class="btn btn-ghost">Actualizar</button>`, `<div id="connections-list" class="connections-list"></div>`
     - `.admin-danger-zone`: heading "Zona de peligro", `<button id="clear-tokens-btn" class="btn btn-danger">Revocar todos los tokens</button>` (calls DELETE /api/admin/tokens if you add that endpoint, or shows a message)
   - At bottom: `<script src="js/app.js"></script>`, `<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>`, `<script src="js/admin.js"></script>`
-- [ ] Add `DELETE /api/admin/tokens` route to `server/index.js`: protected by `adminAuth`, calls a new `revokeAllTokens()` function in `auth.js` that calls `tokens.clear()`, returns `{ ok: true }`
+- [x] Add `DELETE /api/admin/tokens` route to `server/index.js`: protected by `adminAuth`, calls a new `revokeAllTokens()` function in `auth.js` that calls `tokens.clear()`, returns `{ ok: true }`
   - Add `revokeAllTokens()` export to `server/auth.js`
-- [ ] Implement `client/js/admin.js`:
+- [x] Implement `client/js/admin.js`:
   - `DOMContentLoaded` listener calls `WJ.init()`
   - `checkSession()`: if `localStorage.getItem(WJ.STORAGE_KEYS.ADMIN_SESSION)` exists, show `#admin-panel`, hide `#login-page`, call `loadAll()`
   - `#admin-login-btn` click: `fetch('/api/admin/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password: input.value }) })`, on 200 save `localStorage[WJ.STORAGE_KEYS.ADMIN_SESSION] = 'true'`, show panel, call `loadAll()`; on 401 show `#login-error`; also listen for Enter keypress on `#admin-password`
@@ -314,8 +314,8 @@ Implement the complete admin panel: `client/admin.html` and `client/js/admin.js`
   - `#refresh-connections-btn` click: calls `loadConnections()`
   - `#clear-tokens-btn` click: confirm with `window.confirm(...)`, `fetch('/api/admin/tokens', { method: 'DELETE' })`, log result
   - Subscribe to Socket.IO `room-list` event: `socket.on('room-list', () => loadRooms())` for live updates — initialize `const socket = io()` at top of the DOMContentLoaded handler
-- [ ] Build check: verify syntax with `node --check client/js/admin.js && node --check server/auth.js && node --check server/index.js`
-- [ ] Commit
+- [x] Build check: verify syntax with `node --check client/js/admin.js && node --check server/auth.js && node --check server/index.js`
+- [x] Commit
 
 ---
 
