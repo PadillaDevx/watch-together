@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('[WJ] Connected to server');
     // Fetch initial room list
     fetch('/api/rooms')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(rooms => renderRooms(rooms))
       .catch(err => console.error('[WJ] Failed to fetch rooms:', err));
   });

@@ -323,7 +323,7 @@ Implement the complete admin panel: `client/admin.html` and `client/js/admin.js`
 
 Write the README.md in Spanish, add the missing `join-required.html` error assets, verify mobile layout, and do a final end-to-end syntax sweep.
 
-- [ ] Create `README.md` in the project root with the following sections in Spanish:
+- [x] Create `README.md` in the project root with the following sections in Spanish:
   - `# WatchJunto`: one-line description "App de watch-party self-hosted para red local"
   - `## Instalación y uso`: numbered steps: `1. npm install`, `2. npm start`, `3. Abrir http://localhost:3000 o http://[tu-ip-local]:3000`
   - `## Cómo obtener tu IP local`: subsections for Windows (`ipconfig | findstr IPv4`), macOS (`ipconfig getifaddr en0`), Linux (`ip a show | grep 'inet '`)
@@ -332,14 +332,14 @@ Write the README.md in Spanish, add the missing `join-required.html` error asset
   - `## Links de invitación`: explain token format, 24h expiry, how guests use them
   - `## Limitaciones conocidas`: only YouTube (no DRM, no private videos), no persistence on server restart, no HTTPS (LAN-only by design), Chrome/Firefox recommended
   - `## Stack técnico`: brief table — Backend: Node.js + Express + Socket.IO, Frontend: HTML + CSS + Vanilla JS, Storage: In-memory Maps + localStorage
-- [ ] Verify `client/index.html` has correct `<script>` load order: `app.js` first, then `socket.io.min.js`, then `lobby.js` — fix if incorrect
-- [ ] Verify `client/room.html` has correct `<script>` load order: `app.js`, `socket.io.min.js`, `player.js`, `room.js` — fix if incorrect
-- [ ] Verify `client/admin.html` has correct `<script>` load order: `app.js`, `socket.io.min.js`, `admin.js` — fix if incorrect
-- [ ] Verify all `fetch()` calls in `admin.js` and `lobby.js` handle non-2xx HTTP responses (check `if (!res.ok) throw new Error(...)` pattern)
-- [ ] Verify `server/index.js` `disconnect` handler properly iterates all rooms and cleans up: ensure the loop uses `for (const [roomId, room] of rooms)` and accesses the exported `rooms` Map from `rooms.js` — fix any scoping issues
-- [ ] Verify mobile layout: inspect `client/css/room.css` that `@media (max-width: 768px)` block sets `.sidebar { display: none }` and `.chat-fab { display: flex }` — add if missing
-- [ ] Verify `WJ.sanitize` is called before any user content is inserted into the DOM via `.innerHTML` in `lobby.js`, `room.js`, and `admin.js` — patch any call sites that use unsanitized string interpolation inside `innerHTML`
-- [ ] Final syntax sweep: run `node --check server/auth.js && node --check server/rooms.js && node --check server/index.js && node --check client/js/app.js && node --check client/js/lobby.js && node --check client/js/room.js && node --check client/js/player.js && node --check client/js/admin.js`
-- [ ] Start the server with `npm start` and verify it logs `[WJ] Server running at http://...` without throwing
-- [ ] Build check: verify syntax with `node --check` on all server files and validate HTML structure (confirm each HTML file has `<!DOCTYPE html>` and closing `</html>`)
-- [ ] Commit
+- [x] Verify `client/index.html` has correct `<script>` load order: `app.js` first, then `socket.io.min.js`, then `lobby.js` — fix if incorrect
+- [x] Verify `client/room.html` has correct `<script>` load order: `app.js`, `socket.io.min.js`, `player.js`, `room.js` — fix if incorrect
+- [x] Verify `client/admin.html` has correct `<script>` load order: `app.js`, `socket.io.min.js`, `admin.js` — fix if incorrect
+- [x] Verify all `fetch()` calls in `admin.js` and `lobby.js` handle non-2xx HTTP responses (check `if (!res.ok) throw new Error(...)` pattern)
+- [x] Verify `server/index.js` `disconnect` handler properly iterates all rooms and cleans up: ensure the loop uses `for (const [roomId, room] of rooms)` and accesses the exported `rooms` Map from `rooms.js` — fix any scoping issues
+- [x] Verify mobile layout: inspect `client/css/room.css` that `@media (max-width: 768px)` block sets `.sidebar { display: none }` and `.chat-fab { display: flex }` — add if missing
+- [x] Verify `WJ.sanitize` is called before any user content is inserted into the DOM via `.innerHTML` in `lobby.js`, `room.js`, and `admin.js` — patch any call sites that use unsanitized string interpolation inside `innerHTML`
+- [x] Final syntax sweep: run `node --check server/auth.js && node --check server/rooms.js && node --check server/index.js && node --check client/js/app.js && node --check client/js/lobby.js && node --check client/js/room.js && node --check client/js/player.js && node --check client/js/admin.js`
+- [x] Start the server with `npm start` and verify it logs `[WJ] Server running at http://...` without throwing
+- [x] Build check: verify syntax with `node --check` on all server files and validate HTML structure (confirm each HTML file has `<!DOCTYPE html>` and closing `</html>`)
+- [x] Commit
