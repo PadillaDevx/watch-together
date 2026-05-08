@@ -1,0 +1,188 @@
+/* ============================================================
+   admin.css — Admin panel styles for WatchJunto.
+   Depends on: main.css
+   ============================================================ */
+
+/* ── Admin page wrapper ─────────────────────────────────────── */
+.admin-layout {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Admin page header ──────────────────────────────────────── */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Admin content section ──────────────────────────────────── */
+.admin-section {
+  margin-bottom: 2.5rem;
+}
+
+/* ── Section title ──────────────────────────────────────────── */
+.admin-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Admin login page (full-screen centered) ────────────────── */
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Admin login card ───────────────────────────────────────── */
+.admin-login-form {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* ── Create room form (two-column grid) ─────────────────────── */
+.create-room-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+/* ── Form group inside create-room-form ─────────────────────── */
+.create-room-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* ── Label inside form group ────────────────────────────────── */
+.create-room-form label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ── Full-width field spanning both columns ─────────────────── */
+.create-room-form .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ── Rooms data table ───────────────────────────────────────── */
+.rooms-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rooms-table th,
+.rooms-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.rooms-table th {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--bg-secondary);
+}
+
+.rooms-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rooms-table .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ── Active connections list ────────────────────────────────── */
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.connection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.connection-item:last-child {
+  border-bottom: none;
+}
+
+/* ── Invite link result box ─────────────────────────────────── */
+.invite-result {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 0.75rem;
+}
+
+.invite-result input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+/* ── Danger zone section ────────────────────────────────────── */
+.admin-danger-zone {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--error);
+  border-radius: 10px;
+}
+
+.admin-danger-zone h3 {
+  color: var(--error);
+  margin-bottom: 1rem;
+}
+
+/* ── Empty state message ────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── Responsive: mobile ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .create-room-form {
+    grid-template-columns: 1fr;
+  }
+
+  .rooms-table {
+    font-size: 0.8125rem;
+  }
+
+  .rooms-table th,
+  .rooms-table td {
+    padding: 0.5rem 0.75rem;
+  }
+}

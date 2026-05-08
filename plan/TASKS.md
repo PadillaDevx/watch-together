@@ -78,7 +78,7 @@ Create the full directory tree, install dependencies, and implement all three se
 
 Implement the full CSS foundation: global reset, CSS custom properties for dark and light themes, typography, utility classes, and all four page-specific stylesheets.
 
-- [ ] Implement `client/css/main.css`:
+- [x] Implement `client/css/main.css`:
   - Full CSS reset: `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }`
   - `:root` dark theme custom properties: `--bg-primary: #080810`, `--bg-secondary: #0f0f1a`, `--bg-surface: #1a1a2e`, `--accent: #7c3aed`, `--accent-hover: #6d28d9`, `--text-primary: #f0f0ff`, `--text-secondary: #a0a0c0`, `--border: #2a2a4a`, `--success: #10b981`, `--warning: #f59e0b`, `--error: #ef4444`
   - `[data-theme="light"]` overrides: `--bg-primary: #ffffff`, `--bg-secondary: #f5f5ff`, `--bg-surface: #ececff`, `--accent: #7c3aed`, `--text-primary: #1a1a2e`, `--text-secondary: #4a4a6a`, `--border: #d0d0e8`
@@ -100,7 +100,7 @@ Implement the full CSS foundation: global reset, CSS custom properties for dark 
   - `.overlay-error`: `position: fixed`, `inset: 0`, `background: var(--bg-primary)`, `display: flex`, `flex-direction: column`, `align-items: center`, `justify-content: center`, `gap: 1rem`, `z-index: 2000`
   - Utility classes: `.text-secondary { color: var(--text-secondary) }`, `.text-accent { color: var(--accent) }`, `.flex { display: flex }`, `.flex-col { flex-direction: column }`, `.items-center { align-items: center }`, `.justify-between { justify-content: space-between }`, `.gap-1 { gap: 0.25rem }` through `.gap-4 { gap: 1rem }`, `.hidden { display: none !important }`
   - Scrollbar styling for webkit: `scrollbar-width: thin`, `scrollbar-color: var(--border) transparent`
-- [ ] Implement `client/css/lobby.css`:
+- [x] Implement `client/css/lobby.css`:
   - `.lobby-header`: `display: flex`, `align-items: center`, `justify-content: space-between`, `padding: 1rem 1.5rem`, `border-bottom: 1px solid var(--border)`, `background: var(--bg-secondary)`
   - `.lobby-header .logo`: `font-size: 1.5rem`, `font-weight: 700`, `color: var(--accent)`, letter-spacing
   - `.lobby-user-info`: `display: flex`, `align-items: center`, `gap: 0.75rem`
@@ -117,7 +117,7 @@ Implement the full CSS foundation: global reset, CSS custom properties for dark 
   - `.rooms-empty`: centered placeholder text, secondary color, padding 3rem
   - Username modal styles: form layout with label + input + submit button
   - `@media (max-width: 768px)`: header wraps, rooms-grid single column
-- [ ] Implement `client/css/room.css`:
+- [x] Implement `client/css/room.css`:
   - `.room-layout`: `display: grid`, `grid-template-columns: 1fr 320px`, `height: calc(100vh - 56px)`, `overflow: hidden`
   - `.room-navbar`: `height: 56px`, `display: flex`, `align-items: center`, `padding: 0 1rem`, `gap: 1rem`, `background: var(--bg-secondary)`, `border-bottom: 1px solid var(--border)`
   - `.room-title`: flex-1, font-weight 600, truncate with text-overflow ellipsis
@@ -142,7 +142,7 @@ Implement the full CSS foundation: global reset, CSS custom properties for dark 
   - FAB button `.chat-fab`: `display: none`, circular 52px, accent background, fixed bottom-right, `box-shadow: 0 4px 12px rgba(0,0,0,0.4)`
   - `.bottom-drawer`: `display: none`, `position: fixed`, `bottom: 0`, `left: 0`, `right: 0`, `height: 60vh`, `background: var(--bg-secondary)`, `border-top: 1px solid var(--border)`, `border-radius: 16px 16px 0 0`, `transform: translateY(100%)`, `transition: transform 0.25s ease`, `z-index: 500`; `.bottom-drawer.open { transform: translateY(0) }`
   - `@media (max-width: 768px)`: `.room-layout { grid-template-columns: 1fr }`, `.sidebar { display: none }`, `.chat-fab { display: flex }`, `.bottom-drawer { display: flex; flex-direction: column }`
-- [ ] Implement `client/css/admin.css`:
+- [x] Implement `client/css/admin.css`:
   - `.admin-layout`: `max-width: 1000px`, `margin: 0 auto`, `padding: 2rem 1.5rem`
   - `.admin-header`: flex space-between with title and logout button
   - `.admin-section`: margin-bottom 2rem; `.admin-section-title`: h2 style, accent underline border-bottom
@@ -153,8 +153,8 @@ Implement the full CSS foundation: global reset, CSS custom properties for dark 
   - `.invite-result`: flex row with readonly input (flex-1) + copy button, padding 1rem, bg-surface, border-radius 8px, margin-top 0.75rem
   - `.admin-danger-zone`: margin-top 2rem, padding 1.5rem, border 1px solid `var(--error)`, border-radius 10px
   - `@media (max-width: 768px)`: create-room-form single column, rooms-table font-size smaller, hide some table columns
-- [ ] Build check: validate HTML structure is implied by CSS class names — verify CSS files have no syntax errors by loading `node -e "require('fs').readFileSync('client/css/main.css', 'utf8')"` for each file to confirm they are readable
-- [ ] Commit
+- [x] Build check: validate HTML structure is implied by CSS class names — verify CSS files have no syntax errors by loading `node -e "require('fs').readFileSync('client/css/main.css', 'utf8')"` for each file to confirm they are readable
+- [x] Commit
 
 ---
 
