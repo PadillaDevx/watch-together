@@ -8,9 +8,9 @@
   height: 56px;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
-  gap: 1rem;
-  background: var(--bg-secondary);
+  padding: 0 var(--space-md);
+  gap: var(--space-md);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -52,7 +52,7 @@
 .url-bar {
   display: flex;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: var(--space-sm) var(--space-md);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
 }
@@ -92,21 +92,22 @@
   bottom: 1rem;
   left: 1rem;
   padding: 0.25rem 0.75rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 600;
   backdrop-filter: blur(4px);
   z-index: 10;
+  letter-spacing: 0.02em;
 }
 
 .sync-pill.synced {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(34, 197, 94, 0.15);
   color: var(--success);
   border: 1px solid var(--success);
 }
 
 .sync-pill.syncing {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.15);
   color: var(--warning);
   border: 1px solid var(--warning);
 }
@@ -116,7 +117,7 @@
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--border);
-  background: var(--bg-secondary);
+  background: var(--bg-surface);
   overflow: hidden;
 }
 
@@ -170,12 +171,15 @@
 /* ── Single chat message ────────────────────────────────────── */
 .chat-msg {
   font-size: 0.8125rem;
-  line-height: 1.4;
+  line-height: 1.5;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid transparent;
 }
 
 .chat-msg-author {
   font-weight: 600;
   color: var(--accent);
+  margin-right: 0.25rem;
 }
 
 .chat-msg-time {
@@ -248,9 +252,9 @@
   left: 0;
   right: 0;
   height: 60vh;
-  background: var(--bg-secondary);
+  background: var(--bg-surface);
   border-top: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   transform: translateY(100%);
   transition: transform 0.25s ease;
   z-index: 500;
