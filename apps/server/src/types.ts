@@ -111,5 +111,6 @@ export interface SocketData {
   username: string;
   authenticated: boolean;
   avatar: string | null;
+  isAdmin?: boolean;
   roomId?: string;
 }

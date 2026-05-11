@@ -1,6 +1,6 @@
 import type { Server } from 'socket.io';
 import { parseCookies } from '../middleware/auth';
-import { validateSession, getUser } from '../services/users';
+import { validateSession, getUser, isAdminSession } from '../services/users';
 import {
   getRoom, getRoomList, addUserToRoom, removeUserFromRoom,
   updatePlayerState, appendChatMessage, getLiveCurrentTime, _rooms,
@@ -25,6 +25,8 @@ export function setupSocket(io: IO): void {
         socket.data.username = username;
         socket.data.authenticated = true;
         socket.data.avatar = getUser(username)?.avatar ?? null;
+        // Propagate admin flag so socket handlers can check permissions
+        socket.data.isAdmin = isAdminSession(token);
       }
     }
     next();
