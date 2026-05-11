@@ -26,7 +26,7 @@ export const searchApi = {
 };
 
 export const adminApi = {
-  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' = 'youtube', iptvListId?: string) =>
+  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' | 'movie' = 'youtube', iptvListId?: string) =>
     api.post('/api/admin/rooms', { name, maxUsers, isOpen, sourceType, ...(iptvListId ? { iptvListId } : {}) }),
   deleteRoom: (id: string) => api.delete(`/api/admin/rooms/${id}`),
   deleteAllRooms: () => api.delete('/api/admin/rooms'),
@@ -40,6 +40,8 @@ export const adminApi = {
 export const iptvApi = {
   listAll: () => api.get<IPTVList[]>('/api/admin/iptv'),
   add: (name: string, url: string) => api.post<IPTVList>('/api/admin/iptv', { name, url }),
+  upload: (name: string, content: string) =>
+    api.post<IPTVList>('/api/admin/iptv/upload', { name, content }),
   update: (id: string, data: Partial<{ name: string; url: string; enabled: boolean }>) =>
     api.put<IPTVList>(`/api/admin/iptv/${id}`, data),
   remove: (id: string) => api.delete(`/api/admin/iptv/${id}`),

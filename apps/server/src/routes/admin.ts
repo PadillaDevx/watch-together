@@ -4,7 +4,7 @@ import { adminAuth } from '../middleware/auth';
 import { listUsers } from '../services/users';
 import { createRoom, deleteRoom, deleteAllRooms, getRoomList, _rooms } from '../services/rooms';
 import { generateToken, listTokens, revokeAllTokens, signAdminCookie } from '../services/tokens';
-import { getAllLists, addList, updateList, deleteList, refreshList } from '../services/iptv';
+import { getAllLists, addList, addListFromContent, updateList, deleteList, refreshList } from '../services/iptv';
 import { getLocalIP } from '../utils';
 import type { ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
 
@@ -28,7 +28,7 @@ export function createAdminRouter(io: IO) {
   });
 
   router.post('/rooms', adminAuth, (req, res) => {
-    const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv'; iptvListId?: string };
+    const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv' | 'movie'; iptvListId?: string };
     if (!name) { res.status(400).json({ error: 'Falta nombre de sala' }); return; }
     const room = createRoom(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId);
     io.emit('room-list', getRoomList());
@@ -80,6 +80,8 @@ export function createAdminRouter(io: IO) {
   router.post('/iptv', adminAuth, async (req, res) => {
     const { name, url } = req.body as { name?: string; url?: string };
     if (!name || !url) { res.status(400).json({ error: 'Faltan campos name y url' }); return; }
+    try { new URL(url); } catch { res.status(400).json({ error: 'URL inválida — debe incluir el protocolo (https://...)' }); return; }
+    if (!/^https?:\/\//i.test(url)) { res.status(400).json({ error: 'Solo se permiten URLs con protocolo http:// o https://' }); return; }
     try {
       const list = await addList(name, url);
       res.json(list);
@@ -88,8 +90,24 @@ export function createAdminRouter(io: IO) {
     }
   });
 
+  // Upload a .m3u file directly (content as JSON string — no multipart needed)
+  router.post('/iptv/upload', adminAuth, (req, res) => {
+    const { name, content } = req.body as { name?: string; content?: string };
+    if (!name || !content) { res.status(400).json({ error: 'Faltan campos name y content' }); return; }
+    try {
+      const list = addListFromContent(name.trim(), content);
+      res.json(list);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   router.put('/iptv/:id', adminAuth, async (req, res) => {
     const { name, url } = req.body as { name?: string; url?: string };
+    if (url) {
+      try { new URL(url); } catch { res.status(400).json({ error: 'URL inválida — debe incluir el protocolo (https://...)' }); return; }
+      if (!/^https?:\/\//i.test(url)) { res.status(400).json({ error: 'Solo se permiten URLs con protocolo http:// o https://' }); return; }
+    }
     try {
       const list = await updateList(req.params['id'] ?? '', name, url);
       res.json(list);

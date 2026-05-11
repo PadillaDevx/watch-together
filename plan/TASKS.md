@@ -76,10 +76,10 @@ Añadir los handlers de socket en `apps/server/src/socket/index.ts` para gestion
 
 Propagar el nuevo tipo `'movie'` a las rutas del servidor y a la API del cliente.
 
-- [ ] En `apps/server/src/routes/admin.ts`: en el handler `POST /api/admin/rooms`, cambiar el tipo anotado de `sourceType` en la destructuración de `req.body` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`; verificar que la llamada a `createRoom` lo pase sin cambios
-- [ ] En `apps/client/src/lib/api.ts`: en `adminApi.createRoom`, cambiar el tipo del parámetro `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] En `apps/server/src/routes/admin.ts`: en el handler `POST /api/admin/rooms`, cambiar el tipo anotado de `sourceType` en la destructuración de `req.body` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`; verificar que la llamada a `createRoom` lo pase sin cambios
+- [x] En `apps/client/src/lib/api.ts`: en `adminApi.createRoom`, cambiar el tipo del parámetro `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
