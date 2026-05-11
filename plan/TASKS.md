@@ -123,13 +123,13 @@ Actualizar `apps/client/src/pages/RoomPage.tsx` con el nuevo estado, listeners d
 
 Crear `apps/client/src/components/QueuePanel.tsx` — panel lateral de la cola de reproducción.
 
-- [ ] Definir props: `queue: QueueItem[]`, `roomId: string`, `currentUsername: string`, `isAdmin: boolean`; importar `socket` desde `../lib/socket` y `QueueItem` desde `../types`
-- [ ] Renderizar lista scrollable de ítems; cada ítem muestra: `<img src={item.thumbnail}>` (si existe, tamaño 48×28 px aprox.), `<span>{item.title}</span>`, `<span className="text-xs text-gray-400">{item.addedBy}</span>`
-- [ ] Añadir botón eliminar en cada ítem — visible si `item.addedBy === currentUsername || isAdmin`; al click emite `socket.emit('queue-remove', { roomId, itemId: item.id })`
-- [ ] Para usuarios admin, hacer ítems arrastrables usando atributos HTML5 nativos: `draggable`, `onDragStart` (guarda `fromIndex` en `event.dataTransfer.setData('text/plain', index)`), `onDragOver` (previene default para permitir drop), `onDrop` (extrae `fromIndex` de `dataTransfer`, calcula `toIndex`, emite `socket.emit('queue-reorder', { roomId, fromIndex, toIndex })`)
-- [ ] Estilizar con Tailwind: fondo oscuro, bordes, scroll vertical, indicador visual de drag activo
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Definir props: `queue: QueueItem[]`, `roomId: string`, `currentUsername: string`, `isAdmin: boolean`; importar `socket` desde `../lib/socket` y `QueueItem` desde `../types`
+- [x] Renderizar lista scrollable de ítems; cada ítem muestra: `<img src={item.thumbnail}>` (si existe, tamaño 48×28 px aprox.), `<span>{item.title}</span>`, `<span className="text-xs text-gray-400">{item.addedBy}</span>`
+- [x] Añadir botón eliminar en cada ítem — visible si `item.addedBy === currentUsername || isAdmin`; al click emite `socket.emit('queue-remove', { roomId, itemId: item.id })`
+- [x] Para usuarios admin, hacer ítems arrastrables usando atributos HTML5 nativos: `draggable`, `onDragStart` (guarda `fromIndex` en `event.dataTransfer.setData('text/plain', index)`), `onDragOver` (previene default para permitir drop), `onDrop` (extrae `fromIndex` de `dataTransfer`, calcula `toIndex`, emite `socket.emit('queue-reorder', { roomId, fromIndex, toIndex })`)
+- [x] Estilizar con Tailwind: fondo oscuro, bordes, scroll vertical, indicador visual de drag activo
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
