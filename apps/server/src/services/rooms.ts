@@ -15,9 +15,10 @@ export function createRoom(name: string, maxUsers: number, isOpen: boolean, sour
     createdAt: Date.now(),
     sourceType,
     iptvListId,
-    playerState: { videoId: null, streamUrl: null, currentTime: 0, isPlaying: false, updatedAt: Date.now() },
+    playerState: { videoId: null, streamUrl: null, currentTime: 0, isPlaying: false, updatedAt: Date.now(), title: null, thumbnail: null },
     users: new Map(),
     chatHistory: [],
+    queue: [],
   };
   _rooms.set(id, room);
   return room;

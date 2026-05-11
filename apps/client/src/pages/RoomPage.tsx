@@ -55,7 +55,7 @@ export function RoomPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   // Track sourceType in a ref to avoid stale closures in socket handlers
-  const sourceTypeRef = useRef<'youtube' | 'iptv'>(room?.sourceType ?? 'youtube');
+  const sourceTypeRef = useRef<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube');
   useEffect(() => {
     sourceTypeRef.current = room?.sourceType ?? 'youtube';
   }, [room?.sourceType]);
@@ -254,11 +254,10 @@ export function RoomPage() {
           <button
             onClick={handleResync}
             title="Sincronizar a todos a tu posición actual"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              syncStatus === 'syncing'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${syncStatus === 'syncing'
                 ? 'bg-yellow-500/15 text-yellow-400'
                 : 'bg-white/5 text-white/50 hover:bg-violet-600/20 hover:text-violet-300'
-            }`}
+              }`}
           >
             {syncStatus === 'syncing'
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -316,7 +315,7 @@ export function RoomPage() {
                 <video
                   ref={videoRef}
                   className="w-full h-full"
-                  controls={false}
+                  controls
                   playsInline
                 />
                 {isLive && (
@@ -358,30 +357,30 @@ export function RoomPage() {
                 Cambiar canal
               </button>
             ) : (
-            <form onSubmit={handleLoadUrl} className="flex-1 flex gap-2">
-              <div className="flex-1 relative">
-                <input
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="URL de YouTube, ID de video o término de búsqueda..."
-                  className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-violet-500/50 pr-6"
-                />
-                {urlInput && (
-                  <button type="button" onClick={() => setUrlInput('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/25 hover:text-white leading-none">×</button>
-                )}
-              </div>
-              <button type="submit" className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                {urlInput && !extractVideoId(urlInput.trim())
-                  ? <><Search className="h-3.5 w-3.5" /> Buscar</>
-                  : <><Play className="h-3.5 w-3.5 fill-current" /> Cargar</>}
-              </button>
-            </form>
+              <form onSubmit={handleLoadUrl} className="flex-1 flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="URL de YouTube, ID de video o término de búsqueda..."
+                    className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-violet-500/50 pr-6"
+                  />
+                  {urlInput && (
+                    <button type="button" onClick={() => setUrlInput('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/25 hover:text-white leading-none">×</button>
+                  )}
+                </div>
+                <button type="submit" className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                  {urlInput && !extractVideoId(urlInput.trim())
+                    ? <><Search className="h-3.5 w-3.5" /> Buscar</>
+                    : <><Play className="h-3.5 w-3.5 fill-current" /> Cargar</>}
+                </button>
+              </form>
             )}
             {room?.sourceType !== 'iptv' && (
-            <button type="button" onClick={() => { setSearchInitialQuery(''); setSearchOpen(true); }}
-              className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors" title="Buscar en YouTube">
-              <Search className="h-4 w-4" />
-            </button>
+              <button type="button" onClick={() => { setSearchInitialQuery(''); setSearchOpen(true); }}
+                className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors" title="Buscar en YouTube">
+                <Search className="h-4 w-4" />
+              </button>
             )}
           </div>
         </div>
@@ -467,9 +466,8 @@ function PanelTabBtn({ active, onClick, icon, label, badge }: {
 }) {
   return (
     <button onClick={onClick}
-      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative border-b-2 ${
-        active ? 'text-violet-300 border-violet-500' : 'text-white/35 hover:text-white/60 border-transparent'
-      }`}
+      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative border-b-2 ${active ? 'text-violet-300 border-violet-500' : 'text-white/35 hover:text-white/60 border-transparent'
+        }`}
     >
       {icon}{label}
       {badge !== undefined && (

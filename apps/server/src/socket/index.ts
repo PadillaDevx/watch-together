@@ -50,6 +50,9 @@ export function setupSocket(io: IO): void {
         currentTime: getLiveCurrentTime(room),
         isPlaying: room.playerState.isPlaying,
         sourceType: room.sourceType,
+        queue: room.queue,
+        title: room.playerState.title,
+        thumbnail: room.playerState.thumbnail,
       });
       socket.to(roomId).emit('user-joined', { username: socket.data.username });
       io.to(roomId).emit('room-users', getRoomUsers(room));
@@ -113,6 +116,9 @@ export function setupSocket(io: IO): void {
         currentTime: getLiveCurrentTime(room),
         isPlaying: room.playerState.isPlaying,
         sourceType: room.sourceType,
+        queue: room.queue,
+        title: room.playerState.title,
+        thumbnail: room.playerState.thumbnail,
       });
     });
 
@@ -127,6 +133,9 @@ export function setupSocket(io: IO): void {
         currentTime,
         isPlaying,
         sourceType: room?.sourceType ?? 'youtube',
+        queue: room?.queue ?? [],
+        title: room?.playerState.title ?? null,
+        thumbnail: room?.playerState.thumbnail ?? null,
       });
     });
 

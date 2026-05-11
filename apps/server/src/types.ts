@@ -13,12 +13,27 @@ export interface SessionData {
   createdAt: number;
 }
 
+/** Represents a single item in a room's playback queue */
+export interface QueueItem {
+  id: string;
+  type: 'youtube' | 'movie';
+  title: string;
+  videoId?: string;
+  streamUrl?: string;
+  thumbnail?: string;
+  addedBy: string;
+}
+
 export interface PlayerState {
   videoId: string | null;
   streamUrl: string | null;
   currentTime: number;
   isPlaying: boolean;
   updatedAt: number;
+  /** Human-readable title of the currently playing media */
+  title: string | null;
+  /** Thumbnail URL for the currently playing media */
+  thumbnail: string | null;
 }
 
 export interface RoomUser {
@@ -40,11 +55,13 @@ export interface Room {
   isOpen: boolean;
   pin?: string;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv';
+  sourceType: 'youtube' | 'iptv' | 'movie';
   iptvListId?: string;
   playerState: PlayerState;
   users: Map<string, RoomUser>;
   chatHistory: ChatMessage[];
+  /** Ordered list of items waiting to be played */
+  queue: QueueItem[];
 }
 
 export interface RoomListItem {
@@ -54,7 +71,7 @@ export interface RoomListItem {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv';
+  sourceType: 'youtube' | 'iptv' | 'movie';
   iptvListId?: string;
   playerState: PlayerState;
   users: Array<{ socketId: string; username: string; joinedAt: Date }>;
@@ -84,7 +101,9 @@ export interface IPTVEntry {
 export interface ServerToClientEvents {
   'room-list': (rooms: RoomListItem[]) => void;
   'room-users': (users: Array<{ socketId: string; username: string; joinedAt: Date }>) => void;
-  'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' }) => void;
+  'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie'; queue: QueueItem[]; title: string | null; thumbnail: string | null }) => void;
+  'queue-update': (queue: QueueItem[]) => void;
+  'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie'; iptvListId?: string }) => void;
   'player-play': (data: { currentTime: number }) => void;
   'player-pause': (data: { currentTime: number }) => void;
   'player-seek': (data: { currentTime: number }) => void;
@@ -105,6 +124,11 @@ export interface ClientToServerEvents {
   'chat-message': (data: { roomId: string; text: string }) => void;
   'request-sync': (data: { roomId: string }) => void;
   'resync-all': (data: { roomId: string; currentTime: number; isPlaying: boolean }) => void;
+  'queue-add': (data: { roomId: string; item: Omit<QueueItem, 'id' | 'addedBy'> }) => void;
+  'queue-remove': (data: { roomId: string; itemId: string }) => void;
+  'queue-next': (data: { roomId: string }) => void;
+  'queue-reorder': (data: { roomId: string; fromIndex: number; toIndex: number }) => void;
+  'switch-source': (data: { roomId: string; sourceType: 'youtube' | 'iptv' | 'movie'; iptvListId?: string }) => void;
 }
 
 export interface SocketData {

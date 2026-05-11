@@ -15,11 +15,26 @@ export interface VideoSearchResult {
   embeddable?: boolean;
 }
 
+/** Represents a single item in a room's playback queue */
+export interface QueueItem {
+  id: string;
+  type: 'youtube' | 'movie';
+  title: string;
+  videoId?: string;
+  streamUrl?: string;
+  thumbnail?: string;
+  addedBy: string;
+}
+
 export interface PlayerState {
   videoId: string | null;
   currentTime: number;
   isPlaying: boolean;
   updatedAt: number;
+  /** Human-readable title of the currently playing media */
+  title: string | null;
+  /** Thumbnail URL for the currently playing media */
+  thumbnail: string | null;
 }
 
 export interface RoomUser {
@@ -35,10 +50,12 @@ export interface Room {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv';
+  sourceType: 'youtube' | 'iptv' | 'movie';
   iptvListId?: string;
   playerState: PlayerState;
   users: RoomUser[];
+  /** Ordered list of items waiting to be played */
+  queue: QueueItem[];
 }
 
 export interface ChatMessage {
@@ -83,4 +100,14 @@ export interface IPTVEntry {
   url: string;
   group: string;
   logo?: string;
+}
+
+/** Search result returned by the Jellyfin media server */
+export interface JellyfinSearchResult {
+  id: string;
+  name: string;
+  type: string;
+  runtimeTicks?: number;
+  imageUrl?: string;
+  streamUrl: string;
 }
