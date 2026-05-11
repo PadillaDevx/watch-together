@@ -13,7 +13,7 @@ interface CreateRoomModalProps {
 
 export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [sourceType, setSourceType] = useState<'youtube' | 'iptv'>('youtube');
+  const [sourceType, setSourceType] = useState<'youtube' | 'iptv' | 'movie'>('youtube');
   const [name, setName] = useState('');
   const [maxUsers, setMaxUsers] = useState('10');
   const [isOpen, setIsOpen] = useState(true);
@@ -47,7 +47,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
     }
   }, [open, step, sourceType]);
 
-  function handleSourceSelect(type: 'youtube' | 'iptv') {
+  function handleSourceSelect(type: 'youtube' | 'iptv' | 'movie') {
     setSourceType(type);
     setStep(2);
   }
@@ -96,7 +96,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
               onClick={() => handleSourceSelect('youtube')}
               className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
             >
-              <span className="text-4xl">🎬</span>
+              <span className="text-4xl">▶️</span>
               <span className="font-semibold">YouTube</span>
               <span className="text-xs text-white/50 text-center">Videos y búsqueda de YouTube</span>
             </button>
@@ -109,6 +109,15 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
               <span className="font-semibold">Lista IPTV</span>
               <span className="text-xs text-white/50 text-center">Canales HLS y VOD</span>
             </button>
+            <button
+              type="button"
+              onClick={() => handleSourceSelect('movie')}
+              className="col-span-2 flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
+            >
+              <span className="text-4xl">🎬</span>
+              <span className="font-semibold">Movies (Jellyfin)</span>
+              <span className="text-xs text-white/50 text-center">Películas y series desde tu servidor Jellyfin</span>
+            </button>
           </div>
         </div>
       ) : (
@@ -120,7 +129,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
           >
             ← Cambiar fuente
             <span className="text-violet-400 font-medium">
-              {sourceType === 'youtube' ? '🎬 YouTube' : '📺 Lista IPTV'}
+              {sourceType === 'youtube' ? '▶️ YouTube' : sourceType === 'movie' ? '🎬 Movies (Jellyfin)' : '📺 Lista IPTV'}
             </span>
           </button>
           <Input
