@@ -191,16 +191,16 @@ Crear `apps/server/src/services/jellyfin.ts` con toda la lógica de comunicació
 
 Crear `apps/server/src/routes/jellyfin.ts` y registrarlo en `apps/server/src/index.ts`.
 
-- [ ] Crear el archivo; importar `Router` de `express`, `adminAuth` y `sessionAuth` de `../middleware/auth`, las funciones del servicio Jellyfin
-- [ ] Crear `adminRouter = Router()` y `userRouter = Router()`
-- [ ] Implementar `POST /config` en `adminRouter` protegido por `adminAuth`: validar `baseUrl` y `apiKey` son strings no vacíos (400 si falta); llamar `setConfig`; llamar `testConnection()`; si falla → 400 `{error}`; si ok → 200 `{ok: true, serverName}` (nunca retornar `apiKey`)
-- [ ] Implementar `GET /status` en `adminRouter` protegido por `adminAuth`: si `getConfig()` es null → `{configured: false}`; si no, llamar `testConnection()` y retornar `{configured: true, ok, serverName, baseUrl: config.baseUrl}` (sin `apiKey`)
-- [ ] Implementar `GET /search` en `userRouter` protegido por `sessionAuth`: validar query param `q` — no vacío y `<= 100` chars (400 si inválido); si no configurado → 503; llamar `searchItems(q)`, añadir a cada resultado `imageUrl: buildProxiedImageUrl(item.id)` y `streamUrl: buildProxiedStreamUrl(item.id)`; retornar el array
-- [ ] Implementar `GET /stream-url/:itemId` en `userRouter` protegido por `sessionAuth`: validar `itemId` con `/^[a-zA-Z0-9]+$/` (400 si inválido); si no configurado → 503; retornar `{streamUrl: buildProxiedStreamUrl(itemId)}`
-- [ ] Exportar `{ adminRouter, userRouter }` desde el módulo
-- [ ] En `apps/server/src/index.ts`: importar `{adminRouter as jellyfinAdminRouter, userRouter as jellyfinUserRouter}` desde `./routes/jellyfin`; añadir `app.use('/api/admin/jellyfin', jellyfinAdminRouter)` y `app.use('/api/jellyfin', jellyfinUserRouter)` junto a las demás rutas existentes
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Crear el archivo; importar `Router` de `express`, `adminAuth` y `sessionAuth` de `../middleware/auth`, las funciones del servicio Jellyfin
+- [x] Crear `adminRouter = Router()` y `userRouter = Router()`
+- [x] Implementar `POST /config` en `adminRouter` protegido por `adminAuth`: validar `baseUrl` y `apiKey` son strings no vacíos (400 si falta); llamar `setConfig`; llamar `testConnection()`; si falla → 400 `{error}`; si ok → 200 `{ok: true, serverName}` (nunca retornar `apiKey`)
+- [x] Implementar `GET /status` en `adminRouter` protegido por `adminAuth`: si `getConfig()` es null → `{configured: false}`; si no, llamar `testConnection()` y retornar `{configured: true, ok, serverName, baseUrl: config.baseUrl}` (sin `apiKey`)
+- [x] Implementar `GET /search` en `userRouter` protegido por `sessionAuth`: validar query param `q` — no vacío y `<= 100` chars (400 si inválido); si no configurado → 503; llamar `searchItems(q)`, añadir a cada resultado `imageUrl: buildProxiedImageUrl(item.id)` y `streamUrl: buildProxiedStreamUrl(item.id)`; retornar el array
+- [x] Implementar `GET /stream-url/:itemId` en `userRouter` protegido por `sessionAuth`: validar `itemId` con `/^[a-zA-Z0-9]+$/` (400 si inválido); si no configurado → 503; retornar `{streamUrl: buildProxiedStreamUrl(itemId)}`
+- [x] Exportar `{ adminRouter, userRouter }` desde el módulo
+- [x] En `apps/server/src/index.ts`: importar `{adminRouter as jellyfinAdminRouter, userRouter as jellyfinUserRouter}` desde `./routes/jellyfin`; añadir `app.use('/api/admin/jellyfin', jellyfinAdminRouter)` y `app.use('/api/jellyfin', jellyfinUserRouter)` junto a las demás rutas existentes
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
