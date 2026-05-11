@@ -149,12 +149,12 @@ Actualizar `VideoSearchModal` e `IPTVBrowserModal` para soportar añadir a cola 
 
 Añadir la opción de sala de tipo Jellyfin/Movies en el modal de creación de sala.
 
-- [ ] En `apps/client/src/components/CreateRoomModal.tsx`: cambiar el tipo del estado `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
-- [ ] En el paso 1 (selector de tipo de sala), añadir un tercer botón **"🎬 Movies (Jellyfin)"** que establece `sourceType = 'movie'`
-- [ ] Cuando `sourceType === 'movie'`, en el paso 2 omitir el selector de lista IPTV y mostrar directamente el formulario de nombre/configuración de sala
-- [ ] En la llamada final a `adminApi.createRoom`, asegurarse de que `sourceType: 'movie'` se pasa y que no se envía `iptvListId` cuando el tipo es `'movie'`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] En `apps/client/src/components/CreateRoomModal.tsx`: cambiar el tipo del estado `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
+- [x] En el paso 1 (selector de tipo de sala), añadir un tercer botón **"🎬 Movies (Jellyfin)"** que establece `sourceType = 'movie'`
+- [x] Cuando `sourceType === 'movie'`, en el paso 2 omitir el selector de lista IPTV y mostrar directamente el formulario de nombre/configuración de sala
+- [x] En la llamada final a `adminApi.createRoom`, asegurarse de que `sourceType: 'movie'` se pasa y que no se envía `iptvListId` cuando el tipo es `'movie'`
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
@@ -162,10 +162,10 @@ Añadir la opción de sala de tipo Jellyfin/Movies en el modal de creación de s
 
 Prerequisito para que el servicio Jellyfin pueda agregar su hostname al allowlist del proxy.
 
-- [ ] En `apps/server/src/routes/iptv.ts`: localizar el `Set<string>` privado `_discoveredCdnHostnames`
-- [ ] Exportar una función nueva `export function trustHostname(hostname: string): void { _discoveredCdnHostnames.add(hostname); }` — añadirla justo después de la declaración del Set, sin modificar nada más del módulo
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] En `apps/server/src/routes/iptv.ts`: localizar el `Set<string>` privado `_discoveredCdnHostnames`
+- [x] Exportar una función nueva `export function trustHostname(hostname: string): void { _discoveredCdnHostnames.add(hostname); }` — añadirla justo después de la declaración del Set, sin modificar nada más del módulo
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
