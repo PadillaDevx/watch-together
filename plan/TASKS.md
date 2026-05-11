@@ -173,16 +173,17 @@ Prerequisito para que el servicio Jellyfin pueda agregar su hostname al allowlis
 
 Crear `apps/server/src/services/jellyfin.ts` con toda la lógica de comunicación con el servidor Jellyfin.
 
-- [ ] Crear el archivo con estado interno `let _config: { baseUrl: string; apiKey: string } | null = null`
-- [ ] Implementar `setConfig(baseUrl: string, apiKey: string): void` — elimina slash final de `baseUrl`, guarda `_config`; llama `trustHostname(new URL(baseUrl).hostname)` importando `trustHostname` de `../routes/iptv`
-- [ ] Implementar `getConfig(): { baseUrl: string; apiKey: string } | null` — retorna `_config`
-- [ ] Implementar `testConnection(): Promise<{ok: boolean; serverName?: string; error?: string}>` — hace `GET {baseUrl}/System/Info` con header `X-Emby-Token: {apiKey}` usando `fetch` nativo de Node 18+ (o `https`/`http` si la versión del servidor no lo soporta); retorna `{ok: true, serverName: data.ServerName}` en HTTP 200, `{ok: false, error: string}` en cualquier error; no expone el `apiKey` en ninguna respuesta
-- [ ] Definir tipo local `JellyfinSearchResult` con `{id: string; name: string; type: string; runtimeTicks?: number; hasPrimaryImage: boolean}`
-- [ ] Implementar `searchItems(query: string, limit = 20): Promise<JellyfinSearchResult[]>` — URL: `{baseUrl}/Items?searchTerm={encodeURIComponent(query)}&IncludeItemTypes=Movie,Episode&Recursive=true&Fields=Overview,RunTimeTicks,ImageTags&Limit={limit}`; header `X-Emby-Token`; mapear `Items` al tipo local
-- [ ] Implementar `buildProxiedStreamUrl(itemId: string): string` — construye `{baseUrl}/Videos/{itemId}/master.m3u8?api_key={apiKey}` y lo envuelve como `/api/iptv/proxy?url=${encodeURIComponent(rawUrl)}`
-- [ ] Implementar `buildProxiedImageUrl(itemId: string): string` — construye `{baseUrl}/Items/{itemId}/Images/Primary?api_key={apiKey}` y lo envuelve igual que el stream URL
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Crear el archivo con estado interno `let _config: { baseUrl: string; apiKey: string } | null = null`
+- [x] Implementar `setConfig(baseUrl: string, apiKey: string): void` — elimina slash final de `baseUrl`, guarda `_config`; llama `trustHostname(new URL(baseUrl).hostname)` importando `trustHostname` de `./proxy-trust` (ver nota de refactor abajo)
+- [x] Implementar `getConfig(): { baseUrl: string; apiKey: string } | null` — retorna `_config`
+- [x] Implementar `testConnection(): Promise<{ok: boolean; serverName?: string; error?: string}>` — hace `GET {baseUrl}/System/Info` con header `X-Emby-Token: {apiKey}` usando `fetch` nativo de Node 18+ (o `https`/`http` si la versión del servidor no lo soporta); retorna `{ok: true, serverName: data.ServerName}` en HTTP 200, `{ok: false, error: string}` en cualquier error; no expone el `apiKey` en ninguna respuesta
+- [x] Definir tipo local `JellyfinItemRaw` con `{Id, Name, Type, RunTimeTicks?, ImageTags?}` (solo interno al módulo)
+- [x] Implementar `searchItems(query: string, limit = 20)` — URL: `{baseUrl}/Items?searchTerm=...&IncludeItemTypes=Movie,Episode&Recursive=true&Fields=Overview,RunTimeTicks,ImageTags&Limit={limit}`; header `X-Emby-Token`; mapear `Items` al tipo de retorno
+- [x] Implementar `buildProxiedStreamUrl(itemId: string): string` — construye `{baseUrl}/Videos/{itemId}/master.m3u8?api_key={apiKey}` y lo envuelve como `/api/iptv/proxy?url=${encodeURIComponent(rawUrl)}`
+- [x] Implementar `buildProxiedImageUrl(itemId: string): string` — construye `{baseUrl}/Items/{itemId}/Images/Primary?api_key={apiKey}` y lo envuelve igual que el stream URL
+- [x] Refactor: `_discoveredCdnHostnames` y `trustHostname` extraídos a `services/proxy-trust.ts`; `routes/iptv.ts` importa y re-exporta desde allí; `services/jellyfin.ts` importa directamente de `./proxy-trust` (evita layer violation service→route)
+- [x] Build & syntax check (tsc --noEmit sin errores)
+- [x] Commit
 
 ---
 

@@ -3,26 +3,12 @@ import https from 'https';
 import http from 'http';
 import { sessionAuth } from '../middleware/auth';
 import { getEntries, getAllLists } from '../services/iptv';
+import { _discoveredCdnHostnames, trustHostname } from '../services/proxy-trust';
+
+export { trustHostname };
 
 export const iptvRouter = Router();
 
-/**
- * CDN hostnames discovered while rewriting manifests that were served from
- * already-whitelisted entry URLs. These are implicitly trusted because they
- * came from inside an authorized manifest (e.g. Akamai/MediaStream CDN edges).
- * The set grows at runtime as streams are played and never shrinks — acceptable
- * for a local/LAN-only admin tool.
- */
-const _discoveredCdnHostnames = new Set<string>();
-
-/**
- * Allow an external service (e.g. Jellyfin) to pre-register its hostname so
- * the proxy will accept requests to that host without requiring it to appear
- * in an IPTV list entry first.
- */
-export function trustHostname(hostname: string): void {
-    _discoveredCdnHostnames.add(hostname);
-}
 
 const HLS_MIME_TYPES = new Set([
     'application/vnd.apple.mpegurl',
