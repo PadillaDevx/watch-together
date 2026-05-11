@@ -87,13 +87,13 @@ Propagar el nuevo tipo `'movie'` a las rutas del servidor y a la API del cliente
 
 Exponer `onEnded` en `useYouTube` y `useHlsPlayer` para que `RoomPage` pueda disparar el auto-avance de cola al terminar el video.
 
-- [ ] En `apps/client/src/hooks/useYouTube.ts`: añadir `onEnded?: () => void` al interface `UseYouTubeOptions`
-- [ ] En `apps/client/src/hooks/useYouTube.ts`: en el callback `onStateChange` del constructor `new window.YT.Player(...)`, añadir `if (e.data === window.YT.PlayerState.ENDED) { onEnded?.(); }` — colocarlo antes del bloque que consume el flag `isRemoteUpdate`
-- [ ] En `apps/client/src/hooks/useYouTube.ts`: añadir `onEnded` al array de dependencias del `useCallback` de `loadVideo` (o al ref estabilizador si lo hay)
-- [ ] En `apps/client/src/hooks/useHlsPlayer.ts`: añadir `onEnded?: () => void` al interface `UseHlsPlayerOptions`
-- [ ] En `apps/client/src/hooks/useHlsPlayer.ts`: crear un ref `onEndedRef = useRef(onEnded)` actualizado con `useEffect(() => { onEndedRef.current = onEnded }, [onEnded])` para evitar re-attachs; en el `useEffect` que adjunta los listeners `'play'` y `'pause'`, añadir `const handleEnded = () => onEndedRef.current?.(); video.addEventListener('ended', handleEnded);` y en el cleanup `video.removeEventListener('ended', handleEnded)`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] En `apps/client/src/hooks/useYouTube.ts`: añadir `onEnded?: () => void` al interface `UseYouTubeOptions`
+- [x] En `apps/client/src/hooks/useYouTube.ts`: en el callback `onStateChange` del constructor `new window.YT.Player(...)`, añadir `if (e.data === window.YT.PlayerState.ENDED) { onEnded?.(); }` — colocarlo antes del bloque que consume el flag `isRemoteUpdate`
+- [x] En `apps/client/src/hooks/useYouTube.ts`: añadir `onEnded` al array de dependencias del `useCallback` de `loadVideo` (o al ref estabilizador si lo hay)
+- [x] En `apps/client/src/hooks/useHlsPlayer.ts`: añadir `onEnded?: () => void` al interface `UseHlsPlayerOptions`
+- [x] En `apps/client/src/hooks/useHlsPlayer.ts`: crear un ref `onEndedRef = useRef(onEnded)` actualizado con `useEffect(() => { onEndedRef.current = onEnded }, [onEnded])` para evitar re-attachs; en el `useEffect` que adjunta los listeners `'play'` y `'pause'`, añadir `const handleEnded = () => onEndedRef.current?.(); video.addEventListener('ended', handleEnded);` y en el cleanup `video.removeEventListener('ended', handleEnded)`
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

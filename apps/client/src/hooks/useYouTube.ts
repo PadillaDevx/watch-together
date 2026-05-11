@@ -31,10 +31,11 @@ interface UseYouTubeOptions {
   containerId: string;
   onPlay?: (currentTime: number) => void;
   onPause?: (currentTime: number) => void;
+  onEnded?: () => void;
   onEmbedError?: (videoId: string) => void;
 }
 
-export function useYouTube({ containerId, onPlay, onPause, onEmbedError }: UseYouTubeOptions) {
+export function useYouTube({ containerId, onPlay, onPause, onEnded, onEmbedError }: UseYouTubeOptions) {
   const playerRef = useRef<YT.Player | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isRemoteUpdate = useRef(false);
@@ -73,6 +74,7 @@ export function useYouTube({ containerId, onPlay, onPause, onEmbedError }: UseYo
               const now = Date.now();
               if (now - lastSeekTime.current > 200) onPause?.(time);
             }
+            if (e.data === window.YT.PlayerState.ENDED) { onEnded?.(); }
           },
           onError: (e: { data: number }) => {
             if (e.data === 101 || e.data === 150) {
@@ -83,7 +85,7 @@ export function useYouTube({ containerId, onPlay, onPause, onEmbedError }: UseYo
         },
       });
     }
-  }, [isReady, containerId, onPlay, onPause]);
+  }, [isReady, containerId, onPlay, onPause, onEnded]);
 
   const remotePlay = useCallback((currentTime: number) => {
     const player = playerRef.current;
