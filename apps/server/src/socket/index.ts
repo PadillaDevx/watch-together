@@ -1,11 +1,13 @@
+import crypto from 'crypto';
 import type { Server } from 'socket.io';
 import { parseCookies } from '../middleware/auth';
 import { validateSession, getUser, isAdminSession } from '../services/users';
 import {
   getRoom, getRoomList, addUserToRoom, removeUserFromRoom,
   updatePlayerState, appendChatMessage, getLiveCurrentTime, _rooms,
+  addToQueue, removeFromQueue, shiftQueue, reorderQueue, switchRoomSource,
 } from '../services/rooms';
-import type { ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
+import type { QueueItem, ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
 
 type IO = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
@@ -137,6 +139,74 @@ export function setupSocket(io: IO): void {
         title: room?.playerState.title ?? null,
         thumbnail: room?.playerState.thumbnail ?? null,
       });
+    });
+
+    socket.on('queue-add', ({ roomId, item }) => {
+      if (!socket.data.authenticated) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      const newItem: QueueItem = {
+        ...item,
+        id: crypto.randomUUID(),
+        addedBy: socket.data.username!,
+      };
+      addToQueue(roomId, newItem);
+      io.to(roomId).emit('queue-update', room.queue);
+    });
+
+    socket.on('queue-remove', ({ roomId, itemId }) => {
+      if (!socket.data.authenticated) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      const idx = room.queue.findIndex(i => i.id === itemId);
+      if (idx === -1) return;
+      const item = room.queue[idx];
+      if (item.addedBy !== socket.data.username && socket.data.isAdmin !== true) {
+        socket.emit('error', { code: 'FORBIDDEN' });
+        return;
+      }
+      removeFromQueue(roomId, itemId);
+      io.to(roomId).emit('queue-update', room.queue);
+    });
+
+    socket.on('queue-next', ({ roomId }) => {
+      if (!socket.data.authenticated) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      const item = shiftQueue(roomId);
+      if (!item) {
+        io.to(roomId).emit('queue-update', room.queue);
+        return;
+      }
+      if (item.type === 'youtube') {
+        updatePlayerState(roomId, { videoId: item.videoId!, streamUrl: null, currentTime: 0, isPlaying: false });
+        io.to(roomId).emit('player-load', { type: 'youtube', videoId: item.videoId! });
+      } else {
+        updatePlayerState(roomId, { streamUrl: item.streamUrl!, videoId: null, currentTime: 0, isPlaying: false });
+        io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: item.streamUrl! });
+      }
+      io.to(roomId).emit('queue-update', room.queue);
+    });
+
+    socket.on('queue-reorder', ({ roomId, fromIndex, toIndex }) => {
+      if (socket.data.isAdmin !== true) {
+        socket.emit('error', { code: 'FORBIDDEN' });
+        return;
+      }
+      const room = getRoom(roomId);
+      if (!room) return;
+      reorderQueue(roomId, fromIndex, toIndex);
+      io.to(roomId).emit('queue-update', room.queue);
+    });
+
+    socket.on('switch-source', ({ roomId, sourceType, iptvListId }) => {
+      if (!socket.data.authenticated) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      switchRoomSource(roomId, sourceType, iptvListId);
+      io.to(roomId).emit('source-switched', { sourceType, iptvListId });
+      io.to(roomId).emit('queue-update', []);
+      io.emit('room-list', getRoomList());
     });
 
     socket.on('disconnect', () => {
