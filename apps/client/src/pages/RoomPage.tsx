@@ -10,6 +10,7 @@ import { useHlsPlayer } from '../hooks/useHlsPlayer';
 import { Avatar } from '../components/ui/Avatar';
 import { VideoSearchModal } from '../components/VideoSearchModal';
 import { IPTVBrowserModal } from '../components/IPTVBrowserModal';
+import { JellyfinBrowserModal } from '../components/JellyfinBrowserModal';
 import { socket } from '../lib/socket';
 import { copyToClipboard } from '../lib/utils';
 import { useStore } from '../store';
@@ -53,6 +54,7 @@ export function RoomPage() {
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
   const [iptvBrowserOpen, setIptvBrowserOpen] = useState(false);
+  const [jellyfinOpen, setJellyfinOpen] = useState(false);
   const [embedError, setEmbedError] = useState<string | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [nowTitle, setNowTitle] = useState<string | null>(null);
@@ -399,6 +401,14 @@ export function RoomPage() {
                 <Tv className="h-4 w-4" />
                 Cambiar canal
               </button>
+            ) : activeSource === 'movie' ? (
+              <button
+                type="button"
+                onClick={() => setJellyfinOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors"
+              >
+                🎬 Jellyfin
+              </button>
             ) : (
               <form onSubmit={handleLoadUrl} className="flex-1 flex gap-2">
                 <div className="flex-1 relative">
@@ -419,7 +429,7 @@ export function RoomPage() {
                 </button>
               </form>
             )}
-            {activeSource !== 'iptv' && (
+            {activeSource === 'youtube' && (
               <button type="button" onClick={() => { setSearchInitialQuery(''); setSearchOpen(true); }}
                 className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors" title="Buscar en YouTube">
                 <Search className="h-4 w-4" />
@@ -560,6 +570,11 @@ export function RoomPage() {
           roomId={roomId!}
         />
       )}
+      <JellyfinBrowserModal
+        open={jellyfinOpen}
+        onClose={() => setJellyfinOpen(false)}
+        roomId={roomId!}
+      />
     </div>
   );
 }

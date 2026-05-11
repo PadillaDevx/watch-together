@@ -223,12 +223,12 @@ Añadir los métodos de API al cliente y la sección de configuración en la pá
 
 Crear el modal de búsqueda Jellyfin y conectarlo en la toolbar de la sala.
 
-- [ ] Crear `apps/client/src/components/JellyfinBrowserModal.tsx`; props: `open: boolean`, `onClose: () => void`, `roomId: string`; importar `jellyfinApi` de `../lib/api`, `socket` de `../lib/socket`, `JellyfinSearchResult` de `../types`, el componente `Modal` de `./ui/Modal`
-- [ ] Al abrir el modal (`open === true`), llamar `jellyfinApi.getStatus()` y si `!configured` mostrar inline: "Jellyfin no está configurado. Un administrador debe configurarlo en el panel de admin." sin mostrar el buscador
-- [ ] Añadir input de búsqueda con debounce de 300ms; cuando el valor tenga `>= 2` caracteres llamar `jellyfinApi.search(q)` y actualizar estado `results`
-- [ ] Renderizar resultados como grid responsive de tarjetas; cada tarjeta muestra: `<img src={item.imageUrl}>` (poster), `{item.name}` (título), duración calculada con `Math.floor((item.runtimeTicks ?? 0) / 600_000_000)` minutos
-- [ ] En cada tarjeta, botón **"▶ Play"**: emite `socket.emit('player-load', {roomId, type: 'iptv', streamUrl: item.streamUrl})` y llama `onClose()`
-- [ ] En cada tarjeta, botón **"+ Queue"**: emite `socket.emit('queue-add', {roomId, item: {type: 'movie', title: item.name, streamUrl: item.streamUrl, thumbnail: item.imageUrl}})` y muestra toast breve sin cerrar el modal
-- [ ] En `apps/client/src/pages/RoomPage.tsx`: añadir `const [jellyfinOpen, setJellyfinOpen] = useState(false)`; añadir botón **"🎬"** en el toolbar que hace `setJellyfinOpen(true)`; renderizar `<JellyfinBrowserModal open={jellyfinOpen} onClose={() => setJellyfinOpen(false)} roomId={roomId!} />`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Crear `apps/client/src/components/JellyfinBrowserModal.tsx`; props: `open: boolean`, `onClose: () => void`, `roomId: string`; importar `jellyfinApi` de `../lib/api`, `socket` de `../lib/socket`, `JellyfinSearchResult` de `../types`, el componente `Modal` de `./ui/Modal`
+- [x] Al abrir el modal (`open === true`), llamar `jellyfinApi.getStatus()` y si `!configured` mostrar inline: "Jellyfin no está configurado. Un administrador debe configurarlo en el panel de admin." sin mostrar el buscador
+- [x] Añadir input de búsqueda con debounce de 300ms; cuando el valor tenga `>= 2` caracteres llamar `jellyfinApi.search(q)` y actualizar estado `results`
+- [x] Renderizar resultados como grid responsive de tarjetas; cada tarjeta muestra: `<img src={item.imageUrl}>` (poster), `{item.name}` (título), duración calculada con `Math.floor((item.runtimeTicks ?? 0) / 600_000_000)` minutos
+- [x] En cada tarjeta, botón **"▶ Play"**: emite `socket.emit('player-load', {roomId, type: 'iptv', streamUrl: item.streamUrl})` y llama `onClose()`
+- [x] En cada tarjeta, botón **"+ Queue"**: emite `socket.emit('queue-add', {roomId, item: {type: 'movie', title: item.name, streamUrl: item.streamUrl, thumbnail: item.imageUrl}})` y muestra toast breve sin cerrar el modal
+- [x] En `apps/client/src/pages/RoomPage.tsx`: añadir `const [jellyfinOpen, setJellyfinOpen] = useState(false)`; añadir botón **"🎬"** en el toolbar que hace `setJellyfinOpen(true)`; renderizar `<JellyfinBrowserModal open={jellyfinOpen} onClose={() => setJellyfinOpen(false)} roomId={roomId!} />`
+- [x] Build & syntax check
+- [x] Commit

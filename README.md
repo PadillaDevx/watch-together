@@ -8,9 +8,12 @@ Watch videos in perfect sync with your friends — YouTube and live IPTV streams
 - **youtube-nocookie.com embed** — videos are loaded via `youtube-nocookie.com` for enhanced privacy. If a video has embedding disabled, an overlay with a direct YouTube link is shown instead of a blank screen.
 - **IPTV / HLS streams** — load any `.m3u8` or `.m3u` playlist from a URL and browse hundreds of live channels and VOD entries directly inside a room.
 - **Server-side CORS proxy** — HLS manifests and segments are fetched server-side (`/api/iptv/proxy`), bypassing CORS restrictions. The proxy is authenticated and domain-whitelisted to registered IPTV lists only.
-- **Admin panel** — manage users, active rooms, connection tokens, and IPTV playlists from a dedicated admin interface.
-- **Room creation with source selection** — when creating a room, choose between YouTube mode or IPTV mode and optionally link a specific IPTV list.
+- **Admin panel** — manage users, active rooms, connection tokens, IPTV playlists, and Jellyfin configuration from a dedicated admin interface.
+- **Room creation with source selection** — when creating a room, choose between YouTube, IPTV, or Movies (Jellyfin) as the source type.
 - **In-room channel browser** — browse and filter IPTV entries by group or search term without leaving the room.
+- **Jellyfin integration** — connect a self-hosted Jellyfin media server; search movies and episodes directly from the room via the 🎬 Jellyfin browser. Stream URLs are proxied server-side so the API key never reaches the client.
+- **Playback queue** — add videos, IPTV channels, or Jellyfin titles to an ordered queue; auto-advances on video end. Admins can reorder items via drag-and-drop, any user can remove their own entries.
+- **Source switching** — change the room's playback source (YouTube / IPTV / Movies) at any time without leaving the room; resets queue and player state for all viewers.
 - **Live badge** — streams detected as live (`HLS.Events.LEVEL_LOADED` with `details.live`) display an **EN VIVO** badge over the player.
 - **Real-time chat** — per-room chat with avatar support.
 - **PIN-protected rooms** — optional PIN lock for private rooms.
