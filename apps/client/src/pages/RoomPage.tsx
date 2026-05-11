@@ -548,6 +548,7 @@ export function RoomPage() {
         onClose={() => setSearchOpen(false)}
         onSelect={handleVideoSelect}
         initialQuery={searchInitialQuery}
+        roomId={roomId!}
       />
 
       {activeSource === 'iptv' && (
@@ -556,6 +557,7 @@ export function RoomPage() {
           onClose={() => setIptvBrowserOpen(false)}
           listId={room?.iptvListId ?? ''}
           onSelect={handleIptvSelect}
+          roomId={roomId!}
         />
       )}
     </div>

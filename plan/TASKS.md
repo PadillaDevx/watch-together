@@ -137,11 +137,11 @@ Crear `apps/client/src/components/QueuePanel.tsx` — panel lateral de la cola d
 
 Actualizar `VideoSearchModal` e `IPTVBrowserModal` para soportar añadir a cola sin cerrar el modal.
 
-- [ ] En `apps/client/src/components/VideoSearchModal.tsx`: en cada fila de resultado, reemplazar el botón único de acción por dos botones — **"▶ Play Now"** (emite `socket.emit('player-load', {roomId, type: 'youtube', videoId: result.videoId})` y cierra modal) y **"+ Queue"** (emite `socket.emit('queue-add', {roomId, item: {type: 'youtube', title: result.title, videoId: result.videoId, thumbnail: result.thumbnail}})` y muestra un toast breve sin cerrar el modal)
-- [ ] En `apps/client/src/components/IPTVBrowserModal.tsx`: en cada entrada IPTV, reemplazar acción única por dos botones — **"▶ Play Now"** (comportamiento actual) y **"+ Queue"** (emite `socket.emit('queue-add', {roomId, item: {type: 'movie', title: entry.name, streamUrl: entry.url, thumbnail: entry.thumbnail ?? undefined}})` — nota: `entry.url` es la URL cruda, no proxificada; el servidor almacena la URL cruda)
-- [ ] Implementar el toast de confirmación para "añadido a cola" en ambos modales (estado local `const [toastMsg, setToastMsg] = useState<string|null>(null)` + `useEffect` de 2s para limpiarlo) o reusar el mecanismo de toast existente si ya existe en el proyecto
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] En `apps/client/src/components/VideoSearchModal.tsx`: en cada fila de resultado, reemplazar el botón único de acción por dos botones — **"▶ Play Now"** (emite `socket.emit('player-load', {roomId, type: 'youtube', videoId: result.videoId})` y cierra modal) y **"+ Queue"** (emite `socket.emit('queue-add', {roomId, item: {type: 'youtube', title: result.title, videoId: result.videoId, thumbnail: result.thumbnail}})` y muestra un toast breve sin cerrar el modal)
+- [x] En `apps/client/src/components/IPTVBrowserModal.tsx`: en cada entrada IPTV, reemplazar acción única por dos botones — **"▶ Play Now"** (comportamiento actual) y **"+ Queue"** (emite `socket.emit('queue-add', {roomId, item: {type: 'movie', title: entry.name, streamUrl: entry.url, thumbnail: entry.thumbnail ?? undefined}})` — nota: `entry.url` es la URL cruda, no proxificada; el servidor almacena la URL cruda)
+- [x] Implementar el toast de confirmación para "añadido a cola" en ambos modales (estado local `const [toastMsg, setToastMsg] = useState<string|null>(null)` + `useEffect` de 2s para limpiarlo) o reusar el mecanismo de toast existente si ya existe en el proyecto
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

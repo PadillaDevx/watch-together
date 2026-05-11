@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Search, X, Play, Loader2 } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { searchApi } from '../lib/api';
+import { socket } from '../lib/socket';
 import type { VideoSearchResult } from '../types';
 
 interface Props {
@@ -9,15 +10,24 @@ interface Props {
   onClose: () => void;
   onSelect: (videoId: string) => void;
   initialQuery?: string;
+  roomId: string;
 }
 
-export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '' }: Props) {
+export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '', roomId }: Props) {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<VideoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(null), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [toastMsg]);
 
   const handleSearch = useCallback(async (q: string) => {
     if (!q.trim()) return;
@@ -40,9 +50,17 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '' }:
     handleSearch(query);
   }
 
-  function handleSelect(videoId: string) {
-    onSelect(videoId);
+  function handlePlayNow(result: VideoSearchResult) {
+    socket.emit('player-load', { roomId, type: 'youtube', videoId: result.videoId });
     onClose();
+  }
+
+  function handleAddToQueue(result: VideoSearchResult) {
+    socket.emit('queue-add', {
+      roomId,
+      item: { type: 'youtube', title: result.title, videoId: result.videoId, thumbnail: result.thumbnail },
+    });
+    setToastMsg('Added to queue');
   }
 
   return (
@@ -80,7 +98,7 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '' }:
       </form>
 
       {/* Results */}
-      <div className="max-h-[420px] overflow-y-auto -mx-5 px-5 space-y-2">
+      <div className="max-h-[420px] overflow-y-auto -mx-5 px-5 space-y-2 pb-1">
         {loading && (
           <div className="flex items-center justify-center py-16 text-white/25">
             <Loader2 className="h-6 w-6 animate-spin" />
@@ -103,20 +121,35 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '' }:
         )}
 
         {!loading && results.map((r) => (
-          <VideoResultRow key={r.videoId} result={r} onSelect={handleSelect} />
+          <VideoResultRow key={r.videoId} result={r} onPlayNow={handlePlayNow} onAddToQueue={handleAddToQueue} />
         ))}
       </div>
+
+      {/* Toast */}
+      {toastMsg && (
+        <div className="mt-3 flex justify-center">
+          <span className="px-4 py-1.5 bg-emerald-600/90 text-white text-xs rounded-full shadow">
+            {toastMsg}
+          </span>
+        </div>
+      )}
     </Modal>
   );
 }
 
-function VideoResultRow({ result, onSelect }: { result: VideoSearchResult; onSelect: (id: string) => void }) {
+function VideoResultRow({
+  result,
+  onPlayNow,
+  onAddToQueue,
+}: {
+  result: VideoSearchResult;
+  onPlayNow: (result: VideoSearchResult) => void;
+  onAddToQueue: (result: VideoSearchResult) => void;
+}) {
   const notEmbeddable = result.embeddable === false;
   return (
-    <button
-      onClick={() => onSelect(result.videoId)}
-      title={notEmbeddable ? 'Este video no permite reproducción embebida' : undefined}
-      className={`w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group text-left${notEmbeddable ? ' opacity-60' : ''}`}
+    <div
+      className={`flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group${notEmbeddable ? ' opacity-60' : ''}`}
     >
       {/* Thumbnail */}
       <div className="relative flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden bg-white/5">
@@ -136,9 +169,6 @@ function VideoResultRow({ result, onSelect }: { result: VideoSearchResult; onSel
             No embebible
           </span>
         )}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-          <Play className="h-6 w-6 text-white fill-white" />
-        </div>
       </div>
 
       {/* Info */}
@@ -149,6 +179,25 @@ function VideoResultRow({ result, onSelect }: { result: VideoSearchResult; onSel
           <p className="text-xs text-white/25 mt-0.5">{result.viewCount}</p>
         )}
       </div>
-    </button>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-1.5 flex-shrink-0">
+        <button
+          onClick={() => onPlayNow(result)}
+          title="Reproducir ahora"
+          className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
+        >
+          <Play className="h-3 w-3 fill-white" />
+          Play Now
+        </button>
+        <button
+          onClick={() => onAddToQueue(result)}
+          title="Añadir a la cola"
+          className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-xs rounded-lg transition-colors whitespace-nowrap"
+        >
+          + Queue
+        </button>
+      </div>
+    </div>
   );
 }
