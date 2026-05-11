@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Users, RotateCcw, Send, Link, Check,
@@ -13,7 +13,9 @@ import { IPTVBrowserModal } from '../components/IPTVBrowserModal';
 import { socket } from '../lib/socket';
 import { copyToClipboard } from '../lib/utils';
 import { useStore } from '../store';
-import type { ChatMessage, RoomUser, IPTVEntry } from '../types';
+import { Button } from '../components/ui/Button';
+import QueuePanel from '../components/QueuePanel';
+import type { ChatMessage, RoomUser, IPTVEntry, QueueItem } from '../types';
 
 function extractVideoId(input: string): string | null {
   const trimmed = input.trim();
@@ -52,6 +54,11 @@ export function RoomPage() {
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string | null>(null);
   const [iptvBrowserOpen, setIptvBrowserOpen] = useState(false);
   const [embedError, setEmbedError] = useState<string | null>(null);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [nowTitle, setNowTitle] = useState<string | null>(null);
+  const [nowThumbnail, setNowThumbnail] = useState<string | null>(null);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   // Track sourceType in a ref to avoid stale closures in socket handlers
@@ -60,11 +67,19 @@ export function RoomPage() {
     sourceTypeRef.current = room?.sourceType ?? 'youtube';
   }, [room?.sourceType]);
 
+  const isLiveRef = useRef<boolean>(false);
+  const handleEnded = useCallback(() => {
+    if (!isLiveRef.current) {
+      socket.emit('queue-next', { roomId: roomId! });
+    }
+  }, [roomId]);
+
   // YouTube player
   const { loadVideo, remotePlay, remotePause, remoteSeek, getCurrentTime } = useYouTube({
     containerId: 'yt-player',
     onPlay: (t) => socket.emit('player-play', { roomId: roomId!, currentTime: t }),
     onPause: (t) => socket.emit('player-pause', { roomId: roomId!, currentTime: t }),
+    onEnded: handleEnded,
     onEmbedError: (vid) => setEmbedError(vid),
   });
 
@@ -82,7 +97,9 @@ export function RoomPage() {
     videoRef,
     onPlay: (t) => socket.emit('player-play', { roomId: roomId!, currentTime: t }),
     onPause: (t) => socket.emit('player-pause', { roomId: roomId!, currentTime: t }),
+    onEnded: handleEnded,
   });
+  useEffect(() => { isLiveRef.current = isLive; }, [isLive]);
 
   // Join room on mount, leave on unmount
   useEffect(() => {
@@ -97,11 +114,15 @@ export function RoomPage() {
   // Socket events
   useEffect(() => {
     function onRoomUsers(list: RoomUser[]) { setUsers(list); }
-    function onSyncState(state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' }) {
-      if (state.sourceType === 'iptv' && state.streamUrl) {
+    function onSyncState(state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie'; queue?: QueueItem[]; title?: string | null; thumbnail?: string | null }) {
+      setActiveSource(state.sourceType);
+      if (state.queue) setQueue(state.queue);
+      setNowTitle(state.title ?? null);
+      setNowThumbnail(state.thumbnail ?? null);
+      if ((state.sourceType === 'iptv' || state.sourceType === 'movie') && state.streamUrl) {
         setCurrentStreamUrl(state.streamUrl);
         loadStream(state.streamUrl);
-      } else if (state.sourceType !== 'iptv' && state.videoId) {
+      } else if (state.sourceType === 'youtube' && state.videoId) {
         setCurrentVideoId(state.videoId);
         loadVideo(state.videoId);
         setTimeout(() => {
@@ -111,15 +132,15 @@ export function RoomPage() {
       }
     }
     function onPlayerPlay({ currentTime }: { currentTime: number }) {
-      if (sourceTypeRef.current === 'iptv') hlsPlay(currentTime);
+      if (sourceTypeRef.current === 'iptv' || sourceTypeRef.current === 'movie') hlsPlay(currentTime);
       else remotePlay(currentTime);
     }
     function onPlayerPause({ currentTime }: { currentTime: number }) {
-      if (sourceTypeRef.current === 'iptv') hlsPause(currentTime);
+      if (sourceTypeRef.current === 'iptv' || sourceTypeRef.current === 'movie') hlsPause(currentTime);
       else remotePause(currentTime);
     }
     function onPlayerSeek({ currentTime }: { currentTime: number }) {
-      if (sourceTypeRef.current === 'iptv') hlsSeek(currentTime);
+      if (sourceTypeRef.current === 'iptv' || sourceTypeRef.current === 'movie') hlsSeek(currentTime);
       else remoteSeek(currentTime);
     }
     function onPlayerLoad(data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string }) {
@@ -145,6 +166,14 @@ export function RoomPage() {
       if (code === 'ROOM_CLOSED') { toast.error('La sala está cerrada'); navigate('/'); }
       if (code === 'WRONG_PIN') { toast.error('PIN incorrecto'); navigate('/'); }
     }
+    function onQueueUpdate(q: QueueItem[]) { setQueue(q); }
+    function onSourceSwitched(data: { sourceType: 'youtube' | 'iptv' | 'movie' }) {
+      sourceTypeRef.current = data.sourceType;
+      setActiveSource(data.sourceType);
+      setQueue([]);
+      setNowTitle(null);
+      setNowThumbnail(null);
+    }
 
     socket.on('room-users', onRoomUsers);
     socket.on('sync-state', onSyncState);
@@ -156,6 +185,8 @@ export function RoomPage() {
     socket.on('user-joined', onUserJoined);
     socket.on('user-left', onUserLeft);
     socket.on('error', onError);
+    socket.on('queue-update', onQueueUpdate);
+    socket.on('source-switched', onSourceSwitched);
 
     return () => {
       socket.off('room-users', onRoomUsers);
@@ -168,6 +199,8 @@ export function RoomPage() {
       socket.off('user-joined', onUserJoined);
       socket.off('user-left', onUserLeft);
       socket.off('error', onError);
+      socket.off('queue-update', onQueueUpdate);
+      socket.off('source-switched', onSourceSwitched);
     };
   }, [loadVideo, remotePlay, remotePause, remoteSeek, loadStream, hlsPlay, hlsPause, hlsSeek, navigate]);
 
@@ -211,7 +244,7 @@ export function RoomPage() {
   }
 
   function handleResync() {
-    const currentTime = room?.sourceType === 'iptv' ? hlsGetTime() : getCurrentTime();
+    const currentTime = activeSource === 'iptv' || activeSource === 'movie' ? hlsGetTime() : getCurrentTime();
     setSyncStatus('syncing');
     socket.emit('resync-all', { roomId: roomId!, currentTime, isPlaying: true });
     setTimeout(() => setSyncStatus('synced'), 2500);
@@ -274,10 +307,20 @@ export function RoomPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Player side */}
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Now playing title bar */}
+          {nowTitle !== null && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#13132b] border-b border-white/[0.06] flex-shrink-0">
+              {nowThumbnail && (
+                <img src={nowThumbnail} alt="" className="h-9 w-16 object-cover rounded flex-shrink-0" />
+              )}
+              <span className="text-sm text-white/80 truncate flex-1">{nowTitle}</span>
+            </div>
+          )}
+
           {/* Video */}
           <div className="flex-1 bg-black relative">
             {/* YouTube player */}
-            {room?.sourceType !== 'iptv' && (
+            {activeSource === 'youtube' && (
               <>
                 <div id="yt-player" className="w-full h-full" />
                 {!currentVideoId && (
@@ -310,7 +353,7 @@ export function RoomPage() {
             )}
 
             {/* IPTV / HLS player */}
-            {room?.sourceType === 'iptv' && (
+            {(activeSource === 'iptv' || activeSource === 'movie') && (
               <>
                 <video
                   ref={videoRef}
@@ -347,7 +390,7 @@ export function RoomPage() {
 
           {/* URL + search bar */}
           <div className="bg-[#13132b] border-t border-white/[0.06] px-4 py-3 flex items-center gap-2 flex-shrink-0">
-            {room?.sourceType === 'iptv' ? (
+            {activeSource === 'iptv' ? (
               <button
                 type="button"
                 onClick={() => setIptvBrowserOpen(true)}
@@ -376,13 +419,71 @@ export function RoomPage() {
                 </button>
               </form>
             )}
-            {room?.sourceType !== 'iptv' && (
+            {activeSource !== 'iptv' && (
               <button type="button" onClick={() => { setSearchInitialQuery(''); setSearchOpen(true); }}
                 className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors" title="Buscar en YouTube">
                 <Search className="h-4 w-4" />
               </button>
             )}
           </div>
+
+          {/* Queue & source controls */}
+          <div className="bg-[#13132b] border-t border-white/[0.06] px-4 py-2 flex items-center gap-2 flex-shrink-0">
+            {queue.length > 0 && (
+              <Button
+                size="xs"
+                variant="secondary"
+                onClick={() => socket.emit('queue-next', { roomId: roomId! })}
+              >
+                ⏭ Siguiente
+              </Button>
+            )}
+            <button
+              type="button"
+              onClick={() => setQueueOpen((o) => !o)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${queueOpen ? 'bg-violet-600/30 text-violet-300' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+            >
+              🎵 Cola{queue.length > 0 ? ` (${queue.length})` : ''}
+            </button>
+            <div className="flex-1" />
+            {/* Source switcher */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!room?.iptvListId) { alert('Esta sala no tiene una lista IPTV configurada'); return; }
+                  socket.emit('switch-source', { roomId: roomId!, sourceType: 'iptv', iptvListId: room.iptvListId });
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'iptv' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              >
+                📺 TV
+              </button>
+              <button
+                type="button"
+                onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'youtube' })}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'youtube' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              >
+                ▶ YouTube
+              </button>
+              <button
+                type="button"
+                onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'movie' })}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'movie' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              >
+                🎬 Movies
+              </button>
+            </div>
+          </div>
+
+          {/* Queue panel */}
+          {queueOpen && (
+            <QueuePanel
+              queue={queue}
+              roomId={roomId!}
+              currentUsername={user?.username ?? null}
+              isAdmin={user?.isAdmin ?? false}
+            />
+          )}
         </div>
 
         {/* Right panel */}
@@ -449,11 +550,11 @@ export function RoomPage() {
         initialQuery={searchInitialQuery}
       />
 
-      {room?.sourceType === 'iptv' && (
+      {activeSource === 'iptv' && (
         <IPTVBrowserModal
           open={iptvBrowserOpen}
           onClose={() => setIptvBrowserOpen(false)}
-          listId={room.iptvListId ?? ''}
+          listId={room?.iptvListId ?? ''}
           onSelect={handleIptvSelect}
         />
       )}

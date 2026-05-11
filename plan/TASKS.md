@@ -101,21 +101,21 @@ Exponer `onEnded` en `useYouTube` y `useHlsPlayer` para que `RoomPage` pueda dis
 
 Actualizar `apps/client/src/pages/RoomPage.tsx` con el nuevo estado, listeners de socket, barra de título, botón "Siguiente" y selector de fuente.
 
-- [ ] Añadir imports: `QueueItem` desde `../types`; `QueuePanel` desde `../components/QueuePanel` (creado en Feature 7)
-- [ ] Añadir estados: `const [queue, setQueue] = useState<QueueItem[]>([])`, `const [nowTitle, setNowTitle] = useState<string | null>(null)`, `const [nowThumbnail, setNowThumbnail] = useState<string | null>(null)`, `const [queueOpen, setQueueOpen] = useState(false)`, `const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube')`
-- [ ] Actualizar el tipo de `sourceTypeRef` de `useRef<'youtube' | 'iptv'>` a `useRef<'youtube' | 'iptv' | 'movie'>` y su valor inicial
-- [ ] Añadir `const isLiveRef = useRef<boolean>(false)` y actualizar `isLiveRef.current = isLive` dentro de un `useEffect([isLive])` (donde `isLive` viene de `useHlsPlayer`)
-- [ ] Definir `handleEnded` como `useCallback` que emite `socket.emit('queue-next', { roomId: roomId! })` solo si `!isLiveRef.current`; pasar `onEnded: handleEnded` a `useYouTube` y `useHlsPlayer`
-- [ ] En `onSyncState`: extraer y aplicar `queue`, `title`, `thumbnail` del payload → `setQueue(q)`, `setNowTitle(t)`, `setNowThumbnail(th)`
-- [ ] Registrar listener `socket.on('queue-update', q => setQueue(q))` dentro del `useEffect` de listeners de socket y limpiarlo en el cleanup
-- [ ] Registrar listener `socket.on('source-switched', data => { sourceTypeRef.current = data.sourceType; setActiveSource(data.sourceType); setQueue([]); setNowTitle(null); setNowThumbnail(null); })` y limpiarlo
-- [ ] Añadir barra de título encima del área del player: renderizar solo cuando `nowTitle !== null`; muestra `<img src={nowThumbnail}>` (si existe) y `<span>{nowTitle}</span>` con clases Tailwind apropiadas
-- [ ] Añadir botón "⏭ Siguiente" en el toolbar — visible solo cuando `queue.length > 0`; al hacer click emite `socket.emit('queue-next', { roomId: roomId! })`; usar el componente `Button` de `../components/ui/Button`
-- [ ] Añadir botón de cola en el toolbar que hace toggle de `queueOpen`; renderizar `<QueuePanel>` condicionalmente pasando `queue`, `roomId`, `currentUsername` (del store) e `isAdmin`
-- [ ] Añadir selector de fuente en el toolbar con 3 botones (`📺 TV`, `▶ YouTube`, `🎬 Movies`): YouTube y Movies emiten `socket.emit('switch-source', {roomId, sourceType})` directamente; TV verifica si la sala tiene `iptvListId` — si no, abre un selector de lista antes de emitir
-- [ ] Condicionar la visibilidad de los players según `activeSource`: mostrar `<div id="yt-player">` solo cuando `activeSource === 'youtube'`; mostrar `<video ref={videoRef}>` cuando `activeSource === 'iptv' || activeSource === 'movie'` (ambos hooks permanecen montados)
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Añadir imports: `QueueItem` desde `../types`; `QueuePanel` desde `../components/QueuePanel` (creado en Feature 7)
+- [x] Añadir estados: `const [queue, setQueue] = useState<QueueItem[]>([])`, `const [nowTitle, setNowTitle] = useState<string | null>(null)`, `const [nowThumbnail, setNowThumbnail] = useState<string | null>(null)`, `const [queueOpen, setQueueOpen] = useState(false)`, `const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube')`
+- [x] Actualizar el tipo de `sourceTypeRef` de `useRef<'youtube' | 'iptv'>` a `useRef<'youtube' | 'iptv' | 'movie'>` y su valor inicial
+- [x] Añadir `const isLiveRef = useRef<boolean>(false)` y actualizar `isLiveRef.current = isLive` dentro de un `useEffect([isLive])` (donde `isLive` viene de `useHlsPlayer`)
+- [x] Definir `handleEnded` como `useCallback` que emite `socket.emit('queue-next', { roomId: roomId! })` solo si `!isLiveRef.current`; pasar `onEnded: handleEnded` a `useYouTube` y `useHlsPlayer`
+- [x] En `onSyncState`: extraer y aplicar `queue`, `title`, `thumbnail` del payload → `setQueue(q)`, `setNowTitle(t)`, `setNowThumbnail(th)`
+- [x] Registrar listener `socket.on('queue-update', q => setQueue(q))` dentro del `useEffect` de listeners de socket y limpiarlo en el cleanup
+- [x] Registrar listener `socket.on('source-switched', data => { sourceTypeRef.current = data.sourceType; setActiveSource(data.sourceType); setQueue([]); setNowTitle(null); setNowThumbnail(null); })` y limpiarlo
+- [x] Añadir barra de título encima del área del player: renderizar solo cuando `nowTitle !== null`; muestra `<img src={nowThumbnail}>` (si existe) y `<span>{nowTitle}</span>` con clases Tailwind apropiadas
+- [x] Añadir botón "⏭ Siguiente" en el toolbar — visible solo cuando `queue.length > 0`; al hacer click emite `socket.emit('queue-next', { roomId: roomId! })`; usar el componente `Button` de `../components/ui/Button`
+- [x] Añadir botón de cola en el toolbar que hace toggle de `queueOpen`; renderizar `<QueuePanel>` condicionalmente pasando `queue`, `roomId`, `currentUsername` (del store) e `isAdmin`
+- [x] Añadir selector de fuente en el toolbar con 3 botones (`📺 TV`, `▶ YouTube`, `🎬 Movies`): YouTube y Movies emiten `socket.emit('switch-source', {roomId, sourceType})` directamente; TV verifica si la sala tiene `iptvListId` — si no, abre un selector de lista antes de emitir
+- [x] Condicionar la visibilidad de los players según `activeSource`: mostrar `<div id="yt-player">` solo cuando `activeSource === 'youtube'`; mostrar `<video ref={videoRef}>` cuando `activeSource === 'iptv' || activeSource === 'movie'` (ambos hooks permanecen montados)
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
