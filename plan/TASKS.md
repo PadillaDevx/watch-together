@@ -208,14 +208,14 @@ Crear `apps/server/src/routes/jellyfin.ts` y registrarlo en `apps/server/src/ind
 
 Añadir los métodos de API al cliente y la sección de configuración en la página de admin.
 
-- [ ] En `apps/client/src/lib/api.ts`: añadir grupo `jellyfinApi` con los métodos `saveConfig(baseUrl, apiKey)` → `POST /api/admin/jellyfin/config`, `getStatus()` → `GET /api/admin/jellyfin/status`, `search(q)` → `GET /api/jellyfin/search?q=`, `getStreamUrl(itemId)` → `GET /api/jellyfin/stream-url/{itemId}`; tipar las respuestas usando `JellyfinSearchResult` de `../../types`
-- [ ] En `apps/client/src/pages/AdminPage.tsx`: añadir una sección o tab "Jellyfin" al lado de las secciones existentes
-- [ ] En la sección Jellyfin de `AdminPage.tsx`: añadir estado local `const [jellyfinUrl, setJellyfinUrl] = useState('')`, `const [jellyfinKey, setJellyfinKey] = useState('')`, `const [jellyfinStatus, setJellyfinStatus] = useState<{configured: boolean; ok?: boolean; serverName?: string; baseUrl?: string} | null>(null)`
-- [ ] Cargar el estado al montar la sección con `jellyfinApi.getStatus()` en un `useEffect`; mostrar badge: verde "Conectado a {serverName}" si `configured && ok`, rojo "No alcanzable" si `configured && !ok`, gris "No configurado" si `!configured`
-- [ ] Renderizar input de texto para URL (placeholder `http://192.168.1.x:8096`) enlazado a `jellyfinUrl`; input `type="password"` para API key enlazado a `jellyfinKey` — nunca pre-poblar con datos del servidor
-- [ ] Botón "Guardar & Verificar" que llama `jellyfinApi.saveConfig(jellyfinUrl, jellyfinKey)`; en éxito muestra toast verde con nombre del servidor y actualiza el badge; en error muestra toast rojo
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] En `apps/client/src/lib/api.ts`: añadir grupo `jellyfinApi` con los métodos `saveConfig(baseUrl, apiKey)` → `POST /api/admin/jellyfin/config`, `getStatus()` → `GET /api/admin/jellyfin/status`, `search(q)` → `GET /api/jellyfin/search?q=`, `getStreamUrl(itemId)` → `GET /api/jellyfin/stream-url/{itemId}`; tipar las respuestas usando `JellyfinSearchResult` de `../../types`
+- [x] En `apps/client/src/pages/AdminPage.tsx`: añadir una sección o tab "Jellyfin" al lado de las secciones existentes
+- [x] En la sección Jellyfin de `AdminPage.tsx`: añadir estado local `const [jellyfinUrl, setJellyfinUrl] = useState('')`, `const [jellyfinKey, setJellyfinKey] = useState('')`, `const [jellyfinStatus, setJellyfinStatus] = useState<{configured: boolean; ok?: boolean; serverName?: string; baseUrl?: string} | null>(null)`
+- [x] Cargar el estado al montar la sección con `jellyfinApi.getStatus()` en un `useEffect`; mostrar badge: verde "Conectado a {serverName}" si `configured && ok`, rojo "No alcanzable" si `configured && !ok`, gris "No configurado" si `!configured`
+- [x] Renderizar input de texto para URL (placeholder `http://192.168.1.x:8096`) enlazado a `jellyfinUrl`; input `type="password"` para API key enlazado a `jellyfinKey` — nunca pre-poblar con datos del servidor
+- [x] Botón "Guardar & Verificar" que llama `jellyfinApi.saveConfig(jellyfinUrl, jellyfinKey)`; en éxito muestra toast verde con nombre del servidor y actualiza el badge; en error muestra toast rojo
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

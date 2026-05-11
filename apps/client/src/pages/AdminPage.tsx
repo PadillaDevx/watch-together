@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
-  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List,
+  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Sidebar } from '../components/Sidebar';
@@ -9,12 +9,12 @@ import { CreateRoomModal } from '../components/CreateRoomModal';
 import { IPTVListManager } from '../components/IPTVListManager';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { adminApi } from '../lib/api';
+import { adminApi, jellyfinApi } from '../lib/api';
 import { copyToClipboard } from '../lib/utils';
 import { useStore } from '../store';
 import type { AdminUser, Connection, Token, Room } from '../types';
 
-type Tab = 'rooms' | 'users' | 'connections' | 'tokens' | 'iptv';
+type Tab = 'rooms' | 'users' | 'connections' | 'tokens' | 'iptv' | 'jellyfin';
 
 export function AdminPage() {
   const { user, rooms } = useStore();
@@ -43,19 +43,19 @@ export function AdminPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 mt-5">
-            {([ 
+            {([
               { id: 'rooms', label: 'Salas', icon: Tv },
               { id: 'users', label: 'Usuarios', icon: Users },
               { id: 'connections', label: 'Conexiones', icon: Radio },
               { id: 'tokens', label: 'Tokens', icon: Key },
               { id: 'iptv', label: 'Listas IPTV', icon: List },
+              { id: 'jellyfin', label: 'Jellyfin', icon: Server },
             ] as const).map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
-                }`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
+                  }`}
               >
                 <Icon className="h-3.5 w-3.5" /> {label}
               </button>
@@ -70,6 +70,7 @@ export function AdminPage() {
           {tab === 'connections' && <ConnectionsTab />}
           {tab === 'tokens' && <TokensTab />}
           {tab === 'iptv' && <IPTVListManager />}
+          {tab === 'jellyfin' && <JellyfinTab />}
         </div>
       </main>
 
@@ -148,7 +149,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.listUsers().then(({ data }) => setUsers(data.users)).catch(() => {}).finally(() => setLoading(false));
+    adminApi.listUsers().then(({ data }) => setUsers(data.users)).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
   return (
@@ -185,7 +186,7 @@ function ConnectionsTab() {
 
   const refresh = useCallback(() => {
     setLoading(true);
-    adminApi.listConnections().then(({ data }) => setConns(data)).catch(() => {}).finally(() => setLoading(false));
+    adminApi.listConnections().then(({ data }) => setConns(data)).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -282,6 +283,98 @@ function TokensTab() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Jellyfin Tab ───────────────────────────────────────────────────────────
+
+function JellyfinTab() {
+  const [jellyfinUrl, setJellyfinUrl] = useState('');
+  const [jellyfinKey, setJellyfinKey] = useState('');
+  const [jellyfinStatus, setJellyfinStatus] = useState<{
+    configured: boolean;
+    ok?: boolean;
+    serverName?: string;
+    baseUrl?: string;
+  } | null>(null);
+  const [jellyfinLoading, setJellyfinLoading] = useState(true);
+
+  useEffect(() => {
+    jellyfinApi.getStatus()
+      .then(({ data }) => {
+        setJellyfinStatus(data);
+        if (data.baseUrl) setJellyfinUrl(data.baseUrl);
+      })
+      .catch(() => setJellyfinStatus(null))
+      .finally(() => setJellyfinLoading(false));
+  }, []);
+
+  async function handleSave() {
+    if (!jellyfinUrl.trim() || !jellyfinKey.trim()) {
+      toast.error('La URL y la API key son obligatorias');
+      return;
+    }
+    try {
+      const { data } = await jellyfinApi.saveConfig(jellyfinUrl.trim(), jellyfinKey.trim());
+      if (data.ok) {
+        toast.success(`Conectado a ${data.serverName ?? 'Jellyfin'}`);
+        setJellyfinStatus({ configured: true, ok: true, serverName: data.serverName, baseUrl: jellyfinUrl.trim() });
+        setJellyfinKey('');
+      } else {
+        toast.error(data.error ?? 'No se pudo conectar al servidor');
+        setJellyfinStatus((prev) => prev ? { ...prev, ok: false } : { configured: true, ok: false });
+      }
+    } catch {
+      toast.error('Error al guardar la configuración');
+    }
+  }
+
+  function StatusBadge() {
+    if (jellyfinLoading) return <span className="text-xs px-2 py-0.5 rounded-full bg-white/8 text-white/30">Cargando…</span>;
+    if (!jellyfinStatus || !jellyfinStatus.configured)
+      return <span className="text-xs px-2 py-0.5 rounded-full bg-white/8 text-white/30">No configurado</span>;
+    if (jellyfinStatus.ok)
+      return <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Conectado a {jellyfinStatus.serverName ?? 'Jellyfin'}</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">No alcanzable</span>;
+  }
+
+  return (
+    <div className="max-w-md space-y-6">
+      <div className="flex items-center gap-3">
+        <h2 className="text-sm font-semibold text-white/70">Servidor Jellyfin</h2>
+        <StatusBadge />
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-white/70">URL del servidor</label>
+          <input
+            type="text"
+            value={jellyfinUrl}
+            onChange={(e) => setJellyfinUrl(e.target.value)}
+            placeholder="http://192.168.1.x:8096"
+            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/40"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-white/70">API Key</label>
+          <input
+            type="password"
+            value={jellyfinKey}
+            onChange={(e) => setJellyfinKey(e.target.value)}
+            placeholder="••••••••••••••••"
+            autoComplete="new-password"
+            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/40"
+          />
+          <p className="text-xs text-white/30">La clave nunca se muestra una vez guardada</p>
+        </div>
+
+        <Button onClick={handleSave}>
+          <Server className="h-4 w-4" /> Guardar &amp; Verificar
+        </Button>
+      </div>
     </div>
   );
 }

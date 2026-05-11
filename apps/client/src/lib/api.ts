@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Room, AdminUser, Connection, Token, VideoSearchResult, IPTVList, IPTVEntry } from '../types';
+import type { Room, AdminUser, Connection, Token, VideoSearchResult, IPTVList, IPTVEntry, JellyfinSearchResult } from '../types';
 
 const api = axios.create({ withCredentials: true });
 
@@ -47,4 +47,15 @@ export const iptvApi = {
   remove: (id: string) => api.delete(`/api/admin/iptv/${id}`),
   refresh: (id: string) => api.post<IPTVList>(`/api/admin/iptv/${id}/refresh`),
   getEntries: (id: string) => api.get<IPTVEntry[]>(`/api/iptv/${id}/entries`),
+};
+
+export const jellyfinApi = {
+  saveConfig: (baseUrl: string, apiKey: string) =>
+    api.post<{ ok: boolean; serverName?: string; error?: string }>('/api/admin/jellyfin/config', { baseUrl, apiKey }),
+  getStatus: () =>
+    api.get<{ configured: boolean; ok?: boolean; serverName?: string; baseUrl?: string }>('/api/admin/jellyfin/status'),
+  search: (q: string) =>
+    api.get<Array<JellyfinSearchResult & { imageUrl: string; streamUrl: string }>>('/api/jellyfin/search', { params: { q } }),
+  getStreamUrl: (itemId: string) =>
+    api.get<{ streamUrl: string }>(`/api/jellyfin/stream-url/${itemId}`),
 };
