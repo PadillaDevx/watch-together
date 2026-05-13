@@ -144,20 +144,20 @@ Replace the emoji-based source-type cards with icon cards, add the `'series'` op
 
 Create `useWatchProgress.ts` and `useSeriesNavigation.ts` to encapsulate watch-progress storage and episode traversal logic.
 
-- [ ] Create `apps/client/src/hooks/useWatchProgress.ts` with exported function `useWatchProgress(roomId: string, username: string)` returning `{ isWatched, markWatched, resetProgress, getSeasonProgress }`
-- [ ] In `useWatchProgress.ts`: define `STORAGE_KEY = \`watchjunto_watched_${roomId}_${username}\``; initialize `useState<Record<string, true>>` by parsing `localStorage.getItem(STORAGE_KEY)` — default to `{}` on missing or invalid JSON
-- [ ] In `useWatchProgress.ts`: implement `isWatched(serieId: string, temporada: number, capituloNumero: number): boolean` — returns `!!watched[\`${serieId}-${temporada}-${capituloNumero}\`]`
-- [ ] In `useWatchProgress.ts`: implement `markWatched(serieId: string, temporada: number, capituloNumero: number): void` — builds new map `{ ...watched, [key]: true }`, calls `setWatched`, and synchronously calls `localStorage.setItem(STORAGE_KEY, JSON.stringify(newMap))`; wrap `setItem` in try/catch for storage quota exceptions
-- [ ] In `useWatchProgress.ts`: implement `resetProgress(serieId: string): void` — filters all keys not starting with `"${serieId}-"` from the map, calls `setWatched`, saves reduced map to `localStorage`
-- [ ] In `useWatchProgress.ts`: implement `getSeasonProgress(serieId: string, temporada: number, total: number): number` — counts entries in `watched` matching keys `"${serieId}-${temporada}-*"` using a filter over `Object.keys(watched)`
-- [ ] In `useWatchProgress.ts`: export a standalone utility function (not a hook) `resetProgressAllRooms(serieId: string, username: string, roomIds: string[]): void` that iterates over `roomIds`, constructs each `STORAGE_KEY`, reads, filters, and re-saves reduced maps directly via `localStorage` without React state
-- [ ] Create `apps/client/src/hooks/useSeriesNavigation.ts` with exported function `useSeriesNavigation({ serieDetail, selectedTemporada, selectedEpisodioIndex })` returning `{ hasNext, getNext, hasPrev, getPrev }`
-- [ ] In `useSeriesNavigation.ts`: compute `sortedTemporadas` using `useMemo(() => [...(serieDetail?.temporadas ?? [])].sort((a, b) => a.temporada - b.temporada), [serieDetail])`
-- [ ] In `useSeriesNavigation.ts`: implement `getNext()` — find current temporada by `temporada.temporada === selectedTemporada`; if `selectedEpisodioIndex + 1 < currentTemporada.episodios.length`, return `{ temporada: selectedTemporada, episodioIndex: selectedEpisodioIndex + 1, episodio }`; else find the next temporada in `sortedTemporadas` and return `{ temporada: next.temporada, episodioIndex: 0, episodio: next.episodios[0] }`; return `null` if end of series
-- [ ] In `useSeriesNavigation.ts`: compute `hasNext: boolean = getNext() !== null` using `useMemo`
-- [ ] In `useSeriesNavigation.ts`: implement `getPrev()` with symmetric logic (prev in season, or last of previous season) and compute `hasPrev: boolean`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Create `apps/client/src/hooks/useWatchProgress.ts` with exported function `useWatchProgress(roomId: string, username: string)` returning `{ isWatched, markWatched, resetProgress, getSeasonProgress }`
+- [x] In `useWatchProgress.ts`: define `STORAGE_KEY = \`watchjunto_watched_${roomId}_${username}\``; initialize `useState<Record<string, true>>` by parsing `localStorage.getItem(STORAGE_KEY)` — default to `{}` on missing or invalid JSON
+- [x] In `useWatchProgress.ts`: implement `isWatched(serieId: string, temporada: number, capituloNumero: number): boolean` — returns `!!watched[\`${serieId}-${temporada}-${capituloNumero}\`]`
+- [x] In `useWatchProgress.ts`: implement `markWatched(serieId: string, temporada: number, capituloNumero: number): void` — builds new map `{ ...watched, [key]: true }`, calls `setWatched`, and synchronously calls `localStorage.setItem(STORAGE_KEY, JSON.stringify(newMap))`; wrap `setItem` in try/catch for storage quota exceptions
+- [x] In `useWatchProgress.ts`: implement `resetProgress(serieId: string): void` — filters all keys not starting with `"${serieId}-"` from the map, calls `setWatched`, saves reduced map to `localStorage`
+- [x] In `useWatchProgress.ts`: implement `getSeasonProgress(serieId: string, temporada: number, total: number): number` — counts entries in `watched` matching keys `"${serieId}-${temporada}-*"` using a filter over `Object.keys(watched)`
+- [x] In `useWatchProgress.ts`: export a standalone utility function (not a hook) `resetProgressAllRooms(serieId: string, username: string, roomIds: string[]): void` that iterates over `roomIds`, constructs each `STORAGE_KEY`, reads, filters, and re-saves reduced maps directly via `localStorage` without React state
+- [x] Create `apps/client/src/hooks/useSeriesNavigation.ts` with exported function `useSeriesNavigation({ serieDetail, selectedTemporada, selectedEpisodioIndex })` returning `{ hasNext, getNext, hasPrev, getPrev }`
+- [x] In `useSeriesNavigation.ts`: compute `sortedTemporadas` using `useMemo(() => [...(serieDetail?.temporadas ?? [])].sort((a, b) => a.temporada - b.temporada), [serieDetail])`
+- [x] In `useSeriesNavigation.ts`: implement `getNext()` — find current temporada by `temporada.temporada === selectedTemporada`; if `selectedEpisodioIndex + 1 < currentTemporada.episodios.length`, return `{ temporada: selectedTemporada, episodioIndex: selectedEpisodioIndex + 1, episodio }`; else find the next temporada in `sortedTemporadas` and return `{ temporada: next.temporada, episodioIndex: 0, episodio: next.episodios[0] }`; return `null` if end of series
+- [x] In `useSeriesNavigation.ts`: compute `hasNext: boolean = getNext() !== null` using `useMemo`
+- [x] In `useSeriesNavigation.ts`: implement `getPrev()` with symmetric logic (prev in season, or last of previous season) and compute `hasPrev: boolean`
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
