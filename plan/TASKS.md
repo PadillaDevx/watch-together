@@ -110,16 +110,16 @@ Create `libraryService.ts` using `cheerio` to scrape LACartoons HTML pages (no R
 
 Add the `series-episode-change` handler in `apps/server/src/socket/index.ts`. Any authenticated user in the room can trigger this event — no admin restriction.
 
-- [ ] In `apps/server/src/socket/index.ts`: inside the `io.on('connection', ...)` block, add `socket.on('series-episode-change', async (data) => { ... })` after the existing `player-load` handler
-- [ ] In the handler: destructure `{ roomId, serieId, serieName, temporada, episodioIndex, embedUrl, titulo }` from the event data
-- [ ] In the handler: guard — if `!socket.data.authenticated`, return early (ignore unauthenticated events)
-- [ ] In the handler: guard — if `socket.data.roomId !== roomId`, return early (socket must be in the specified room)
-- [ ] In the handler: do NOT add any `socket.data.isAdmin` check — any authenticated room member can change the episode
-- [ ] In the handler: call `updatePlayerState(roomId, { streamUrl: embedUrl, videoId: null, currentTime: 0, isPlaying: false, title: titulo, thumbnail: null })` to persist the new state
-- [ ] In the handler: broadcast `io.to(roomId).emit('series-episode-change', { serieId, serieName, temporada, episodioIndex, embedUrl, titulo })` to all room members including the sender
-- [ ] In the handler: also emit `io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo })` so the existing player machinery loads the embed for all clients
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] In `apps/server/src/socket/index.ts`: inside the `io.on('connection', ...)` block, add `socket.on('series-episode-change', async (data) => { ... })` after the existing `player-load` handler
+- [x] In the handler: destructure `{ roomId, serieId, serieName, temporada, episodioIndex, embedUrl, titulo }` from the event data
+- [x] In the handler: guard — if `!socket.data.authenticated`, return early (ignore unauthenticated events)
+- [x] In the handler: guard — if `socket.data.roomId !== roomId`, return early (socket must be in the specified room)
+- [x] In the handler: do NOT add any `socket.data.isAdmin` check — any authenticated room member can change the episode
+- [x] In the handler: call `updatePlayerState(roomId, { streamUrl: embedUrl, videoId: null, currentTime: 0, isPlaying: false, title: titulo, thumbnail: null })` to persist the new state
+- [x] In the handler: broadcast `io.to(roomId).emit('series-episode-change', { serieId, serieName, temporada, episodioIndex, embedUrl, titulo })` to all room members including the sender
+- [x] In the handler: also emit `io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo })` so the existing player machinery loads the embed for all clients
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

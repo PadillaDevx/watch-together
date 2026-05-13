@@ -225,6 +225,16 @@ function setupSocket(io) {
             io.to(roomId).emit('queue-update', []);
             io.emit('room-list', (0, rooms_1.getRoomList)());
         });
+        socket.on('series-episode-change', async (data) => {
+            const { roomId, serieId, serieName, temporada, episodioIndex, embedUrl, titulo } = data;
+            if (!socket.data.authenticated || !socket.data.username)
+                return;
+            if (socket.data.roomId !== roomId)
+                return;
+            (0, rooms_1.updatePlayerState)(roomId, { streamUrl: embedUrl, videoId: null, currentTime: 0, isPlaying: false, title: titulo, thumbnail: null });
+            io.to(roomId).emit('series-episode-change', { serieId, serieName, temporada, episodioIndex, embedUrl, titulo });
+            io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo });
+        });
         socket.on('disconnect', () => {
             for (const room of rooms_1._rooms.values()) {
                 if (room.users.has(socket.id)) {
