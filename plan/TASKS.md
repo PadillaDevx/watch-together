@@ -165,18 +165,18 @@ Create `useWatchProgress.ts` and `useSeriesNavigation.ts` to encapsulate watch-p
 
 Create `SeriesSelector.tsx` with three native `<select>` dropdowns (serie, season, episode), a season progress badge, and Ver/Siguiente action buttons. Accessible to all authenticated users.
 
-- [ ] Create `apps/client/src/components/SeriesSelector.tsx` and define `SeriesSelectorProps` interface with all props: `roomId`, `username`, `isAdmin`, `serieDetail`, `seriesList`, `selectedSerieId`, `selectedTemporada`, `selectedEpisodioIndex`, `loadingEpisodes`, `loadingSeries`, `onSerieChange`, `onTemporadaChange`, `onEpisodioChange`, `onPlay`, `onNext`, `hasNext`, `watchProgress` (typed as `ReturnType<typeof useWatchProgress>`)
-- [ ] In `SeriesSelector.tsx`: render outer container `<div className="flex flex-col sm:flex-row gap-2 items-center w-full">`
-- [ ] In `SeriesSelector.tsx`: render Serie `<select>` — iterate `seriesList` producing `<option value={s.id}>{s.name}</option>`; when `loadingSeries` render a single disabled `<option>Cargando...</option>` instead; call `onSerieChange(e.target.value)` on `onChange`
-- [ ] In `SeriesSelector.tsx`: render Temporada `<select>` — iterate `[...serieDetail.temporadas].sort((a,b) => a.temporada - b.temporada)` producing `<option value={t.temporada}>Temporada {t.temporada}</option>`; disabled when `selectedSerieId === null`; show `<Loader2 className="w-4 h-4 animate-spin inline ml-1" />` next to the label when `loadingEpisodes`; call `onTemporadaChange(Number(e.target.value))` on `onChange`
-- [ ] In `SeriesSelector.tsx`: render Episodio `<select>` — iterate the current temporada's `episodios`; each `<option>` text: `"${isWatched ? '[✓] ' : ''}Cap. ${ep.capitulo_numero} — ${ep.titulo}"`; disabled when `selectedTemporada === null`; call `onEpisodioChange(Number(e.target.value))` on `onChange`
-- [ ] In `SeriesSelector.tsx`: apply dark Tailwind styling to all `<select>` elements: `bg-gray-800 border border-white/10 rounded-lg text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500`
-- [ ] In `SeriesSelector.tsx`: render season progress badge between Episodio select and Ver button: `<span className="text-xs text-white/50 whitespace-nowrap">Ep. {watchProgress.getSeasonProgress(...)}/{total}</span>` — compute `total` from the selected temporada's `episodios.length`
-- [ ] In `SeriesSelector.tsx`: render Ver `<button>` that calls `onPlay` — do NOT disable for non-admin users (any user can play); apply violet filled button styles
-- [ ] In `SeriesSelector.tsx`: render Siguiente `<button>` that calls `onNext` — disabled when `!hasNext`; do NOT add any isAdmin condition; apply violet outline button styles
-- [ ] In `SeriesSelector.tsx`: when series list fails to load, render `<span className="flex items-center gap-1 text-red-400 text-sm"><AlertCircle className="w-4 h-4" />Error al cargar series</span>` — import `AlertCircle` from `lucide-react`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Create `apps/client/src/components/SeriesSelector.tsx` and define `SeriesSelectorProps` interface with all props: `roomId`, `username`, `isAdmin`, `serieDetail`, `seriesList`, `selectedSerieId`, `selectedTemporada`, `selectedEpisodioIndex`, `loadingEpisodes`, `loadingSeries`, `onSerieChange`, `onTemporadaChange`, `onEpisodioChange`, `onPlay`, `onNext`, `hasNext`, `watchProgress` (typed as `ReturnType<typeof useWatchProgress>`)
+- [x] In `SeriesSelector.tsx`: render outer container `<div className="flex flex-col sm:flex-row gap-2 items-center w-full">`
+- [x] In `SeriesSelector.tsx`: render Serie `<select>` — iterate `seriesList` producing `<option value={s.id}>{s.name}</option>`; when `loadingSeries` render a single disabled `<option>Cargando...</option>` instead; call `onSerieChange(e.target.value)` on `onChange`
+- [x] In `SeriesSelector.tsx`: render Temporada `<select>` — iterate `[...serieDetail.temporadas].sort((a,b) => a.temporada - b.temporada)` producing `<option value={t.temporada}>Temporada {t.temporada}</option>`; disabled when `selectedSerieId === null`; show `<Loader2 className="w-4 h-4 animate-spin inline ml-1" />` next to the label when `loadingEpisodes`; call `onTemporadaChange(Number(e.target.value))` on `onChange`
+- [x] In `SeriesSelector.tsx`: render Episodio `<select>` — iterate the current temporada's `episodios`; each `<option>` text: `"${isWatched ? '[✓] ' : ''}Cap. ${ep.capitulo_numero} — ${ep.titulo}"`; disabled when `selectedTemporada === null`; call `onEpisodioChange(Number(e.target.value))` on `onChange`
+- [x] In `SeriesSelector.tsx`: apply dark Tailwind styling to all `<select>` elements: `bg-gray-800 border border-white/10 rounded-lg text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500`
+- [x] In `SeriesSelector.tsx`: render season progress badge between Episodio select and Ver button: `<span className="text-xs text-white/50 whitespace-nowrap">Ep. {watchProgress.getSeasonProgress(...)}/{total}</span>` — compute `total` from the selected temporada's `episodios.length`
+- [x] In `SeriesSelector.tsx`: render Ver `<button>` that calls `onPlay` — do NOT disable for non-admin users (any user can play); apply violet filled button styles
+- [x] In `SeriesSelector.tsx`: render Siguiente `<button>` that calls `onNext` — disabled when `!hasNext`; do NOT add any isAdmin condition; apply violet outline button styles
+- [x] In `SeriesSelector.tsx`: when series list fails to load, render `<span className="flex items-center gap-1 text-red-400 text-sm"><AlertCircle className="w-4 h-4" />Error al cargar series</span>` — import `AlertCircle` from `lucide-react`
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
@@ -184,13 +184,13 @@ Create `SeriesSelector.tsx` with three native `<select>` dropdowns (serie, seaso
 
 Create the `NextEpisodeButton.tsx` floating button that appears in the bottom-right of the video player canvas for all users when there is a next episode available.
 
-- [ ] Create `apps/client/src/components/NextEpisodeButton.tsx` and define `NextEpisodeButtonProps` interface: `{ visible: boolean; onClick: () => void; nextEpisodeTitulo?: string }`
-- [ ] In `NextEpisodeButton.tsx`: render a `<button>` with positioning classes `absolute bottom-4 right-4 z-20` (parent must have `relative`)
-- [ ] In `NextEpisodeButton.tsx`: apply pill styling: `flex items-center gap-2 px-4 py-2 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-white text-sm font-medium hover:bg-violet-600/80 hover:border-violet-500 hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] transition-all duration-200 cursor-pointer`
-- [ ] In `NextEpisodeButton.tsx`: apply visibility classes dynamically — `${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300` — never unmount the element to avoid layout shifts
-- [ ] In `NextEpisodeButton.tsx`: render `<SkipForward className="w-4 h-4" />` icon followed by text `"Siguiente episodio"`; import `SkipForward` from `lucide-react`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Create `apps/client/src/components/NextEpisodeButton.tsx` and define `NextEpisodeButtonProps` interface: `{ visible: boolean; onClick: () => void; nextEpisodeTitulo?: string }`
+- [x] In `NextEpisodeButton.tsx`: render a `<button>` with positioning classes `absolute bottom-4 right-4 z-20` (parent must have `relative`)
+- [x] In `NextEpisodeButton.tsx`: apply pill styling: `flex items-center gap-2 px-4 py-2 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-white text-sm font-medium hover:bg-violet-600/80 hover:border-violet-500 hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] transition-all duration-200 cursor-pointer`
+- [x] In `NextEpisodeButton.tsx`: apply visibility classes dynamically — `${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300` — never unmount the element to avoid layout shifts
+- [x] In `NextEpisodeButton.tsx`: render `<SkipForward className="w-4 h-4" />` icon followed by text `"Siguiente episodio"`; import `SkipForward` from `lucide-react`
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
