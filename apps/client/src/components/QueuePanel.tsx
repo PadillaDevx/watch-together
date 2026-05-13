@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { X, GripVertical } from 'lucide-react';
+import { X, GripVertical, Play } from 'lucide-react';
 import { socket } from '../lib/socket';
 import type { QueueItem } from '../types';
 
@@ -94,7 +94,7 @@ export default function QueuePanel({ queue, roomId, currentUsername, isAdmin }: 
                                         className="flex-shrink-0 rounded bg-white/[0.06] flex items-center justify-center"
                                         style={{ width: 48, height: 28 }}
                                     >
-                                        <span className="text-white/20 text-xs">▶</span>
+                                        <Play className="h-3 w-3 text-white/20" />
                                     </div>
                                 )}
 

@@ -34,23 +34,23 @@ Implement changes in 11 features in strict dependency order to avoid cascading T
 
 Remove every emoji character from all `.tsx`, `.ts`, `.html`, and `.css` files and replace with `lucide-react` icons or plain text. Icon sizing convention: `w-8 h-8` in cards, `w-4 h-4` in buttons/toolbars, `w-3 h-3` inline.
 
-- [ ] Run `grep -rn --include="*.tsx" --include="*.ts" --include="*.html" --include="*.css" -P "[\x{1F000}-\x{1FFFF}]|[\x{2600}-\x{27BF}]|▶|◀|⏭|✓|✅|🎉" apps/` to produce a full list of all emoji occurrences across the project
-- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: replace `▶️`, `📺`, `🎬`, `🔗` inside source-type card `<span>` elements with `<Youtube className="w-8 h-8" />`, `<Tv className="w-8 h-8" />`, `<Film className="w-8 h-8" />`, `<Library className="w-8 h-8" />` from `lucide-react`
-- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: replace back-button source badge emoji strings (`▶️ YouTube`, `🎬 Movies (Jellyfin)`, `🔗 URL directa`, `📺 Lista IPTV`) with inline `<Icon className="w-3 h-3 inline mr-1" /> Label` JSX using the same icon mapping
-- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: replace `{ icon: '🔒' }` in the `toast.success()` PIN call with `{ icon: <Lock className="w-4 h-4 text-yellow-400" /> }` and import `Lock` from `lucide-react`
-- [ ] Scan and fix all emoji in `apps/client/src/pages/LobbyPage.tsx` — replace with matching `lucide-react` icons (`Plus`, `Home`, etc.)
-- [ ] Scan and fix all emoji in `apps/client/src/components/Sidebar.tsx` — replace with `MessageSquare`, `Users`, `Settings`, `Home` from `lucide-react`
-- [ ] Scan and fix all emoji in `apps/client/src/pages/AdminPage.tsx` — replace with matching `lucide-react` icons
-- [ ] Scan and fix all emoji in `apps/client/src/pages/RoomPage.tsx` — replace with `RefreshCw`, `SkipForward`, `Play`, and others from `lucide-react`
-- [ ] Scan and fix all emoji in `apps/client/src/components/QueuePanel.tsx` — replace with matching `lucide-react` icons
-- [ ] Scan and fix all emoji in `apps/client/src/components/IPTVBrowserModal.tsx` — replace with `lucide-react` icons
-- [ ] Scan and fix all emoji in `apps/client/src/components/VideoSearchModal.tsx` — replace with `lucide-react` icons
-- [ ] Scan and fix all emoji in `apps/client/src/components/JellyfinBrowserModal.tsx` — replace with `lucide-react` icons
-- [ ] Scan and fix remaining files in `apps/client/src/components/` (`IPTVListManager.tsx`, `ProfileModal.tsx`, `RoomCard.tsx`, `AuthModal.tsx`, all `ui/` files) for any emoji and replace
-- [ ] Scan `apps/server/src/` for any emoji inside string literals or comments and replace with plain text
-- [ ] Re-run the emoji grep to confirm zero occurrences remain across the entire `apps/` directory
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Run `grep -rn --include="*.tsx" --include="*.ts" --include="*.html" --include="*.css" -P "[\x{1F000}-\x{1FFFF}]|[\x{2600}-\x{27BF}]|▶|◀|⏭|✓|✅|🎉" apps/` to produce a full list of all emoji occurrences across the project
+- [x] In `apps/client/src/components/CreateRoomModal.tsx`: replace `▶️`, `📺`, `🎬`, `🔗` inside source-type card `<span>` elements with `<Youtube className="w-8 h-8" />`, `<Tv className="w-8 h-8" />`, `<Film className="w-8 h-8" />`, `<Library className="w-8 h-8" />` from `lucide-react`
+- [x] In `apps/client/src/components/CreateRoomModal.tsx`: replace back-button source badge emoji strings (`▶️ YouTube`, `🎬 Movies (Jellyfin)`, `🔗 URL directa`, `📺 Lista IPTV`) with inline `<Icon className="w-3 h-3 inline mr-1" /> Label` JSX using the same icon mapping
+- [x] In `apps/client/src/components/CreateRoomModal.tsx`: replace `{ icon: '🔒' }` in the `toast.success()` PIN call with `{ icon: <Lock className="w-4 h-4 text-yellow-400" /> }` and import `Lock` from `lucide-react`
+- [x] Scan and fix all emoji in `apps/client/src/pages/LobbyPage.tsx` — replace with matching `lucide-react` icons (`Plus`, `Home`, etc.)
+- [x] Scan and fix all emoji in `apps/client/src/components/Sidebar.tsx` — replace with `MessageSquare`, `Users`, `Settings`, `Home` from `lucide-react`
+- [x] Scan and fix all emoji in `apps/client/src/pages/AdminPage.tsx` — replace with matching `lucide-react` icons
+- [x] Scan and fix all emoji in `apps/client/src/pages/RoomPage.tsx` — replace with `RefreshCw`, `SkipForward`, `Play`, and others from `lucide-react`
+- [x] Scan and fix all emoji in `apps/client/src/components/QueuePanel.tsx` — replace with matching `lucide-react` icons
+- [x] Scan and fix all emoji in `apps/client/src/components/IPTVBrowserModal.tsx` — replace with `lucide-react` icons
+- [x] Scan and fix all emoji in `apps/client/src/components/VideoSearchModal.tsx` — replace with `lucide-react` icons
+- [x] Scan and fix all emoji in `apps/client/src/components/JellyfinBrowserModal.tsx` — replace with `lucide-react` icons
+- [x] Scan and fix remaining files in `apps/client/src/components/` (`IPTVListManager.tsx`, `ProfileModal.tsx`, `RoomCard.tsx`, `AuthModal.tsx`, all `ui/` files) for any emoji and replace
+- [x] Scan `apps/server/src/` for any emoji inside string literals or comments and replace with plain text
+- [x] Re-run the emoji grep to confirm zero occurrences remain across the entire `apps/` directory
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

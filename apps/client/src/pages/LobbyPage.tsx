@@ -16,7 +16,7 @@ export function LobbyPage() {
 
   useEffect(() => {
     // Fetch initial room list
-    roomsApi.list().then(({ data }) => setRooms(data.rooms)).catch(() => {});
+    roomsApi.list().then(({ data }) => setRooms(data.rooms)).catch(() => { });
 
     // Real-time updates
     const onRoomList = (updated: Room[]) => setRooms(updated);
@@ -45,7 +45,7 @@ export function LobbyPage() {
           <div className="flex items-start justify-between mb-8">
             <div>
               <h1 className="text-2xl font-bold text-white leading-tight">
-                {greeting}, {user?.username} 👋
+                {greeting}, {user?.username}
               </h1>
               <p className="text-white/40 mt-1 text-sm">
                 {rooms.length === 0 ? 'No hay salas disponibles' : `${rooms.length} sala${rooms.length > 1 ? 's' : ''} disponible${rooms.length > 1 ? 's' : ''}`}

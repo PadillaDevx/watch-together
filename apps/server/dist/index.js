@@ -22,13 +22,13 @@ const index_2 = require("./db/index");
 const rooms_2 = require("./services/rooms");
 const iptv_2 = require("./services/iptv");
 const jellyfin_2 = require("./services/jellyfin");
-const PORT = Number(process.env['PORT'] ?? 3000);
+const PORT = Number(process.env['PORT'] ?? 3001);
 const isDev = process.env['NODE_ENV'] === 'development';
 const app = (0, express_1.default)();
 const httpServer = http_1.default.createServer(app);
 const io = new socket_io_1.Server(httpServer, {
     cors: isDev
-        ? { origin: ['http://localhost:5173'], credentials: true }
+        ? { origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true }
         : { origin: false },
 });
 app.use((0, cookie_parser_1.default)());

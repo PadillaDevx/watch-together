@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Film } from 'lucide-react';
+import { Film, Play } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { jellyfinApi } from '../lib/api';
 import { socket } from '../lib/socket';
@@ -188,9 +188,9 @@ export function JellyfinBrowserModal({ open, onClose, roomId }: JellyfinBrowserM
                                             <div className="flex gap-1.5 mt-auto pt-1">
                                                 <button
                                                     onClick={() => handlePlay(item)}
-                                                    className="flex-1 px-2 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors whitespace-nowrap"
+                                                    className="flex-1 px-2 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors whitespace-nowrap flex items-center justify-center gap-1"
                                                 >
-                                                    ▶ Play
+                                                    <Play className="h-3 w-3 fill-current" /> Play
                                                 </button>
                                                 <button
                                                     onClick={() => handleQueue(item)}

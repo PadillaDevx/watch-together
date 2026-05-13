@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Tv } from 'lucide-react';
+import { Tv, Play } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { iptvApi } from '../lib/api';
 import { socket } from '../lib/socket';
@@ -150,9 +150,9 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                                 <div className="flex gap-1.5 flex-shrink-0 ml-2">
                                     <button
                                         onClick={() => handlePlayNow(entry)}
-                                        className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors whitespace-nowrap"
+                                        className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
                                     >
-                                        ▶ Play Now
+                                        <Play className="h-3 w-3 fill-current" /> Play Now
                                     </button>
                                     <button
                                         onClick={() => handleAddToQueue(entry)}

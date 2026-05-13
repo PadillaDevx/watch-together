@@ -8,6 +8,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const auth_1 = require("../middleware/auth");
 const users_1 = require("../services/users");
 const rooms_1 = require("../services/rooms");
+const iptv_1 = require("../routes/iptv");
 function getRoomUsers(room) {
     return Array.from(room.users.entries()).map(([socketId, data]) => ({
         socketId, username: data.username, joinedAt: data.joinedAt,
@@ -91,6 +92,14 @@ function setupSocket(io) {
         socket.on('player-load', (data) => {
             const { roomId } = data;
             if (data.type === 'iptv') {
+                // For URL rooms, auto-trust the hostname so the proxy allows it
+                const room = (0, rooms_1.getRoom)(roomId);
+                if (room?.sourceType === 'url') {
+                    try {
+                        (0, iptv_1.trustHostname)(new URL(data.streamUrl).hostname);
+                    }
+                    catch { /* ignore invalid URLs */ }
+                }
                 (0, rooms_1.updatePlayerState)(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false });
                 io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: data.streamUrl });
             }

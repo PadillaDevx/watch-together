@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Users, RotateCcw, Send, Link, Check,
   Play, Loader2, MessageSquare, Search, Tv, AlertCircle,
+  Film, Youtube, SkipForward,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useYouTube } from '../hooks/useYouTube';
@@ -222,10 +223,10 @@ export function RoomPage() {
       });
     }
     function onUserJoined({ username }: { username: string }) {
-      toast(`${username} se unió`, { icon: '👋', duration: 3000 });
+      toast(`${username} se unió`, { duration: 3000 });
     }
     function onUserLeft({ username }: { username: string }) {
-      toast(`${username} salió`, { icon: '👋', duration: 3000 });
+      toast(`${username} salió`, { duration: 3000 });
     }
     function onError({ code }: { code: string }) {
       if (code === 'ROOM_NOT_FOUND') { toast.error('Sala no encontrada'); navigate('/'); }
@@ -337,7 +338,7 @@ export function RoomPage() {
     setSyncStatus('syncing');
     socket.emit('resync-all', { roomId: roomId!, currentTime, isPlaying: true });
     setTimeout(() => setSyncStatus('synced'), 2500);
-    toast('Sincronizando a todos...', { icon: '🔄', duration: 2000 });
+    toast('Sincronizando a todos...', { icon: <RotateCcw className="w-4 h-4 text-violet-400" />, duration: 2000 });
   }
 
   function handleSendMessage(e: React.FormEvent) {
@@ -541,7 +542,7 @@ export function RoomPage() {
                 )}
                 {urlActivePlayer === null && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-3 pointer-events-none">
-                    <span className="text-5xl">🔗</span>
+                    <Link className="h-12 w-12" />
                     <p className="text-sm">Pega una URL abajo para reproducir</p>
                     <p className="text-xs text-white/15">YouTube, .m3u8, .mp4, página de embed...</p>
                   </div>
@@ -576,7 +577,7 @@ export function RoomPage() {
                 onClick={() => setJellyfinOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors"
               >
-                🎬 Jellyfin
+                <Film className="h-4 w-4" /> Jellyfin
               </button>
             ) : (
               <form onSubmit={handleLoadUrl} className="flex-1 flex gap-2">
@@ -616,7 +617,7 @@ export function RoomPage() {
                 variant="secondary"
                 onClick={() => socket.emit('queue-next', { roomId: roomId! })}
               >
-                ⏭ Siguiente
+                <SkipForward className="h-3.5 w-3.5" /> Siguiente
               </Button>
             )}
             <button
@@ -624,7 +625,7 @@ export function RoomPage() {
               onClick={() => setQueueOpen((o) => !o)}
               className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${queueOpen ? 'bg-violet-600/30 text-violet-300' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
             >
-              🎵 Cola{queue.length > 0 ? ` (${queue.length})` : ''}
+              Cola{queue.length > 0 ? ` (${queue.length})` : ''}
             </button>
             <div className="flex-1" />
             {/* Source switcher */}
@@ -637,28 +638,28 @@ export function RoomPage() {
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'iptv' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
-                📺 TV
+                <Tv className="h-4 w-4 inline mr-1" />TV
               </button>
               <button
                 type="button"
                 onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'youtube' })}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'youtube' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
-                ▶ YouTube
+                <Youtube className="h-4 w-4 inline mr-1" />YouTube
               </button>
               <button
                 type="button"
                 onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'movie' })}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'movie' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
-                🎬 Movies
+                <Film className="h-4 w-4 inline mr-1" />Movies
               </button>
               <button
                 type="button"
                 onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'url' })}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'url' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
-                🔗 URL
+                <Link className="h-4 w-4 inline mr-1" />URL
               </button>
             </div>
           </div>

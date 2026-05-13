@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Users, Play, Lock } from 'lucide-react';
+import { Trash2, Users, Play, Lock, X } from 'lucide-react';
 import type { Room } from '../types';
 import { Avatar } from './ui/Avatar';
 import { Button } from './ui/Button';
@@ -100,7 +100,7 @@ export function RoomCard({ room, isAdmin, onDelete }: RoomCardProps) {
               OK
             </button>
             <button type="button" onClick={() => setShowPin(false)} className="px-2 py-1.5 text-white/30 hover:text-white text-xs transition-colors">
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
           {pinError && <p className="text-xs text-red-400">PIN demasiado corto</p>}

@@ -34,20 +34,40 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.db = void 0;
+exports.get_db = get_db;
 exports.connectWithRetry = connectWithRetry;
 const node_postgres_1 = require("drizzle-orm/node-postgres");
 const pg_1 = require("pg");
 const schema = __importStar(require("./schema"));
-const DATABASE_URL = process.env['DATABASE_URL'];
-if (!DATABASE_URL) {
-    throw new Error('[DB] DATABASE_URL environment variable is not set');
+// Pool is created lazily on first connectWithRetry call
+let pool;
+let _db;
+function getPool() {
+    if (!pool) {
+        const url = process.env['DATABASE_URL'];
+        if (!url)
+            throw new Error('[DB] DATABASE_URL environment variable is not set');
+        pool = new pg_1.Pool({ connectionString: url });
+        _db = (0, node_postgres_1.drizzle)(pool, { schema });
+    }
+    return pool;
 }
-const pool = new pg_1.Pool({ connectionString: DATABASE_URL });
-exports.db = (0, node_postgres_1.drizzle)(pool, { schema });
+function get_db() {
+    if (!_db)
+        getPool(); // ensure initialized
+    return _db;
+}
+// Convenience proxy — same API as before
+exports.db = new Proxy({}, {
+    get(_target, prop) {
+        return Reflect.get(get_db(), prop);
+    },
+});
 async function connectWithRetry(retries = 3, delayMs = 2000) {
+    const p = getPool();
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-            const client = await pool.connect();
+            const client = await p.connect();
             client.release();
             console.log('[DB] Connected to PostgreSQL');
             return;

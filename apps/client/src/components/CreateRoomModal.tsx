@@ -1,4 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
+import { Youtube, Tv, Film, Library, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Modal } from './ui/Modal';
 import { Input } from './ui/Input';
@@ -71,7 +72,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
       if (data.pin) {
         toast.success(
           <span>Sala <b>"{name.trim()}"</b> creada — PIN: <b className="font-mono tracking-widest">{data.pin}</b></span>,
-          { duration: 15000, icon: '🔒' }
+          { duration: 15000, icon: <Lock className="w-4 h-4 text-yellow-400" /> }
         );
       } else {
         toast.success(`Sala "${name.trim()}" creada`);
@@ -96,7 +97,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
               onClick={() => handleSourceSelect('youtube')}
               className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
             >
-              <span className="text-4xl">▶️</span>
+              <Youtube className="w-8 h-8" />
               <span className="font-semibold">YouTube</span>
               <span className="text-xs text-white/50 text-center">Videos y búsqueda de YouTube</span>
             </button>
@@ -105,7 +106,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
               onClick={() => handleSourceSelect('iptv')}
               className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
             >
-              <span className="text-4xl">📺</span>
+              <Tv className="w-8 h-8" />
               <span className="font-semibold">Lista IPTV</span>
               <span className="text-xs text-white/50 text-center">Canales HLS y VOD</span>
             </button>
@@ -114,7 +115,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
               onClick={() => handleSourceSelect('movie')}
               className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
             >
-              <span className="text-4xl">🎬</span>
+              <Film className="w-8 h-8" />
               <span className="font-semibold">Movies (Jellyfin)</span>
               <span className="text-xs text-white/50 text-center">Películas y series desde tu servidor Jellyfin</span>
             </button>
@@ -123,7 +124,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
               onClick={() => handleSourceSelect('url')}
               className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
             >
-              <span className="text-4xl">🔗</span>
+              <Library className="w-8 h-8" />
               <span className="font-semibold">URL directa</span>
               <span className="text-xs text-white/50 text-center">YouTube, .m3u8, .mp4 u otro enlace de video</span>
             </button>
@@ -138,7 +139,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
           >
             ← Cambiar fuente
             <span className="text-violet-400 font-medium">
-              {sourceType === 'youtube' ? '▶️ YouTube' : sourceType === 'movie' ? '🎬 Movies (Jellyfin)' : sourceType === 'url' ? '🔗 URL directa' : '📺 Lista IPTV'}
+              {sourceType === 'youtube' ? <><Youtube className="w-3 h-3 inline mr-1" />YouTube</> : sourceType === 'movie' ? <><Film className="w-3 h-3 inline mr-1" />Movies (Jellyfin)</> : sourceType === 'url' ? <><Library className="w-3 h-3 inline mr-1" />URL directa</> : <><Tv className="w-3 h-3 inline mr-1" />Lista IPTV</>}
             </span>
           </button>
           <Input
