@@ -103,6 +103,10 @@ function setupSocket(io) {
                 (0, rooms_1.updatePlayerState)(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false });
                 io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: data.streamUrl });
             }
+            else if (data.type === 'series') {
+                (0, rooms_1.updatePlayerState)(roomId, { videoId: null, streamUrl: data.embedUrl, currentTime: 0, isPlaying: false, title: data.title ?? null, thumbnail: data.thumbnail ?? null });
+                io.to(roomId).emit('player-load', { type: 'series', embedUrl: data.embedUrl, title: data.title, thumbnail: data.thumbnail });
+            }
             else {
                 (0, rooms_1.updatePlayerState)(roomId, { videoId: data.videoId, streamUrl: null, currentTime: 0, isPlaying: false });
                 io.to(roomId).emit('player-load', { type: 'youtube', videoId: data.videoId });

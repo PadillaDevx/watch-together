@@ -55,7 +55,7 @@ export interface Room {
   isOpen: boolean;
   pin?: string;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv' | 'movie' | 'url';
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
   users: Map<string, RoomUser>;
@@ -71,7 +71,7 @@ export interface RoomListItem {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv' | 'movie' | 'url';
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
   users: Array<{ socketId: string; username: string; joinedAt: Date }>;
@@ -101,13 +101,14 @@ export interface IPTVEntry {
 export interface ServerToClientEvents {
   'room-list': (rooms: RoomListItem[]) => void;
   'room-users': (users: Array<{ socketId: string; username: string; joinedAt: Date }>) => void;
-  'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie'; queue: QueueItem[]; title: string | null; thumbnail: string | null }) => void;
+  'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; queue: QueueItem[]; title: string | null; thumbnail: string | null }) => void;
   'queue-update': (queue: QueueItem[]) => void;
-  'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie'; iptvListId?: string }) => void;
+  'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;
   'player-play': (data: { currentTime: number }) => void;
   'player-pause': (data: { currentTime: number }) => void;
   'player-seek': (data: { currentTime: number }) => void;
-  'player-load': (data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string }) => void;
+  'player-load': (data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string } | { type: 'series'; embedUrl: string; title?: string; thumbnail?: string }) => void;
+  'series-episode-change': (data: { serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => void;
   'chat-message': (msg: ChatMessage) => void;
   'user-joined': (data: { username: string }) => void;
   'user-left': (data: { username: string }) => void;
@@ -120,7 +121,8 @@ export interface ClientToServerEvents {
   'player-play': (data: { roomId: string; currentTime: number }) => void;
   'player-pause': (data: { roomId: string; currentTime: number }) => void;
   'player-seek': (data: { roomId: string; currentTime: number }) => void;
-  'player-load': (data: { roomId: string } & ({ type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string })) => void;
+  'player-load': (data: { roomId: string } & ({ type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string } | { type: 'series'; embedUrl: string; title?: string; thumbnail?: string })) => void;
+  'series-episode-change': (data: { roomId: string; serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => void;
   'chat-message': (data: { roomId: string; text: string }) => void;
   'request-sync': (data: { roomId: string }) => void;
   'resync-all': (data: { roomId: string; currentTime: number; isPlaying: boolean }) => void;
@@ -128,7 +130,7 @@ export interface ClientToServerEvents {
   'queue-remove': (data: { roomId: string; itemId: string }) => void;
   'queue-next': (data: { roomId: string }) => void;
   'queue-reorder': (data: { roomId: string; fromIndex: number; toIndex: number }) => void;
-  'switch-source': (data: { roomId: string; sourceType: 'youtube' | 'iptv' | 'movie'; iptvListId?: string }) => void;
+  'switch-source': (data: { roomId: string; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;
 }
 
 export interface SocketData {

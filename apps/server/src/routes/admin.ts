@@ -29,7 +29,7 @@ export function createAdminRouter(io: IO) {
   });
 
   router.post('/rooms', adminAuth, async (req, res) => {
-    const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv' | 'movie' | 'url'; iptvListId?: string };
+    const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string };
     if (!name) { res.status(400).json({ error: 'Falta nombre de sala' }); return; }
     try {
       const room = await createRoom(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId);

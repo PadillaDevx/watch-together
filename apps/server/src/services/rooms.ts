@@ -23,7 +23,7 @@ function buildRoomFromDb(
     isOpen: dbRoom.isOpen,
     pin: dbRoom.pin ?? undefined,
     createdAt: dbRoom.createdAt.getTime(),
-    sourceType: dbRoom.sourceType as 'youtube' | 'iptv' | 'movie' | 'url',
+    sourceType: dbRoom.sourceType as 'youtube' | 'iptv' | 'movie' | 'url' | 'series',
     iptvListId: dbRoom.iptvListId ?? undefined,
     playerState: {
       videoId: null,
@@ -76,7 +76,7 @@ export async function createRoom(
   name: string,
   maxUsers: number,
   isOpen: boolean,
-  sourceType: 'youtube' | 'iptv' | 'movie' | 'url' = 'youtube',
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' = 'youtube',
   iptvListId?: string,
 ): Promise<Room> {
   const pin = isOpen ? null : String(Math.floor(100000 + Math.random() * 900000));

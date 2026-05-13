@@ -58,27 +58,27 @@ Remove every emoji character from all `.tsx`, `.ts`, `.html`, and `.css` files a
 
 Extend type unions and add new interfaces in both `apps/client/src/types.ts` and `apps/server/src/types.ts` before any downstream implementation to avoid cascading TS errors.
 
-- [ ] In `apps/client/src/types.ts`: extend `Room.sourceType` union from `'youtube' | 'iptv' | 'movie' | 'url'` to `'youtube' | 'iptv' | 'movie' | 'url' | 'series'`
-- [ ] In `apps/client/src/types.ts`: add `LibrarySerie` interface — `{ id: string; name: string; thumbnail?: string; active: boolean }`
-- [ ] In `apps/client/src/types.ts`: add `LibraryEpisodio` interface — `{ capitulo_numero: number; titulo: string; url: string }` (where `url` is the raw path, NOT the embed URL)
-- [ ] In `apps/client/src/types.ts`: add `LibraryTemporada` interface — `{ temporada: number; episodios: LibraryEpisodio[] }`
-- [ ] In `apps/client/src/types.ts`: add `LibrarySerieDetail` interface extending `LibrarySerie` — `{ temporadas: LibraryTemporada[] }`
-- [ ] In `apps/client/src/types.ts`: add `LibraryEpisodeEmbed` interface — `{ embedUrl: string }`
-- [ ] In `apps/client/src/types.ts`: add `SeriesRoomState` interface — `{ selectedSerieId: string | null; selectedTemporada: number | null; selectedEpisodioIndex: number | null; embedUrl: string | null }`
-- [ ] In `apps/client/src/types.ts`: extend `QueueItem.type` union to include `| 'series'`
-- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `Room` to include `| 'series'`
-- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `RoomListItem` to include `| 'series'`
-- [ ] In `apps/server/src/types.ts`: extend the `sourceType` field in `ServerToClientEvents['sync-state']` payload to include `| 'series'` (fixes existing bug where `'url'` was also missing)
-- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `ServerToClientEvents['source-switched']` payload to include `| 'series'`
-- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `ClientToServerEvents['switch-source']` payload to include `| 'series'`
-- [ ] In `apps/server/src/types.ts`: extend the `player-load` discriminated union in both `ServerToClientEvents` and `ClientToServerEvents` to add `| { type: 'series'; embedUrl: string; title?: string; thumbnail?: string }`
-- [ ] In `apps/server/src/types.ts`: add `'series-episode-change'` to `ServerToClientEvents` with payload `{ serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }`
-- [ ] In `apps/server/src/types.ts`: add `'series-episode-change'` to `ClientToServerEvents` with payload adding `roomId: string` to the `ServerToClientEvents` payload above
-- [ ] In `apps/server/src/services/rooms.ts`: update the `createRoom` function `sourceType` parameter type to include `| 'series'`
-- [ ] In `apps/server/src/services/rooms.ts`: update the `buildRoomFromDb` helper cast to `sourceType: dbRoom.sourceType as 'youtube' | 'iptv' | 'movie' | 'url' | 'series'`
-- [ ] In `apps/server/src/routes/admin.ts`: update the `sourceType` validation in the `POST /rooms` handler to include `'series'` in the valid values
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] In `apps/client/src/types.ts`: extend `Room.sourceType` union from `'youtube' | 'iptv' | 'movie' | 'url'` to `'youtube' | 'iptv' | 'movie' | 'url' | 'series'`
+- [x] In `apps/client/src/types.ts`: add `LibrarySerie` interface — `{ id: string; name: string; thumbnail?: string; active: boolean }`
+- [x] In `apps/client/src/types.ts`: add `LibraryEpisodio` interface — `{ capitulo_numero: number; titulo: string; url: string }` (where `url` is the raw path, NOT the embed URL)
+- [x] In `apps/client/src/types.ts`: add `LibraryTemporada` interface — `{ temporada: number; episodios: LibraryEpisodio[] }`
+- [x] In `apps/client/src/types.ts`: add `LibrarySerieDetail` interface extending `LibrarySerie` — `{ temporadas: LibraryTemporada[] }`
+- [x] In `apps/client/src/types.ts`: add `LibraryEpisodeEmbed` interface — `{ embedUrl: string }`
+- [x] In `apps/client/src/types.ts`: add `SeriesRoomState` interface — `{ selectedSerieId: string | null; selectedTemporada: number | null; selectedEpisodioIndex: number | null; embedUrl: string | null }`
+- [x] In `apps/client/src/types.ts`: extend `QueueItem.type` union to include `| 'series'`
+- [x] In `apps/server/src/types.ts`: extend `sourceType` in `Room` to include `| 'series'`
+- [x] In `apps/server/src/types.ts`: extend `sourceType` in `RoomListItem` to include `| 'series'`
+- [x] In `apps/server/src/types.ts`: extend the `sourceType` field in `ServerToClientEvents['sync-state']` payload to include `| 'series'` (fixes existing bug where `'url'` was also missing)
+- [x] In `apps/server/src/types.ts`: extend `sourceType` in `ServerToClientEvents['source-switched']` payload to include `| 'series'`
+- [x] In `apps/server/src/types.ts`: extend `sourceType` in `ClientToServerEvents['switch-source']` payload to include `| 'series'`
+- [x] In `apps/server/src/types.ts`: extend the `player-load` discriminated union in both `ServerToClientEvents` and `ClientToServerEvents` to add `| { type: 'series'; embedUrl: string; title?: string; thumbnail?: string }`
+- [x] In `apps/server/src/types.ts`: add `'series-episode-change'` to `ServerToClientEvents` with payload `{ serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }`
+- [x] In `apps/server/src/types.ts`: add `'series-episode-change'` to `ClientToServerEvents` with payload adding `roomId: string` to the `ServerToClientEvents` payload above
+- [x] In `apps/server/src/services/rooms.ts`: update the `createRoom` function `sourceType` parameter type to include `| 'series'`
+- [x] In `apps/server/src/services/rooms.ts`: update the `buildRoomFromDb` helper cast to `sourceType: dbRoom.sourceType as 'youtube' | 'iptv' | 'movie' | 'url' | 'series'`
+- [x] In `apps/server/src/routes/admin.ts`: update the `sourceType` validation in the `POST /rooms` handler to include `'series'` in the valid values
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

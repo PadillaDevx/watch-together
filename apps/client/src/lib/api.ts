@@ -26,7 +26,7 @@ export const searchApi = {
 };
 
 export const adminApi = {
-  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' | 'movie' = 'youtube', iptvListId?: string) =>
+  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' = 'youtube', iptvListId?: string) =>
     api.post('/api/admin/rooms', { name, maxUsers, isOpen, sourceType, ...(iptvListId ? { iptvListId } : {}) }),
   deleteRoom: (id: string) => api.delete(`/api/admin/rooms/${id}`),
   deleteAllRooms: () => api.delete('/api/admin/rooms'),

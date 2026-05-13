@@ -69,7 +69,7 @@ export function RoomPage() {
   const [nowTitle, setNowTitle] = useState<string | null>(null);
   const [nowThumbnail, setNowThumbnail] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
-  const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie' | 'url'>(room?.sourceType ?? 'youtube');
+  const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie' | 'url' | 'series'>(room?.sourceType ?? 'youtube');
   // For 'url' rooms: tracks what player is currently active
   const [urlActivePlayer, setUrlActivePlayer] = useState<'youtube' | 'stream' | 'iframe' | null>(null);
   const urlActivePlayerRef = useRef<'youtube' | 'stream' | 'iframe' | null>(null);
@@ -77,7 +77,7 @@ export function RoomPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // Track sourceType in a ref to avoid stale closures in socket handlers
-  const sourceTypeRef = useRef<'youtube' | 'iptv' | 'movie' | 'url'>(room?.sourceType ?? 'youtube');
+  const sourceTypeRef = useRef<'youtube' | 'iptv' | 'movie' | 'url' | 'series'>(room?.sourceType ?? 'youtube');
   useEffect(() => {
     sourceTypeRef.current = room?.sourceType ?? 'youtube';
   }, [room?.sourceType]);

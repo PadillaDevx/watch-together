@@ -99,6 +99,9 @@ export function setupSocket(io: IO): void {
         }
         updatePlayerState(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false });
         io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: data.streamUrl });
+      } else if (data.type === 'series') {
+        updatePlayerState(roomId, { videoId: null, streamUrl: data.embedUrl, currentTime: 0, isPlaying: false, title: data.title ?? null, thumbnail: data.thumbnail ?? null });
+        io.to(roomId).emit('player-load', { type: 'series', embedUrl: data.embedUrl, title: data.title, thumbnail: data.thumbnail });
       } else {
         updatePlayerState(roomId, { videoId: data.videoId, streamUrl: null, currentTime: 0, isPlaying: false });
         io.to(roomId).emit('player-load', { type: 'youtube', videoId: data.videoId });

@@ -18,7 +18,7 @@ export interface VideoSearchResult {
 /** Represents a single item in a room's playback queue */
 export interface QueueItem {
   id: string;
-  type: 'youtube' | 'movie';
+  type: 'youtube' | 'movie' | 'series';
   title: string;
   videoId?: string;
   streamUrl?: string;
@@ -50,7 +50,7 @@ export interface Room {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv' | 'movie' | 'url';
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
   users: RoomUser[];
@@ -110,4 +110,38 @@ export interface JellyfinSearchResult {
   runtimeTicks?: number;
   imageUrl?: string;
   streamUrl: string;
+}
+
+export interface LibrarySerie {
+  id: string;
+  name: string;
+  thumbnail?: string;
+  active: boolean;
+}
+
+export interface LibraryEpisodio {
+  capitulo_numero: number;
+  titulo: string;
+  /** Raw path to the episode page (NOT the embed URL) */
+  url: string;
+}
+
+export interface LibraryTemporada {
+  temporada: number;
+  episodios: LibraryEpisodio[];
+}
+
+export interface LibrarySerieDetail extends LibrarySerie {
+  temporadas: LibraryTemporada[];
+}
+
+export interface LibraryEpisodeEmbed {
+  embedUrl: string;
+}
+
+export interface SeriesRoomState {
+  selectedSerieId: string | null;
+  selectedTemporada: number | null;
+  selectedEpisodioIndex: number | null;
+  embedUrl: string | null;
 }
