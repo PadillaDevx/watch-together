@@ -13,7 +13,7 @@ interface CreateRoomModalProps {
 
 export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [sourceType, setSourceType] = useState<'youtube' | 'iptv' | 'movie'>('youtube');
+  const [sourceType, setSourceType] = useState<'youtube' | 'iptv' | 'movie' | 'url'>('youtube');
   const [name, setName] = useState('');
   const [maxUsers, setMaxUsers] = useState('10');
   const [isOpen, setIsOpen] = useState(true);
@@ -47,7 +47,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
     }
   }, [open, step, sourceType]);
 
-  function handleSourceSelect(type: 'youtube' | 'iptv' | 'movie') {
+  function handleSourceSelect(type: 'youtube' | 'iptv' | 'movie' | 'url') {
     setSourceType(type);
     setStep(2);
   }
@@ -112,11 +112,20 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
             <button
               type="button"
               onClick={() => handleSourceSelect('movie')}
-              className="col-span-2 flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
+              className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
             >
               <span className="text-4xl">🎬</span>
               <span className="font-semibold">Movies (Jellyfin)</span>
               <span className="text-xs text-white/50 text-center">Películas y series desde tu servidor Jellyfin</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSourceSelect('url')}
+              className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
+            >
+              <span className="text-4xl">🔗</span>
+              <span className="font-semibold">URL directa</span>
+              <span className="text-xs text-white/50 text-center">YouTube, .m3u8, .mp4 u otro enlace de video</span>
             </button>
           </div>
         </div>
@@ -129,7 +138,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
           >
             ← Cambiar fuente
             <span className="text-violet-400 font-medium">
-              {sourceType === 'youtube' ? '▶️ YouTube' : sourceType === 'movie' ? '🎬 Movies (Jellyfin)' : '📺 Lista IPTV'}
+              {sourceType === 'youtube' ? '▶️ YouTube' : sourceType === 'movie' ? '🎬 Movies (Jellyfin)' : sourceType === 'url' ? '🔗 URL directa' : '📺 Lista IPTV'}
             </span>
           </button>
           <Input

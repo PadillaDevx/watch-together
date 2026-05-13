@@ -85,8 +85,8 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                             <button
                                 onClick={() => setSelectedGroup('__all__')}
                                 className={`w-full text-left px-4 py-2 text-xs truncate transition-colors ${selectedGroup === '__all__'
-                                        ? 'text-violet-300 bg-violet-600/15 font-medium'
-                                        : 'text-white/50 hover:text-white hover:bg-white/5'
+                                    ? 'text-violet-300 bg-violet-600/15 font-medium'
+                                    : 'text-white/50 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 Todos
@@ -96,8 +96,8 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                                     key={g}
                                     onClick={() => setSelectedGroup(g)}
                                     className={`w-full text-left px-4 py-2 text-xs truncate transition-colors ${selectedGroup === g
-                                            ? 'text-violet-300 bg-violet-600/15 font-medium'
-                                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                                        ? 'text-violet-300 bg-violet-600/15 font-medium'
+                                        : 'text-white/50 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
                                     {g || 'Sin categoría'}

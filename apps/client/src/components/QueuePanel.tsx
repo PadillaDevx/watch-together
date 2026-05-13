@@ -5,126 +5,126 @@ import { socket } from '../lib/socket';
 import type { QueueItem } from '../types';
 
 interface QueuePanelProps {
-  queue: QueueItem[];
-  roomId: string;
-  currentUsername: string | null;
-  isAdmin: boolean;
+    queue: QueueItem[];
+    roomId: string;
+    currentUsername: string | null;
+    isAdmin: boolean;
 }
 
 export default function QueuePanel({ queue, roomId, currentUsername, isAdmin }: QueuePanelProps) {
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  function handleDragStart(e: React.DragEvent<HTMLLIElement>, index: number) {
-    e.dataTransfer.setData('text/plain', String(index));
-    e.dataTransfer.effectAllowed = 'move';
-  }
+    function handleDragStart(e: React.DragEvent<HTMLLIElement>, index: number) {
+        e.dataTransfer.setData('text/plain', String(index));
+        e.dataTransfer.effectAllowed = 'move';
+    }
 
-  function handleDragOver(e: React.DragEvent<HTMLLIElement>, index: number) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  }
+    function handleDragOver(e: React.DragEvent<HTMLLIElement>, index: number) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOverIndex(index);
+    }
 
-  function handleDrop(e: React.DragEvent<HTMLLIElement>, toIndex: number) {
-    e.preventDefault();
-    setDragOverIndex(null);
-    const fromIndex = Number(e.dataTransfer.getData('text/plain'));
-    if (fromIndex === toIndex) return;
-    socket.emit('queue-reorder', { roomId, fromIndex, toIndex });
-  }
+    function handleDrop(e: React.DragEvent<HTMLLIElement>, toIndex: number) {
+        e.preventDefault();
+        setDragOverIndex(null);
+        const fromIndex = Number(e.dataTransfer.getData('text/plain'));
+        if (fromIndex === toIndex) return;
+        socket.emit('queue-reorder', { roomId, fromIndex, toIndex });
+    }
 
-  function handleRemove(itemId: string) {
-    socket.emit('queue-remove', { roomId, itemId });
-  }
+    function handleRemove(itemId: string) {
+        socket.emit('queue-remove', { roomId, itemId });
+    }
 
-  return (
-    <div className="flex flex-col h-full bg-surface-raised border border-white/[0.08] rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
-        <h3 className="text-sm font-semibold text-white">Queue</h3>
-        <p className="text-xs text-white/40 mt-0.5">
-          {queue.length} item{queue.length !== 1 ? 's' : ''}
-        </p>
-      </div>
+    return (
+        <div className="flex flex-col h-full bg-surface-raised border border-white/[0.08] rounded-xl overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
+                <h3 className="text-sm font-semibold text-white">Queue</h3>
+                <p className="text-xs text-white/40 mt-0.5">
+                    {queue.length} item{queue.length !== 1 ? 's' : ''}
+                </p>
+            </div>
 
-      {/* Body */}
-      {queue.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <p className="text-sm text-white/40">Queue is empty</p>
-        </div>
-      ) : (
-        <ul className="flex-1 overflow-y-auto py-2 divide-y divide-white/[0.04]">
-          {queue.map((item, index) => {
-            const canRemove = item.addedBy === currentUsername || isAdmin;
-            const isDragTarget = dragOverIndex === index;
-
-            return (
-              <li
-                key={item.id}
-                draggable={isAdmin}
-                onDragStart={isAdmin ? (e) => handleDragStart(e, index) : undefined}
-                onDragOver={isAdmin ? (e) => handleDragOver(e, index) : undefined}
-                onDragLeave={isAdmin ? () => setDragOverIndex(null) : undefined}
-                onDrop={isAdmin ? (e) => handleDrop(e, index) : undefined}
-                onDragEnd={isAdmin ? () => setDragOverIndex(null) : undefined}
-                className={clsx(
-                  'flex items-center gap-3 px-3 py-2 group transition-colors select-none',
-                  isAdmin && 'cursor-grab active:cursor-grabbing',
-                  isDragTarget
-                    ? 'bg-violet-500/20 border-l-2 border-violet-500'
-                    : 'hover:bg-white/[0.04]',
-                )}
-              >
-                {/* Drag handle (admin only) */}
-                {isAdmin && (
-                  <GripVertical className="h-4 w-4 flex-shrink-0 text-white/20 group-hover:text-white/40 transition-colors" />
-                )}
-
-                {/* Thumbnail */}
-                {item.thumbnail ? (
-                  <img
-                    src={item.thumbnail}
-                    alt={item.title}
-                    width={48}
-                    height={28}
-                    className="flex-shrink-0 rounded object-cover bg-white/[0.06]"
-                  />
-                ) : (
-                  <div
-                    className="flex-shrink-0 rounded bg-white/[0.06] flex items-center justify-center"
-                    style={{ width: 48, height: 28 }}
-                  >
-                    <span className="text-white/20 text-xs">▶</span>
-                  </div>
-                )}
-
-                {/* Title + added-by */}
-                <div className="flex-1 min-w-0">
-                  <span className="block text-sm text-white truncate leading-tight">
-                    {item.title}
-                  </span>
-                  <span className="text-xs text-gray-400 truncate">{item.addedBy}</span>
+            {/* Body */}
+            {queue.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center px-4 py-8">
+                    <p className="text-sm text-white/40">Queue is empty</p>
                 </div>
+            ) : (
+                <ul className="flex-1 overflow-y-auto py-2 divide-y divide-white/[0.04]">
+                    {queue.map((item, index) => {
+                        const canRemove = item.addedBy === currentUsername || isAdmin;
+                        const isDragTarget = dragOverIndex === index;
 
-                {/* Remove button */}
-                {canRemove && (
-                  <button
-                    onClick={() => handleRemove(item.id)}
-                    title="Remove from queue"
-                    className={clsx(
-                      'flex-shrink-0 p-1 rounded transition-all',
-                      'text-white/30 hover:text-red-400 hover:bg-red-500/10',
-                      'opacity-0 group-hover:opacity-100',
-                    )}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
+                        return (
+                            <li
+                                key={item.id}
+                                draggable={isAdmin}
+                                onDragStart={isAdmin ? (e) => handleDragStart(e, index) : undefined}
+                                onDragOver={isAdmin ? (e) => handleDragOver(e, index) : undefined}
+                                onDragLeave={isAdmin ? () => setDragOverIndex(null) : undefined}
+                                onDrop={isAdmin ? (e) => handleDrop(e, index) : undefined}
+                                onDragEnd={isAdmin ? () => setDragOverIndex(null) : undefined}
+                                className={clsx(
+                                    'flex items-center gap-3 px-3 py-2 group transition-colors select-none',
+                                    isAdmin && 'cursor-grab active:cursor-grabbing',
+                                    isDragTarget
+                                        ? 'bg-violet-500/20 border-l-2 border-violet-500'
+                                        : 'hover:bg-white/[0.04]',
+                                )}
+                            >
+                                {/* Drag handle (admin only) */}
+                                {isAdmin && (
+                                    <GripVertical className="h-4 w-4 flex-shrink-0 text-white/20 group-hover:text-white/40 transition-colors" />
+                                )}
+
+                                {/* Thumbnail */}
+                                {item.thumbnail ? (
+                                    <img
+                                        src={item.thumbnail}
+                                        alt={item.title}
+                                        width={48}
+                                        height={28}
+                                        className="flex-shrink-0 rounded object-cover bg-white/[0.06]"
+                                    />
+                                ) : (
+                                    <div
+                                        className="flex-shrink-0 rounded bg-white/[0.06] flex items-center justify-center"
+                                        style={{ width: 48, height: 28 }}
+                                    >
+                                        <span className="text-white/20 text-xs">▶</span>
+                                    </div>
+                                )}
+
+                                {/* Title + added-by */}
+                                <div className="flex-1 min-w-0">
+                                    <span className="block text-sm text-white truncate leading-tight">
+                                        {item.title}
+                                    </span>
+                                    <span className="text-xs text-gray-400 truncate">{item.addedBy}</span>
+                                </div>
+
+                                {/* Remove button */}
+                                {canRemove && (
+                                    <button
+                                        onClick={() => handleRemove(item.id)}
+                                        title="Remove from queue"
+                                        className={clsx(
+                                            'flex-shrink-0 p-1 rounded transition-all',
+                                            'text-white/30 hover:text-red-400 hover:bg-red-500/10',
+                                            'opacity-0 group-hover:opacity-100',
+                                        )}
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
+    );
 }

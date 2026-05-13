@@ -30,6 +30,14 @@ function extractVideoId(input: string): string | null {
   return null;
 }
 
+/** Returns true if the URL points to a direct video/stream file (HLS, MP4, etc.) */
+function isDirectVideoUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    return /\.(m3u8|mp4|webm|ogg|ogv|mkv|ts|avi|flv)(\?|$)/.test(path);
+  } catch { return false; }
+}
+
 type PanelTab = 'users' | 'chat';
 
 export function RoomPage() {
@@ -60,11 +68,15 @@ export function RoomPage() {
   const [nowTitle, setNowTitle] = useState<string | null>(null);
   const [nowThumbnail, setNowThumbnail] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
-  const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube');
+  const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie' | 'url'>(room?.sourceType ?? 'youtube');
+  // For 'url' rooms: tracks what player is currently active
+  const [urlActivePlayer, setUrlActivePlayer] = useState<'youtube' | 'stream' | 'iframe' | null>(null);
+  const urlActivePlayerRef = useRef<'youtube' | 'stream' | 'iframe' | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   // Track sourceType in a ref to avoid stale closures in socket handlers
-  const sourceTypeRef = useRef<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube');
+  const sourceTypeRef = useRef<'youtube' | 'iptv' | 'movie' | 'url'>(room?.sourceType ?? 'youtube');
   useEffect(() => {
     sourceTypeRef.current = room?.sourceType ?? 'youtube';
   }, [room?.sourceType]);
@@ -116,8 +128,9 @@ export function RoomPage() {
   // Socket events
   useEffect(() => {
     function onRoomUsers(list: RoomUser[]) { setUsers(list); }
-    function onSyncState(state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie'; queue?: QueueItem[]; title?: string | null; thumbnail?: string | null }) {
+    function onSyncState(state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url'; queue?: QueueItem[]; title?: string | null; thumbnail?: string | null }) {
       setActiveSource(state.sourceType);
+      sourceTypeRef.current = state.sourceType;
       if (state.queue) setQueue(state.queue);
       setNowTitle(state.title ?? null);
       setNowThumbnail(state.thumbnail ?? null);
@@ -131,23 +144,75 @@ export function RoomPage() {
           if (state.isPlaying) remotePlay(state.currentTime);
           else remotePause(state.currentTime);
         }, 1000);
+      } else if (state.sourceType === 'url') {
+        if (state.streamUrl) {
+          setCurrentStreamUrl(state.streamUrl);
+          if (isDirectVideoUrl(state.streamUrl)) {
+            setUrlActivePlayer('stream');
+            urlActivePlayerRef.current = 'stream';
+            loadStream(state.streamUrl);
+          } else {
+            setUrlActivePlayer('iframe');
+            urlActivePlayerRef.current = 'iframe';
+          }
+        } else if (state.videoId) {
+          setCurrentVideoId(state.videoId);
+          setUrlActivePlayer('youtube');
+          urlActivePlayerRef.current = 'youtube';
+          loadVideo(state.videoId);
+          setTimeout(() => {
+            if (state.isPlaying) remotePlay(state.currentTime);
+            else remotePause(state.currentTime);
+          }, 1000);
+        }
       }
     }
     function onPlayerPlay({ currentTime }: { currentTime: number }) {
-      if (sourceTypeRef.current === 'iptv' || sourceTypeRef.current === 'movie') hlsPlay(currentTime);
-      else remotePlay(currentTime);
+      const st = sourceTypeRef.current;
+      if (st === 'iptv' || st === 'movie') hlsPlay(currentTime);
+      else if (st === 'url') {
+        if (urlActivePlayerRef.current === 'youtube') remotePlay(currentTime);
+        else if (urlActivePlayerRef.current === 'stream') hlsPlay(currentTime);
+        // iframe: no-op, can't control programmatically
+      } else remotePlay(currentTime);
     }
     function onPlayerPause({ currentTime }: { currentTime: number }) {
-      if (sourceTypeRef.current === 'iptv' || sourceTypeRef.current === 'movie') hlsPause(currentTime);
-      else remotePause(currentTime);
+      const st = sourceTypeRef.current;
+      if (st === 'iptv' || st === 'movie') hlsPause(currentTime);
+      else if (st === 'url') {
+        if (urlActivePlayerRef.current === 'youtube') remotePause(currentTime);
+        else if (urlActivePlayerRef.current === 'stream') hlsPause(currentTime);
+      } else remotePause(currentTime);
     }
     function onPlayerSeek({ currentTime }: { currentTime: number }) {
-      if (sourceTypeRef.current === 'iptv' || sourceTypeRef.current === 'movie') hlsSeek(currentTime);
-      else remoteSeek(currentTime);
+      const st = sourceTypeRef.current;
+      if (st === 'iptv' || st === 'movie') hlsSeek(currentTime);
+      else if (st === 'url') {
+        if (urlActivePlayerRef.current === 'youtube') remoteSeek(currentTime);
+        else if (urlActivePlayerRef.current === 'stream') hlsSeek(currentTime);
+      } else remoteSeek(currentTime);
     }
     function onPlayerLoad(data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string }) {
-      if (data.type === 'youtube') { setCurrentVideoId(data.videoId); setEmbedError(null); loadVideo(data.videoId); }
-      else if (data.type === 'iptv') { setCurrentStreamUrl(data.streamUrl); loadStream(data.streamUrl); }
+      if (data.type === 'youtube') {
+        setCurrentVideoId(data.videoId);
+        setEmbedError(null);
+        loadVideo(data.videoId);
+        if (sourceTypeRef.current === 'url') { setUrlActivePlayer('youtube'); urlActivePlayerRef.current = 'youtube'; }
+      } else if (data.type === 'iptv') {
+        setCurrentStreamUrl(data.streamUrl);
+        if (sourceTypeRef.current === 'url') {
+          if (isDirectVideoUrl(data.streamUrl)) {
+            loadStream(data.streamUrl);
+            setUrlActivePlayer('stream');
+            urlActivePlayerRef.current = 'stream';
+          } else {
+            setUrlActivePlayer('iframe');
+            urlActivePlayerRef.current = 'iframe';
+          }
+        } else {
+          loadStream(data.streamUrl);
+        }
+      }
     }
     function onChatMessage(msg: ChatMessage) {
       setMessages((prev) => [...prev, msg]);
@@ -169,12 +234,16 @@ export function RoomPage() {
       if (code === 'WRONG_PIN') { toast.error('PIN incorrecto'); navigate('/'); }
     }
     function onQueueUpdate(q: QueueItem[]) { setQueue(q); }
-    function onSourceSwitched(data: { sourceType: 'youtube' | 'iptv' | 'movie' }) {
+    function onSourceSwitched(data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' }) {
       sourceTypeRef.current = data.sourceType;
       setActiveSource(data.sourceType);
       setQueue([]);
       setNowTitle(null);
       setNowThumbnail(null);
+      if (data.sourceType === 'url') {
+        setUrlActivePlayer(null);
+        urlActivePlayerRef.current = null;
+      }
     }
 
     socket.on('room-users', onRoomUsers);
@@ -223,11 +292,27 @@ export function RoomPage() {
     const videoId = extractVideoId(trimmed);
     if (videoId) {
       setCurrentVideoId(videoId);
+      if (activeSource === 'url') { setUrlActivePlayer('youtube'); urlActivePlayerRef.current = 'youtube'; }
       socket.emit('player-load', { roomId: roomId!, type: 'youtube', videoId });
       setUrlInput('');
       return;
     }
-    // Not a valid YT URL — open search
+    // In 'url' rooms: detect direct video vs embed page
+    if (activeSource === 'url') {
+      try { new URL(trimmed); } catch { toast.error('URL inválida'); return; }
+      setCurrentStreamUrl(trimmed);
+      if (isDirectVideoUrl(trimmed)) {
+        setUrlActivePlayer('stream');
+        urlActivePlayerRef.current = 'stream';
+      } else {
+        setUrlActivePlayer('iframe');
+        urlActivePlayerRef.current = 'iframe';
+      }
+      socket.emit('player-load', { roomId: roomId!, type: 'iptv', streamUrl: trimmed });
+      setUrlInput('');
+      return;
+    }
+    // YouTube room: not a valid YT URL — open search
     const isYTUrl = trimmed.toLowerCase().includes('youtube.com') || trimmed.toLowerCase().includes('youtu.be');
     setSearchInitialQuery(isYTUrl ? '' : trimmed);
     setSearchOpen(true);
@@ -246,7 +331,9 @@ export function RoomPage() {
   }
 
   function handleResync() {
-    const currentTime = activeSource === 'iptv' || activeSource === 'movie' ? hlsGetTime() : getCurrentTime();
+    const isStreamPlayer = activeSource === 'iptv' || activeSource === 'movie' ||
+      (activeSource === 'url' && urlActivePlayer === 'stream');
+    const currentTime = isStreamPlayer ? hlsGetTime() : getCurrentTime();
     setSyncStatus('syncing');
     socket.emit('resync-all', { roomId: roomId!, currentTime, isPlaying: true });
     setTimeout(() => setSyncStatus('synced'), 2500);
@@ -290,8 +377,8 @@ export function RoomPage() {
             onClick={handleResync}
             title="Sincronizar a todos a tu posición actual"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${syncStatus === 'syncing'
-                ? 'bg-yellow-500/15 text-yellow-400'
-                : 'bg-white/5 text-white/50 hover:bg-violet-600/20 hover:text-violet-300'
+              ? 'bg-yellow-500/15 text-yellow-400'
+              : 'bg-white/5 text-white/50 hover:bg-violet-600/20 hover:text-violet-300'
               }`}
           >
             {syncStatus === 'syncing'
@@ -388,6 +475,88 @@ export function RoomPage() {
                 )}
               </>
             )}
+
+            {/* URL room: auto-detect player */}
+            {activeSource === 'url' && (
+              <>
+                {/* YouTube layer (visible when urlActivePlayer === 'youtube') */}
+                <div
+                  id="yt-player"
+                  className="w-full h-full"
+                  style={{ display: urlActivePlayer === 'youtube' ? 'block' : 'none' }}
+                />
+                {/* Stream/video layer — always in DOM so videoRef is available */}
+                <video
+                  ref={videoRef}
+                  className="w-full h-full"
+                  controls
+                  playsInline
+                  style={{ display: urlActivePlayer === 'stream' ? 'block' : 'none' }}
+                />
+                {/* Iframe embed layer for non-stream web pages */}
+                {urlActivePlayer === 'iframe' && currentStreamUrl && (
+                  <div className="absolute inset-0 flex flex-col">
+                    {/* Toolbar */}
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-black/70 backdrop-blur-sm flex-shrink-0 z-10">
+                      <span className="text-xs text-white/50 truncate max-w-[60%]">{currentStreamUrl}</span>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={currentStreamUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white/80 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                          Nueva pestaña
+                        </a>
+                        <button
+                          onClick={() => iframeRef.current?.requestFullscreen?.()}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white/80 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                          Pantalla completa
+                        </button>
+                      </div>
+                    </div>
+                    <iframe
+                      ref={iframeRef}
+                      src={currentStreamUrl}
+                      className="flex-1 border-0 w-full"
+                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+                {isLive && urlActivePlayer === 'stream' && (
+                  <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold z-10">
+                    EN VIVO
+                  </span>
+                )}
+                {hlsError && urlActivePlayer === 'stream' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3 z-20">
+                    <AlertCircle className="h-10 w-10 text-red-400" />
+                    <p className="text-sm text-white/70">Error al cargar el video</p>
+                    <button onClick={retryStream} className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors">Reintentar</button>
+                  </div>
+                )}
+                {urlActivePlayer === null && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-3 pointer-events-none">
+                    <span className="text-5xl">🔗</span>
+                    <p className="text-sm">Pega una URL abajo para reproducir</p>
+                    <p className="text-xs text-white/15">YouTube, .m3u8, .mp4, página de embed...</p>
+                  </div>
+                )}
+                {embedError !== null && urlActivePlayer === 'youtube' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 gap-4 z-20">
+                    <AlertCircle className="h-10 w-10 text-yellow-400" />
+                    <p className="text-sm text-white/80 text-center px-8">Este video no permite reproducción embebida</p>
+                    <a href={`https://www.youtube.com/watch?v=${embedError}`} target="_blank" rel="noopener noreferrer" className="px-4 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm text-white transition-colors">Abrir en YouTube</a>
+                    <button onClick={() => setEmbedError(null)} className="text-xs text-white/40 hover:text-white/70 transition-colors">Cerrar</button>
+                  </div>
+                )}
+              </>
+            )}
+
           </div>
 
           {/* URL + search bar */}
@@ -415,7 +584,7 @@ export function RoomPage() {
                   <input
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="URL de YouTube, ID de video o término de búsqueda..."
+                    placeholder={activeSource === 'url' ? 'Pega una URL (YouTube, .m3u8, .mp4...)' : 'URL de YouTube, ID de video o término de búsqueda...'}
                     className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-violet-500/50 pr-6"
                   />
                   {urlInput && (
@@ -423,9 +592,11 @@ export function RoomPage() {
                   )}
                 </div>
                 <button type="submit" className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                  {urlInput && !extractVideoId(urlInput.trim())
-                    ? <><Search className="h-3.5 w-3.5" /> Buscar</>
-                    : <><Play className="h-3.5 w-3.5 fill-current" /> Cargar</>}
+                  {activeSource === 'url'
+                    ? <><Play className="h-3.5 w-3.5 fill-current" /> Reproducir</>
+                    : urlInput && !extractVideoId(urlInput.trim())
+                      ? <><Search className="h-3.5 w-3.5" /> Buscar</>
+                      : <><Play className="h-3.5 w-3.5 fill-current" /> Cargar</>}
                 </button>
               </form>
             )}
@@ -481,6 +652,13 @@ export function RoomPage() {
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'movie' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
                 🎬 Movies
+              </button>
+              <button
+                type="button"
+                onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'url' })}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'url' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              >
+                🔗 URL
               </button>
             </div>
           </div>

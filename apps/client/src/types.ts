@@ -50,7 +50,7 @@ export interface Room {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv' | 'movie';
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url';
   iptvListId?: string;
   playerState: PlayerState;
   users: RoomUser[];

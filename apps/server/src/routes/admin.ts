@@ -13,8 +13,9 @@ type IO = Server<ClientToServerEvents, ServerToClientEvents, Record<string, neve
 export function createAdminRouter(io: IO) {
   const router = Router();
 
-  router.get('/users', adminAuth, (_req, res) => {
-    res.json({ users: listUsers() });
+  router.get('/users', adminAuth, async (_req, res) => {
+    try { res.json({ users: await listUsers() }); }
+    catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
   router.post('/login', (req, res) => {
@@ -27,38 +28,46 @@ export function createAdminRouter(io: IO) {
     res.json({ ok: true });
   });
 
-  router.post('/rooms', adminAuth, (req, res) => {
-    const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv' | 'movie'; iptvListId?: string };
+  router.post('/rooms', adminAuth, async (req, res) => {
+    const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv' | 'movie' | 'url'; iptvListId?: string };
     if (!name) { res.status(400).json({ error: 'Falta nombre de sala' }); return; }
-    const room = createRoom(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId);
-    io.emit('room-list', getRoomList());
-    res.json(room);
+    try {
+      const room = await createRoom(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId);
+      io.emit('room-list', getRoomList());
+      res.json(room);
+    } catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
-  router.delete('/rooms/:id', adminAuth, (req, res) => {
-    deleteRoom(req.params['id'] ?? '');
-    io.emit('room-list', getRoomList());
-    res.json({ ok: true });
+  router.delete('/rooms/:id', adminAuth, async (req, res) => {
+    try {
+      await deleteRoom(req.params['id'] ?? '');
+      io.emit('room-list', getRoomList());
+      res.json({ ok: true });
+    } catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
-  router.delete('/rooms', adminAuth, (_req, res) => {
-    deleteAllRooms();
-    io.emit('room-list', getRoomList());
-    res.json({ ok: true });
+  router.delete('/rooms', adminAuth, async (_req, res) => {
+    try {
+      await deleteAllRooms();
+      io.emit('room-list', getRoomList());
+      res.json({ ok: true });
+    } catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
-  router.post('/invite', adminAuth, (_req, res) => {
+  router.post('/invite', adminAuth, async (_req, res) => {
     const baseUrl = `http://${getLocalIP()}:${process.env['PORT'] ?? 3000}`;
-    res.json(generateToken(baseUrl));
+    try { res.json(await generateToken(baseUrl)); }
+    catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
-  router.get('/tokens', adminAuth, (_req, res) => {
-    res.json({ tokens: listTokens() });
+  router.get('/tokens', adminAuth, async (_req, res) => {
+    try { res.json({ tokens: await listTokens() }); }
+    catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
-  router.delete('/tokens', adminAuth, (_req, res) => {
-    revokeAllTokens();
-    res.json({ ok: true });
+  router.delete('/tokens', adminAuth, async (_req, res) => {
+    try { await revokeAllTokens(); res.json({ ok: true }); }
+    catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
   router.get('/connections', adminAuth, (_req, res) => {
@@ -85,21 +94,16 @@ export function createAdminRouter(io: IO) {
     try {
       const list = await addList(name, url);
       res.json(list);
-    } catch (err) {
-      res.status(500).json({ error: (err as Error).message });
-    }
+    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
   });
 
-  // Upload a .m3u file directly (content as JSON string — no multipart needed)
-  router.post('/iptv/upload', adminAuth, (req, res) => {
+  router.post('/iptv/upload', adminAuth, async (req, res) => {
     const { name, content } = req.body as { name?: string; content?: string };
     if (!name || !content) { res.status(400).json({ error: 'Faltan campos name y content' }); return; }
     try {
-      const list = addListFromContent(name.trim(), content);
+      const list = await addListFromContent(name.trim(), content);
       res.json(list);
-    } catch (err) {
-      res.status(500).json({ error: (err as Error).message });
-    }
+    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
   });
 
   router.put('/iptv/:id', adminAuth, async (req, res) => {
@@ -111,23 +115,19 @@ export function createAdminRouter(io: IO) {
     try {
       const list = await updateList(req.params['id'] ?? '', name, url);
       res.json(list);
-    } catch (err) {
-      res.status(500).json({ error: (err as Error).message });
-    }
+    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
   });
 
-  router.delete('/iptv/:id', adminAuth, (req, res) => {
-    deleteList(req.params['id'] ?? '');
-    res.json({ ok: true });
+  router.delete('/iptv/:id', adminAuth, async (req, res) => {
+    try { await deleteList(req.params['id'] ?? ''); res.json({ ok: true }); }
+    catch (err) { res.status(500).json({ error: (err as Error).message }); }
   });
 
   router.post('/iptv/:id/refresh', adminAuth, async (req, res) => {
     try {
       const list = await refreshList(req.params['id'] ?? '');
       res.json(list);
-    } catch (err) {
-      res.status(500).json({ error: (err as Error).message });
-    }
+    } catch (err) { res.status(500).json({ error: (err as Error).message }); }
   });
 
   return router;

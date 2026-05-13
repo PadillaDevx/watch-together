@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupSocket = setupSocket;
+const crypto_1 = __importDefault(require("crypto"));
 const auth_1 = require("../middleware/auth");
 const users_1 = require("../services/users");
 const rooms_1 = require("../services/rooms");
@@ -10,7 +14,7 @@ function getRoomUsers(room) {
     }));
 }
 function setupSocket(io) {
-    io.use((socket, next) => {
+    io.use(async (socket, next) => {
         const cookies = (0, auth_1.parseCookies)(socket.handshake.headers.cookie);
         const token = cookies['wj_session'];
         if (token) {
@@ -18,7 +22,9 @@ function setupSocket(io) {
             if (username) {
                 socket.data.username = username;
                 socket.data.authenticated = true;
-                socket.data.avatar = (0, users_1.getUser)(username)?.avatar ?? null;
+                const user = await (0, users_1.getUser)(username);
+                socket.data.avatar = user?.avatar ?? null;
+                socket.data.isAdmin = (0, users_1.isAdminSession)(token);
             }
         }
         next();
@@ -51,6 +57,9 @@ function setupSocket(io) {
                 currentTime: (0, rooms_1.getLiveCurrentTime)(room),
                 isPlaying: room.playerState.isPlaying,
                 sourceType: room.sourceType,
+                queue: room.queue,
+                title: room.playerState.title,
+                thumbnail: room.playerState.thumbnail,
             });
             socket.to(roomId).emit('user-joined', { username: socket.data.username });
             io.to(roomId).emit('room-users', getRoomUsers(room));
@@ -84,12 +93,10 @@ function setupSocket(io) {
             if (data.type === 'iptv') {
                 (0, rooms_1.updatePlayerState)(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false });
                 io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: data.streamUrl });
-                console.log('[WJ] load IPTV in room', roomId, 'streamUrl:', data.streamUrl);
             }
             else {
                 (0, rooms_1.updatePlayerState)(roomId, { videoId: data.videoId, streamUrl: null, currentTime: 0, isPlaying: false });
                 io.to(roomId).emit('player-load', { type: 'youtube', videoId: data.videoId });
-                console.log('[WJ] load YouTube in room', roomId, 'videoId:', data.videoId);
             }
         });
         socket.on('chat-message', ({ roomId, text }) => {
@@ -110,6 +117,9 @@ function setupSocket(io) {
                 currentTime: (0, rooms_1.getLiveCurrentTime)(room),
                 isPlaying: room.playerState.isPlaying,
                 sourceType: room.sourceType,
+                queue: room.queue,
+                title: room.playerState.title,
+                thumbnail: room.playerState.thumbnail,
             });
         });
         socket.on('resync-all', ({ roomId, currentTime, isPlaying }) => {
@@ -117,14 +127,90 @@ function setupSocket(io) {
                 return;
             (0, rooms_1.updatePlayerState)(roomId, { currentTime, isPlaying });
             const room = (0, rooms_1.getRoom)(roomId);
-            // Push the exact state to everyone in the room (including sender)
             io.to(roomId).emit('sync-state', {
                 videoId: room?.playerState.videoId ?? null,
                 streamUrl: room?.playerState.streamUrl ?? null,
                 currentTime,
                 isPlaying,
                 sourceType: room?.sourceType ?? 'youtube',
+                queue: room?.queue ?? [],
+                title: room?.playerState.title ?? null,
+                thumbnail: room?.playerState.thumbnail ?? null,
             });
+        });
+        socket.on('queue-add', async ({ roomId, item }) => {
+            if (!socket.data.authenticated)
+                return;
+            const room = (0, rooms_1.getRoom)(roomId);
+            if (!room)
+                return;
+            const newItem = {
+                ...item,
+                id: crypto_1.default.randomUUID(),
+                addedBy: socket.data.username,
+            };
+            await (0, rooms_1.addToQueue)(roomId, newItem);
+            io.to(roomId).emit('queue-update', room.queue);
+        });
+        socket.on('queue-remove', async ({ roomId, itemId }) => {
+            if (!socket.data.authenticated)
+                return;
+            const room = (0, rooms_1.getRoom)(roomId);
+            if (!room)
+                return;
+            const idx = room.queue.findIndex(i => i.id === itemId);
+            if (idx === -1)
+                return;
+            const item = room.queue[idx];
+            if (item.addedBy !== socket.data.username && socket.data.isAdmin !== true) {
+                socket.emit('error', { code: 'FORBIDDEN' });
+                return;
+            }
+            await (0, rooms_1.removeFromQueue)(roomId, itemId);
+            io.to(roomId).emit('queue-update', room.queue);
+        });
+        socket.on('queue-next', async ({ roomId }) => {
+            if (!socket.data.authenticated)
+                return;
+            const room = (0, rooms_1.getRoom)(roomId);
+            if (!room)
+                return;
+            const item = await (0, rooms_1.shiftQueue)(roomId);
+            if (!item) {
+                io.to(roomId).emit('queue-update', room.queue);
+                return;
+            }
+            if (item.type === 'youtube') {
+                (0, rooms_1.updatePlayerState)(roomId, { videoId: item.videoId, streamUrl: null, currentTime: 0, isPlaying: false });
+                io.to(roomId).emit('player-load', { type: 'youtube', videoId: item.videoId });
+            }
+            else {
+                (0, rooms_1.updatePlayerState)(roomId, { streamUrl: item.streamUrl, videoId: null, currentTime: 0, isPlaying: false });
+                io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: item.streamUrl });
+            }
+            io.to(roomId).emit('queue-update', room.queue);
+        });
+        socket.on('queue-reorder', async ({ roomId, fromIndex, toIndex }) => {
+            if (socket.data.isAdmin !== true) {
+                socket.emit('error', { code: 'FORBIDDEN' });
+                return;
+            }
+            const room = (0, rooms_1.getRoom)(roomId);
+            if (!room)
+                return;
+            await (0, rooms_1.reorderQueue)(roomId, fromIndex, toIndex);
+            io.to(roomId).emit('queue-update', room.queue);
+        });
+        socket.on('switch-source', async ({ roomId, sourceType, iptvListId }) => {
+            if (!socket.data.authenticated)
+                return;
+            const room = (0, rooms_1.getRoom)(roomId);
+            if (!room)
+                return;
+            await (0, rooms_1.switchRoomSource)(roomId, sourceType, iptvListId);
+            io.to(roomId).emit('source-switched', { sourceType, iptvListId });
+            io.to(roomId).emit('queue-update', []);
+            io.emit('room-list', (0, rooms_1.getRoomList)());
         });
         socket.on('disconnect', () => {
             for (const room of rooms_1._rooms.values()) {

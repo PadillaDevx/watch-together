@@ -16,7 +16,7 @@ export interface SessionData {
 /** Represents a single item in a room's playback queue */
 export interface QueueItem {
   id: string;
-  type: 'youtube' | 'movie';
+  type: 'youtube' | 'movie' | 'iptv';
   title: string;
   videoId?: string;
   streamUrl?: string;
@@ -55,7 +55,7 @@ export interface Room {
   isOpen: boolean;
   pin?: string;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv' | 'movie';
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url';
   iptvListId?: string;
   playerState: PlayerState;
   users: Map<string, RoomUser>;
@@ -71,7 +71,7 @@ export interface RoomListItem {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv' | 'movie';
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url';
   iptvListId?: string;
   playerState: PlayerState;
   users: Array<{ socketId: string; username: string; joinedAt: Date }>;

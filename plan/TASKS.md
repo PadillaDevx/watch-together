@@ -2,233 +2,249 @@
 
 ## Problem
 
-La aplicación watch-together tiene un sistema de reproducción básico (YouTube e IPTV) sin cola de reproducción, sin posibilidad de cambiar la fuente dentro de una sala activa, y sin integración con servidores de medios propios (Jellyfin). Los tipos de `PlayerState` y `Room` no tienen soporte para metadatos de reproducción (título, thumbnail), el middleware de socket no propaga el rol `isAdmin` al estado del socket (lo que bloquea la implementación de permisos), y los hooks `useYouTube` y `useHlsPlayer` no exponen el evento `onEnded`, impidiendo el auto-avance de cola.
+WatchJunto is a watch-together platform that currently supports YouTube, IPTV, and Jellyfin as source types. The project needs several improvements:
+
+1. **Emoji pollution**: All `.tsx`, `.ts`, `.html`, and `.css` files contain Unicode emoji characters used as icons. These must be replaced with `lucide-react` SVG icons for a consistent, accessible, and professional UI.
+2. **New "Series Clásicas" room type**: Integrate with LACartoons — a public Ruby on Rails website with no REST API — via server-side HTML scraping using `cheerio`. Users need to browse series, seasons, and episodes from inside a room.
+3. **Modal redesign**: The `CreateRoomModal` uses emoji-based cards and lacks the new Series Clásicas option. It needs icon-based cards with violet hover styling and the new source type.
+4. **Episode navigation UX**: Rooms of type `'series'` need dropdowns for selecting serie/season/episode, a next-episode button in the toolbar, and a floating next-episode button on the player canvas.
+5. **Watch progress tracking**: Per-user, per-room watched episode state must be stored in `localStorage` with visual indicators in the episode dropdown.
+6. **Real-time sync**: Any authenticated user in a series room can change the episode — triggering a new `series-episode-change` socket event broadcast to all room members.
+7. **TypeScript gaps**: The existing `sourceType` union and `player-load` discriminated union are incomplete and must be extended before any downstream work begins.
 
 ## Solution
 
-Se implementan tres fases encadenadas. **Fase A**: cola de reproducción en memoria, con handlers socket para añadir, eliminar, saltar y reordenar ítems, auto-avance al terminar el video, y UI de panel de cola con drag-and-drop para admin. **Fase B**: cambio de fuente en tiempo real dentro de la sala (`'youtube' | 'iptv' | 'movie'`), con reset de cola y estado al cambiar, selector en toolbar y soporte en `CreateRoomModal`. **Fase C**: integración con Jellyfin a través del proxy IPTV existente — servicio server-side para buscar y construir URLs proxificadas, rutas admin y de usuario, y modal de búsqueda en el cliente. La API key de Jellyfin nunca llega al cliente.
+Implement changes in 11 features in strict dependency order to avoid cascading TypeScript errors:
+
+- **Feature 1** (Emoji Removal): audit all files, replace emoji with `lucide-react` icons using the canonical icon mapping.
+- **Feature 2** (TypeScript Types): extend `sourceType` unions, add new interfaces (`LibrarySerie`, `LibrarySerieDetail`, etc.), and add `series-episode-change` socket event types in both `client/types.ts` and `server/types.ts`.
+- **Feature 3** (Backend Scraper): install `cheerio`, create `library.json` config, implement `libraryService.ts` with cheerio-based HTML scraping of `https://www.lacartoons.com`, cache results in memory (5–10 min TTL), expose via `/api/library/*` Express routes, and update the client's `api.ts` with a `libraryApi` object.
+- **Feature 4** (Socket Handler): add `series-episode-change` handler in `socket/index.ts` — no admin restriction, any authenticated room member can trigger it.
+- **Feature 5** (CreateRoomModal): replace emoji cards with icon-based cards, add `'series'` option, remove `'url'` from the flow, apply violet hover styles.
+- **Feature 6** (Series Hooks): create `useWatchProgress.ts` (localStorage progress tracking) and `useSeriesNavigation.ts` (next/prev episode traversal logic).
+- **Feature 7** (SeriesSelector): create `SeriesSelector.tsx` with three native `<select>` dropdowns, progress badge, and Ver/Siguiente buttons — accessible to all users.
+- **Feature 8** (NextEpisodeButton): create floating `NextEpisodeButton.tsx` with opacity-based visibility and violet hover glow.
+- **Feature 9** (RoomPage Integration): wire all new state, hooks, handlers, socket listeners, and conditional rendering into `RoomPage.tsx`.
+- **Feature 10** (AdminPage Progress Reset): add a Series Clásicas section with per-series progress reset controls.
+- **Feature 11** (Documentation): create `docs/series-architecture.md` and `docs/lacartoons-scraper.md`, add TSDoc to all new code.
 
 ---
 
-## Pre-work — Fix `isAdmin` en el middleware de socket
+### Feature 1: Emoji Removal
 
-Prerequisito bloqueante para todas las comprobaciones de permisos de admin en la Fase A.
+Remove every emoji character from all `.tsx`, `.ts`, `.html`, and `.css` files and replace with `lucide-react` icons or plain text. Icon sizing convention: `w-8 h-8` in cards, `w-4 h-4` in buttons/toolbars, `w-3 h-3` inline.
 
-- [x] En `apps/server/src/types.ts`: añadir `isAdmin?: boolean` al interface `SocketData`
-- [x] En `apps/server/src/socket/index.ts`: añadir `isAdminSession` al import existente de `../services/users` (junto a `validateSession` y `getUser`)
-- [x] En `apps/server/src/socket/index.ts`: dentro del bloque `io.use(...)`, inmediatamente después de `socket.data.avatar = ...`, añadir `socket.data.isAdmin = isAdminSession(token)`
-- [x] Build & syntax check
-- [x] Commit
-
----
-
-## Feature 1: Tipos nuevos (servidor y cliente)
-
-Añadir todos los tipos necesarios para la cola, los metadatos de reproducción y los eventos socket antes de tocar cualquier lógica.
-
-- [x] En `apps/server/src/types.ts`: añadir interface `QueueItem` con campos `id: string`, `type: 'youtube' | 'movie'`, `title: string`, `videoId?: string`, `streamUrl?: string`, `thumbnail?: string`, `addedBy: string`
-- [x] En `apps/server/src/types.ts`: añadir `title: string | null` y `thumbnail: string | null` a la interface `PlayerState`
-- [x] En `apps/server/src/types.ts`: añadir `queue: QueueItem[]` a la interface `Room`
-- [x] En `apps/server/src/types.ts`: cambiar `sourceType: 'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'` en los interfaces `Room` y `RoomListItem`
-- [x] En `apps/server/src/types.ts` — `ServerToClientEvents`: añadir `'queue-update': (queue: QueueItem[]) => void`; extender el payload de `'sync-state'` con `queue: QueueItem[]`, `title: string | null`, `thumbnail: string | null`; añadir `'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie'; iptvListId?: string }) => void`
-- [x] En `apps/server/src/types.ts` — `ClientToServerEvents`: añadir `'queue-add'`, `'queue-remove'`, `'queue-next'`, `'queue-reorder'` y `'switch-source'` con sus payloads tal como describe el plan (`roomId`, `item: Omit<QueueItem, 'id'|'addedBy'>`, `itemId`, `fromIndex`, `toIndex`, `sourceType`, `iptvListId?`)
-- [x] En `apps/client/src/types.ts`: añadir interface `QueueItem` (mismos campos que en servidor)
-- [x] En `apps/client/src/types.ts`: añadir `queue: QueueItem[]` a `Room`; añadir `title: string | null` y `thumbnail: string | null` a `PlayerState`; cambiar `sourceType` de `Room` a `'youtube' | 'iptv' | 'movie'`
-- [x] En `apps/client/src/types.ts`: añadir interface `JellyfinSearchResult` con `id: string`, `name: string`, `type: string`, `runtimeTicks?: number`, `imageUrl?: string`, `streamUrl: string`
-- [x] Build & syntax check
-- [x] Commit
+- [ ] Run `grep -rn --include="*.tsx" --include="*.ts" --include="*.html" --include="*.css" -P "[\x{1F000}-\x{1FFFF}]|[\x{2600}-\x{27BF}]|▶|◀|⏭|✓|✅|🎉" apps/` to produce a full list of all emoji occurrences across the project
+- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: replace `▶️`, `📺`, `🎬`, `🔗` inside source-type card `<span>` elements with `<Youtube className="w-8 h-8" />`, `<Tv className="w-8 h-8" />`, `<Film className="w-8 h-8" />`, `<Library className="w-8 h-8" />` from `lucide-react`
+- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: replace back-button source badge emoji strings (`▶️ YouTube`, `🎬 Movies (Jellyfin)`, `🔗 URL directa`, `📺 Lista IPTV`) with inline `<Icon className="w-3 h-3 inline mr-1" /> Label` JSX using the same icon mapping
+- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: replace `{ icon: '🔒' }` in the `toast.success()` PIN call with `{ icon: <Lock className="w-4 h-4 text-yellow-400" /> }` and import `Lock` from `lucide-react`
+- [ ] Scan and fix all emoji in `apps/client/src/pages/LobbyPage.tsx` — replace with matching `lucide-react` icons (`Plus`, `Home`, etc.)
+- [ ] Scan and fix all emoji in `apps/client/src/components/Sidebar.tsx` — replace with `MessageSquare`, `Users`, `Settings`, `Home` from `lucide-react`
+- [ ] Scan and fix all emoji in `apps/client/src/pages/AdminPage.tsx` — replace with matching `lucide-react` icons
+- [ ] Scan and fix all emoji in `apps/client/src/pages/RoomPage.tsx` — replace with `RefreshCw`, `SkipForward`, `Play`, and others from `lucide-react`
+- [ ] Scan and fix all emoji in `apps/client/src/components/QueuePanel.tsx` — replace with matching `lucide-react` icons
+- [ ] Scan and fix all emoji in `apps/client/src/components/IPTVBrowserModal.tsx` — replace with `lucide-react` icons
+- [ ] Scan and fix all emoji in `apps/client/src/components/VideoSearchModal.tsx` — replace with `lucide-react` icons
+- [ ] Scan and fix all emoji in `apps/client/src/components/JellyfinBrowserModal.tsx` — replace with `lucide-react` icons
+- [ ] Scan and fix remaining files in `apps/client/src/components/` (`IPTVListManager.tsx`, `ProfileModal.tsx`, `RoomCard.tsx`, `AuthModal.tsx`, all `ui/` files) for any emoji and replace
+- [ ] Scan `apps/server/src/` for any emoji inside string literals or comments and replace with plain text
+- [ ] Re-run the emoji grep to confirm zero occurrences remain across the entire `apps/` directory
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 2: Servicio de sala — helpers de cola
+### Feature 2: TypeScript Types Update
 
-Extender `apps/server/src/services/rooms.ts` con las funciones necesarias para manipular la cola y el nuevo campo `sourceType: 'movie'`.
+Extend type unions and add new interfaces in both `apps/client/src/types.ts` and `apps/server/src/types.ts` before any downstream implementation to avoid cascading TS errors.
 
-- [x] En `createRoom`: añadir `queue: []` al objeto `Room` literal; cambiar el tipo del parámetro `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
-- [x] Añadir `addToQueue(roomId: string, item: QueueItem): void` — recupera la sala con `_rooms.get(roomId)`; hace `room.queue.push(item)` si existe
-- [x] Añadir `removeFromQueue(roomId: string, itemId: string): boolean` — busca el índice del ítem con `room.queue.findIndex(i => i.id === itemId)`, hace `splice` si lo encuentra, retorna `true`; retorna `false` si no se encuentra
-- [x] Añadir `shiftQueue(roomId: string): QueueItem | undefined` — hace `room.queue.shift()`; si el ítem devuelto existe, llama `updatePlayerState(roomId, { title: item.title, thumbnail: item.thumbnail ?? null })` antes de retornar el ítem
-- [x] Añadir `reorderQueue(roomId: string, fromIndex: number, toIndex: number): void` — valida que ambos índices estén dentro de `[0, room.queue.length - 1]`; extrae el elemento con `splice(fromIndex, 1)[0]`; lo inserta con `splice(toIndex, 0, element)`
-- [x] Añadir `switchRoomSource(roomId: string, sourceType: 'youtube' | 'iptv' | 'movie', iptvListId?: string): boolean` — recupera la sala, asigna `room.sourceType` e `room.iptvListId`; resetea `room.playerState` a `{ videoId: null, streamUrl: null, currentTime: 0, isPlaying: false, updatedAt: Date.now(), title: null, thumbnail: null }`; limpia `room.queue = []`; retorna `true`; retorna `false` si la sala no existe
-- [x] Actualizar los imports en `rooms.ts` para incluir `QueueItem` desde `../types`
-- [x] Build & syntax check
-- [x] Commit
-
----
-
-## Feature 3: Handlers socket — cola y cambio de fuente
-
-Añadir los handlers de socket en `apps/server/src/socket/index.ts` para gestionar la cola y el cambio de fuente.
-
-- [x] Actualizar los imports de `rooms.ts` al inicio del archivo para incluir `addToQueue`, `removeFromQueue`, `shiftQueue`, `reorderQueue`, `switchRoomSource`
-- [x] Actualizar las tres emisiones de `sync-state` (`join-room`, `request-sync`, `resync-all`) añadiendo `queue: room.queue`, `title: room.playerState.title ?? null`, `thumbnail: room.playerState.thumbnail ?? null` al objeto emitido
-- [x] Añadir handler `'queue-add'`: (1) guard `!socket.data.authenticated → return`; (2) recuperar sala; (3) construir `QueueItem` con `id: crypto.randomUUID()` y `addedBy: socket.data.username!` a partir del payload; (4) llamar `addToQueue(roomId, newItem)`; (5) emitir `queue-update` con `room.queue` a `io.to(roomId)`
-- [x] Añadir handler `'queue-remove'`: (1) guard autenticado; (2) recuperar sala; (3) encontrar ítem en `room.queue`; (4) check: `item.addedBy === socket.data.username || socket.data.isAdmin === true`, si no cumple emitir `error: { code: 'FORBIDDEN' }` y return; (5) llamar `removeFromQueue`; (6) emitir `queue-update` a `io.to(roomId)`
-- [x] Añadir handler `'queue-next'`: (1) guard autenticado; (2) recuperar sala; (3) llamar `shiftQueue(roomId)`; (4) si no hay ítem emitir `queue-update(room.queue)` y return; (5) si `item.type === 'youtube'` → `updatePlayerState` con `{videoId, streamUrl: null, currentTime: 0, isPlaying: false}` + emitir `player-load {type:'youtube', videoId}`; si `item.type === 'movie'` → `updatePlayerState` con `{streamUrl, videoId: null, currentTime: 0, isPlaying: false}` + emitir `player-load {type:'iptv', streamUrl}`; (6) emitir `queue-update` con `room.queue` a `io.to(roomId)`
-- [x] Añadir handler `'queue-reorder'`: (1) guard `socket.data.isAdmin !== true → error FORBIDDEN`; (2) recuperar sala; (3) validar índices en bounds; (4) llamar `reorderQueue`; (5) emitir `queue-update`
-- [x] Añadir handler `'switch-source'`: (1) guard autenticado; (2) recuperar sala; (3) llamar `switchRoomSource(roomId, sourceType, iptvListId)`; (4) emitir `source-switched {sourceType, iptvListId}` a `io.to(roomId)`; (5) emitir `queue-update([])` a `io.to(roomId)`; (6) emitir `room-list` global con `io.emit('room-list', getRoomList())`
-- [x] Build & syntax check
-- [x] Commit
+- [ ] In `apps/client/src/types.ts`: extend `Room.sourceType` union from `'youtube' | 'iptv' | 'movie' | 'url'` to `'youtube' | 'iptv' | 'movie' | 'url' | 'series'`
+- [ ] In `apps/client/src/types.ts`: add `LibrarySerie` interface — `{ id: string; name: string; thumbnail?: string; active: boolean }`
+- [ ] In `apps/client/src/types.ts`: add `LibraryEpisodio` interface — `{ capitulo_numero: number; titulo: string; url: string }` (where `url` is the raw path, NOT the embed URL)
+- [ ] In `apps/client/src/types.ts`: add `LibraryTemporada` interface — `{ temporada: number; episodios: LibraryEpisodio[] }`
+- [ ] In `apps/client/src/types.ts`: add `LibrarySerieDetail` interface extending `LibrarySerie` — `{ temporadas: LibraryTemporada[] }`
+- [ ] In `apps/client/src/types.ts`: add `LibraryEpisodeEmbed` interface — `{ embedUrl: string }`
+- [ ] In `apps/client/src/types.ts`: add `SeriesRoomState` interface — `{ selectedSerieId: string | null; selectedTemporada: number | null; selectedEpisodioIndex: number | null; embedUrl: string | null }`
+- [ ] In `apps/client/src/types.ts`: extend `QueueItem.type` union to include `| 'series'`
+- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `Room` to include `| 'series'`
+- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `RoomListItem` to include `| 'series'`
+- [ ] In `apps/server/src/types.ts`: extend the `sourceType` field in `ServerToClientEvents['sync-state']` payload to include `| 'series'` (fixes existing bug where `'url'` was also missing)
+- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `ServerToClientEvents['source-switched']` payload to include `| 'series'`
+- [ ] In `apps/server/src/types.ts`: extend `sourceType` in `ClientToServerEvents['switch-source']` payload to include `| 'series'`
+- [ ] In `apps/server/src/types.ts`: extend the `player-load` discriminated union in both `ServerToClientEvents` and `ClientToServerEvents` to add `| { type: 'series'; embedUrl: string; title?: string; thumbnail?: string }`
+- [ ] In `apps/server/src/types.ts`: add `'series-episode-change'` to `ServerToClientEvents` with payload `{ serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }`
+- [ ] In `apps/server/src/types.ts`: add `'series-episode-change'` to `ClientToServerEvents` with payload adding `roomId: string` to the `ServerToClientEvents` payload above
+- [ ] In `apps/server/src/services/rooms.ts`: update the `createRoom` function `sourceType` parameter type to include `| 'series'`
+- [ ] In `apps/server/src/services/rooms.ts`: update the `buildRoomFromDb` helper cast to `sourceType: dbRoom.sourceType as 'youtube' | 'iptv' | 'movie' | 'url' | 'series'`
+- [ ] In `apps/server/src/routes/admin.ts`: update the `sourceType` validation in the `POST /rooms` handler to include `'series'` in the valid values
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 4: Rutas admin — actualizar `createRoom` y tipo `sourceType`
+### Feature 3: Backend HTML Scraper Service
 
-Propagar el nuevo tipo `'movie'` a las rutas del servidor y a la API del cliente.
+Create `libraryService.ts` using `cheerio` to scrape LACartoons HTML pages (no REST API exists). Expose results via `/api/library/*` Express routes and update the client's `api.ts`.
 
-- [x] En `apps/server/src/routes/admin.ts`: en el handler `POST /api/admin/rooms`, cambiar el tipo anotado de `sourceType` en la destructuración de `req.body` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`; verificar que la llamada a `createRoom` lo pase sin cambios
-- [x] En `apps/client/src/lib/api.ts`: en `adminApi.createRoom`, cambiar el tipo del parámetro `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
-- [x] Build & syntax check
-- [x] Commit
-
----
-
-## Feature 5: Hooks — evento `onEnded`
-
-Exponer `onEnded` en `useYouTube` y `useHlsPlayer` para que `RoomPage` pueda disparar el auto-avance de cola al terminar el video.
-
-- [x] En `apps/client/src/hooks/useYouTube.ts`: añadir `onEnded?: () => void` al interface `UseYouTubeOptions`
-- [x] En `apps/client/src/hooks/useYouTube.ts`: en el callback `onStateChange` del constructor `new window.YT.Player(...)`, añadir `if (e.data === window.YT.PlayerState.ENDED) { onEnded?.(); }` — colocarlo antes del bloque que consume el flag `isRemoteUpdate`
-- [x] En `apps/client/src/hooks/useYouTube.ts`: añadir `onEnded` al array de dependencias del `useCallback` de `loadVideo` (o al ref estabilizador si lo hay)
-- [x] En `apps/client/src/hooks/useHlsPlayer.ts`: añadir `onEnded?: () => void` al interface `UseHlsPlayerOptions`
-- [x] En `apps/client/src/hooks/useHlsPlayer.ts`: crear un ref `onEndedRef = useRef(onEnded)` actualizado con `useEffect(() => { onEndedRef.current = onEnded }, [onEnded])` para evitar re-attachs; en el `useEffect` que adjunta los listeners `'play'` y `'pause'`, añadir `const handleEnded = () => onEndedRef.current?.(); video.addEventListener('ended', handleEnded);` y en el cleanup `video.removeEventListener('ended', handleEnded)`
-- [x] Build & syntax check
-- [x] Commit
-
----
-
-## Feature 6: RoomPage — estado de cola, título y source-switch
-
-Actualizar `apps/client/src/pages/RoomPage.tsx` con el nuevo estado, listeners de socket, barra de título, botón "Siguiente" y selector de fuente.
-
-- [x] Añadir imports: `QueueItem` desde `../types`; `QueuePanel` desde `../components/QueuePanel` (creado en Feature 7)
-- [x] Añadir estados: `const [queue, setQueue] = useState<QueueItem[]>([])`, `const [nowTitle, setNowTitle] = useState<string | null>(null)`, `const [nowThumbnail, setNowThumbnail] = useState<string | null>(null)`, `const [queueOpen, setQueueOpen] = useState(false)`, `const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie'>(room?.sourceType ?? 'youtube')`
-- [x] Actualizar el tipo de `sourceTypeRef` de `useRef<'youtube' | 'iptv'>` a `useRef<'youtube' | 'iptv' | 'movie'>` y su valor inicial
-- [x] Añadir `const isLiveRef = useRef<boolean>(false)` y actualizar `isLiveRef.current = isLive` dentro de un `useEffect([isLive])` (donde `isLive` viene de `useHlsPlayer`)
-- [x] Definir `handleEnded` como `useCallback` que emite `socket.emit('queue-next', { roomId: roomId! })` solo si `!isLiveRef.current`; pasar `onEnded: handleEnded` a `useYouTube` y `useHlsPlayer`
-- [x] En `onSyncState`: extraer y aplicar `queue`, `title`, `thumbnail` del payload → `setQueue(q)`, `setNowTitle(t)`, `setNowThumbnail(th)`
-- [x] Registrar listener `socket.on('queue-update', q => setQueue(q))` dentro del `useEffect` de listeners de socket y limpiarlo en el cleanup
-- [x] Registrar listener `socket.on('source-switched', data => { sourceTypeRef.current = data.sourceType; setActiveSource(data.sourceType); setQueue([]); setNowTitle(null); setNowThumbnail(null); })` y limpiarlo
-- [x] Añadir barra de título encima del área del player: renderizar solo cuando `nowTitle !== null`; muestra `<img src={nowThumbnail}>` (si existe) y `<span>{nowTitle}</span>` con clases Tailwind apropiadas
-- [x] Añadir botón "⏭ Siguiente" en el toolbar — visible solo cuando `queue.length > 0`; al hacer click emite `socket.emit('queue-next', { roomId: roomId! })`; usar el componente `Button` de `../components/ui/Button`
-- [x] Añadir botón de cola en el toolbar que hace toggle de `queueOpen`; renderizar `<QueuePanel>` condicionalmente pasando `queue`, `roomId`, `currentUsername` (del store) e `isAdmin`
-- [x] Añadir selector de fuente en el toolbar con 3 botones (`📺 TV`, `▶ YouTube`, `🎬 Movies`): YouTube y Movies emiten `socket.emit('switch-source', {roomId, sourceType})` directamente; TV verifica si la sala tiene `iptvListId` — si no, abre un selector de lista antes de emitir
-- [x] Condicionar la visibilidad de los players según `activeSource`: mostrar `<div id="yt-player">` solo cuando `activeSource === 'youtube'`; mostrar `<video ref={videoRef}>` cuando `activeSource === 'iptv' || activeSource === 'movie'` (ambos hooks permanecen montados)
-- [x] Build & syntax check
-- [x] Commit
+- [ ] In `apps/server/package.json`: add `"cheerio": "^1.0.0"` to `dependencies` and run `npm install` inside `apps/server/`
+- [ ] Create `apps/server/src/db/library.json`: static config array listing known series — each entry has `id` (slug, e.g. `"coraje"`), `name` (display name), `lacartoons_serie_id` (numeric, used in lacartoons.com URL paths), `thumbnail` (optional string), `active: true`
+- [ ] Create `apps/server/src/services/libraryService.ts`: declare module-level constant `LACARTOONS_BASE_URL = 'https://www.lacartoons.com'` and import `cheerio`
+- [ ] In `libraryService.ts`: declare cache Maps — `seriesCache: Map<string, LibrarySerie[]>` (key `'all'`), `episodesCache: Map<string, LibrarySerieDetail>` (key is serieId slug), `cacheTimestamps: Map<string, number>`; declare `TTL_SERIES = 5 * 60 * 1000` and `TTL_EPISODES = 10 * 60 * 1000`
+- [ ] In `libraryService.ts`: implement `fetchSeriesList(): Promise<LibrarySerie[]>` — reads `library.json` (via `require` or `fs.readFileSync`), filters `active === true`, caches result under key `'all'` with 5-min TTL, returns cached data if within TTL
+- [ ] In `libraryService.ts`: implement `fetchSerieDetail(serieId: string): Promise<LibrarySerieDetail>` — looks up `lacartoons_serie_id` from `library.json` for the given slug; fetches `https://www.lacartoons.com/serie/{lacartoons_serie_id}` using `fetch(url, { signal: AbortSignal.timeout(10000) })`; throws on non-2xx; parses HTML with `const $ = cheerio.load(await res.text())`; extracts season containers and episode links from the DOM; constructs `LibrarySerieDetail`; caches with 10-min TTL
+- [ ] In `libraryService.ts`: document (as inline comments) the exact cheerio selectors chosen for the LACartoons series page — season container selector, episode `<a>` selector, title extraction, capitulo number extraction, and the `href` stored as `LibraryEpisodio.url`
+- [ ] In `libraryService.ts`: implement `resolveEpisodeEmbed(episodePath: string): Promise<string>` — prepends `LACARTOONS_BASE_URL` if `episodePath` starts with `/`; fetches the episode page (URL format: `https://www.lacartoons.com/serie/capitulo/[id]?t=[temporada]`) with 10s timeout; parses HTML with cheerio; selects `iframe[src*="cubeembed"]` attribute `src`; throws `new Error('LACartoons embed not found: ...')` if iframe is absent; returns `embedUrl`
+- [ ] In `libraryService.ts`: wrap all `fetch` calls in try/catch; re-throw as `new Error('LACartoons: <descriptive context message>')` so route handlers can surface it as a 502
+- [ ] Create `apps/server/src/routes/library.ts`: export `createLibraryRouter()` function returning an Express `Router`; import `fetchSeriesList`, `fetchSerieDetail`, `resolveEpisodeEmbed` from `../services/libraryService`; import `requireAuth` from `../middleware/auth`
+- [ ] In `library.ts`: implement `GET /series` — call `fetchSeriesList()`, return JSON; on error respond `502 { error: 'No se pudo conectar a la biblioteca' }`; protect with `requireAuth`
+- [ ] In `library.ts`: implement `GET /series/:serieId/episodes` — validate `req.params.serieId` matches `/^[a-z0-9-]{1,100}$/` regex; call `fetchSerieDetail(serieId)`; respond 404 `{ error: 'Serie no encontrada' }` if serie not in `library.json`; respond 502 on scraping error; protect with `requireAuth`
+- [ ] In `library.ts`: implement `GET /episode` — validate `req.query.path` is a non-empty string with max 500 chars; call `resolveEpisodeEmbed(path)`; return `{ embedUrl }`; respond 502 on error; protect with `requireAuth`
+- [ ] In `apps/server/src/index.ts`: import `createLibraryRouter` and add `app.use('/api/library', createLibraryRouter())` alongside existing route registrations
+- [ ] In `apps/client/src/lib/api.ts`: add exported `libraryApi` object with three methods — `listSeries: () => api.get<LibrarySerie[]>('/api/library/series')`, `getSerieDetail: (serieId: string) => api.get<LibrarySerieDetail>(\`/api/library/series/${serieId}/episodes\`)`, `resolveEmbed: (path: string) => api.get<{ embedUrl: string }>('/api/library/episode', { params: { path } })`; import `LibrarySerie`, `LibrarySerieDetail` from `'../types'`
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 7: Componente `QueuePanel`
+### Feature 4: Socket Event for Series Navigation
 
-Crear `apps/client/src/components/QueuePanel.tsx` — panel lateral de la cola de reproducción.
+Add the `series-episode-change` handler in `apps/server/src/socket/index.ts`. Any authenticated user in the room can trigger this event — no admin restriction.
 
-- [x] Definir props: `queue: QueueItem[]`, `roomId: string`, `currentUsername: string`, `isAdmin: boolean`; importar `socket` desde `../lib/socket` y `QueueItem` desde `../types`
-- [x] Renderizar lista scrollable de ítems; cada ítem muestra: `<img src={item.thumbnail}>` (si existe, tamaño 48×28 px aprox.), `<span>{item.title}</span>`, `<span className="text-xs text-gray-400">{item.addedBy}</span>`
-- [x] Añadir botón eliminar en cada ítem — visible si `item.addedBy === currentUsername || isAdmin`; al click emite `socket.emit('queue-remove', { roomId, itemId: item.id })`
-- [x] Para usuarios admin, hacer ítems arrastrables usando atributos HTML5 nativos: `draggable`, `onDragStart` (guarda `fromIndex` en `event.dataTransfer.setData('text/plain', index)`), `onDragOver` (previene default para permitir drop), `onDrop` (extrae `fromIndex` de `dataTransfer`, calcula `toIndex`, emite `socket.emit('queue-reorder', { roomId, fromIndex, toIndex })`)
-- [x] Estilizar con Tailwind: fondo oscuro, bordes, scroll vertical, indicador visual de drag activo
-- [x] Build & syntax check
-- [x] Commit
-
----
-
-## Feature 8: Modales — botones "Play Now" y "+ Queue"
-
-Actualizar `VideoSearchModal` e `IPTVBrowserModal` para soportar añadir a cola sin cerrar el modal.
-
-- [x] En `apps/client/src/components/VideoSearchModal.tsx`: en cada fila de resultado, reemplazar el botón único de acción por dos botones — **"▶ Play Now"** (emite `socket.emit('player-load', {roomId, type: 'youtube', videoId: result.videoId})` y cierra modal) y **"+ Queue"** (emite `socket.emit('queue-add', {roomId, item: {type: 'youtube', title: result.title, videoId: result.videoId, thumbnail: result.thumbnail}})` y muestra un toast breve sin cerrar el modal)
-- [x] En `apps/client/src/components/IPTVBrowserModal.tsx`: en cada entrada IPTV, reemplazar acción única por dos botones — **"▶ Play Now"** (comportamiento actual) y **"+ Queue"** (emite `socket.emit('queue-add', {roomId, item: {type: 'movie', title: entry.name, streamUrl: entry.url, thumbnail: entry.thumbnail ?? undefined}})` — nota: `entry.url` es la URL cruda, no proxificada; el servidor almacena la URL cruda)
-- [x] Implementar el toast de confirmación para "añadido a cola" en ambos modales (estado local `const [toastMsg, setToastMsg] = useState<string|null>(null)` + `useEffect` de 2s para limpiarlo) o reusar el mecanismo de toast existente si ya existe en el proyecto
-- [x] Build & syntax check
-- [x] Commit
+- [ ] In `apps/server/src/socket/index.ts`: inside the `io.on('connection', ...)` block, add `socket.on('series-episode-change', async (data) => { ... })` after the existing `player-load` handler
+- [ ] In the handler: destructure `{ roomId, serieId, serieName, temporada, episodioIndex, embedUrl, titulo }` from the event data
+- [ ] In the handler: guard — if `!socket.data.authenticated`, return early (ignore unauthenticated events)
+- [ ] In the handler: guard — if `socket.data.roomId !== roomId`, return early (socket must be in the specified room)
+- [ ] In the handler: do NOT add any `socket.data.isAdmin` check — any authenticated room member can change the episode
+- [ ] In the handler: call `updatePlayerState(roomId, { streamUrl: embedUrl, videoId: null, currentTime: 0, isPlaying: false, title: titulo, thumbnail: null })` to persist the new state
+- [ ] In the handler: broadcast `io.to(roomId).emit('series-episode-change', { serieId, serieName, temporada, episodioIndex, embedUrl, titulo })` to all room members including the sender
+- [ ] In the handler: also emit `io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo })` so the existing player machinery loads the embed for all clients
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 9: `CreateRoomModal` — soporte `'movie'`
+### Feature 5: CreateRoomModal Redesign
 
-Añadir la opción de sala de tipo Jellyfin/Movies en el modal de creación de sala.
+Replace the emoji-based source-type cards with icon cards, add the `'series'` option, remove `'url'`, and apply violet hover glow styles.
 
-- [x] En `apps/client/src/components/CreateRoomModal.tsx`: cambiar el tipo del estado `sourceType` de `'youtube' | 'iptv'` a `'youtube' | 'iptv' | 'movie'`
-- [x] En el paso 1 (selector de tipo de sala), añadir un tercer botón **"🎬 Movies (Jellyfin)"** que establece `sourceType = 'movie'`
-- [x] Cuando `sourceType === 'movie'`, en el paso 2 omitir el selector de lista IPTV y mostrar directamente el formulario de nombre/configuración de sala
-- [x] En la llamada final a `adminApi.createRoom`, asegurarse de que `sourceType: 'movie'` se pasa y que no se envía `iptvListId` cuando el tipo es `'movie'`
-- [x] Build & syntax check
-- [x] Commit
-
----
-
-## Feature 10: Proxy IPTV — exportar `trustHostname`
-
-Prerequisito para que el servicio Jellyfin pueda agregar su hostname al allowlist del proxy.
-
-- [x] En `apps/server/src/routes/iptv.ts`: localizar el `Set<string>` privado `_discoveredCdnHostnames`
-- [x] Exportar una función nueva `export function trustHostname(hostname: string): void { _discoveredCdnHostnames.add(hostname); }` — añadirla justo después de la declaración del Set, sin modificar nada más del módulo
-- [x] Build & syntax check
-- [x] Commit
+- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: change the `sourceType` local state type to `'youtube' | 'iptv' | 'movie' | 'series'`; update the `useState` initial value and `handleSourceSelect` parameter type accordingly
+- [ ] In `CreateRoomModal.tsx`: replace the entire `<div className="grid grid-cols-2 gap-3">` card section with 4 new cards: YouTube (`<Youtube />`), Lista IPTV (`<Tv />`), Jellyfin (`<Film />`), Series Clásicas (`<Library />`) — remove the `'url'` card entirely
+- [ ] In `CreateRoomModal.tsx`: apply base card Tailwind: `flex flex-col items-center gap-3 p-5 rounded-xl border transition-all text-white border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 hover:shadow-[0_0_12px_rgba(139,92,246,0.3)]`
+- [ ] In `CreateRoomModal.tsx`: apply selected-state classes when `sourceType === option`: `border-violet-500 bg-violet-600/20 shadow-[0_0_12px_rgba(139,92,246,0.3)]` — merge with base classes conditionally
+- [ ] In `CreateRoomModal.tsx`: wrap each icon in `<div className="p-3 rounded-full bg-white/10">` before the icon component
+- [ ] In `CreateRoomModal.tsx`: replace the back-button source badge ternary chain with a `const sourceLabels: Record<string, ReactNode>` map keyed by `sourceType` that maps to `<><Icon className="w-3 h-3 inline mr-1" /> Label</>` and render as `sourceLabels[sourceType]`
+- [ ] In `CreateRoomModal.tsx`: ensure the IPTV list selector block is guarded strictly by `sourceType === 'iptv'` so it never renders for `'series'` rooms
+- [ ] In `CreateRoomModal.tsx`: verify the `adminApi.createRoom(name, maxUsers, isOpen, sourceType, iptvListId)` call passes `sourceType` correctly — `iptvListId` will be `undefined` for `'series'` which is correct; no change needed to the call itself
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 11: Servicio Jellyfin (servidor)
+### Feature 6: Series Hooks
 
-Crear `apps/server/src/services/jellyfin.ts` con toda la lógica de comunicación con el servidor Jellyfin.
+Create `useWatchProgress.ts` and `useSeriesNavigation.ts` to encapsulate watch-progress storage and episode traversal logic.
 
-- [x] Crear el archivo con estado interno `let _config: { baseUrl: string; apiKey: string } | null = null`
-- [x] Implementar `setConfig(baseUrl: string, apiKey: string): void` — elimina slash final de `baseUrl`, guarda `_config`; llama `trustHostname(new URL(baseUrl).hostname)` importando `trustHostname` de `./proxy-trust` (ver nota de refactor abajo)
-- [x] Implementar `getConfig(): { baseUrl: string; apiKey: string } | null` — retorna `_config`
-- [x] Implementar `testConnection(): Promise<{ok: boolean; serverName?: string; error?: string}>` — hace `GET {baseUrl}/System/Info` con header `X-Emby-Token: {apiKey}` usando `fetch` nativo de Node 18+ (o `https`/`http` si la versión del servidor no lo soporta); retorna `{ok: true, serverName: data.ServerName}` en HTTP 200, `{ok: false, error: string}` en cualquier error; no expone el `apiKey` en ninguna respuesta
-- [x] Definir tipo local `JellyfinItemRaw` con `{Id, Name, Type, RunTimeTicks?, ImageTags?}` (solo interno al módulo)
-- [x] Implementar `searchItems(query: string, limit = 20)` — URL: `{baseUrl}/Items?searchTerm=...&IncludeItemTypes=Movie,Episode&Recursive=true&Fields=Overview,RunTimeTicks,ImageTags&Limit={limit}`; header `X-Emby-Token`; mapear `Items` al tipo de retorno
-- [x] Implementar `buildProxiedStreamUrl(itemId: string): string` — construye `{baseUrl}/Videos/{itemId}/master.m3u8?api_key={apiKey}` y lo envuelve como `/api/iptv/proxy?url=${encodeURIComponent(rawUrl)}`
-- [x] Implementar `buildProxiedImageUrl(itemId: string): string` — construye `{baseUrl}/Items/{itemId}/Images/Primary?api_key={apiKey}` y lo envuelve igual que el stream URL
-- [x] Refactor: `_discoveredCdnHostnames` y `trustHostname` extraídos a `services/proxy-trust.ts`; `routes/iptv.ts` importa y re-exporta desde allí; `services/jellyfin.ts` importa directamente de `./proxy-trust` (evita layer violation service→route)
-- [x] Build & syntax check (tsc --noEmit sin errores)
-- [x] Commit
-
----
-
-## Feature 12: Rutas Jellyfin (servidor)
-
-Crear `apps/server/src/routes/jellyfin.ts` y registrarlo en `apps/server/src/index.ts`.
-
-- [x] Crear el archivo; importar `Router` de `express`, `adminAuth` y `sessionAuth` de `../middleware/auth`, las funciones del servicio Jellyfin
-- [x] Crear `adminRouter = Router()` y `userRouter = Router()`
-- [x] Implementar `POST /config` en `adminRouter` protegido por `adminAuth`: validar `baseUrl` y `apiKey` son strings no vacíos (400 si falta); llamar `setConfig`; llamar `testConnection()`; si falla → 400 `{error}`; si ok → 200 `{ok: true, serverName}` (nunca retornar `apiKey`)
-- [x] Implementar `GET /status` en `adminRouter` protegido por `adminAuth`: si `getConfig()` es null → `{configured: false}`; si no, llamar `testConnection()` y retornar `{configured: true, ok, serverName, baseUrl: config.baseUrl}` (sin `apiKey`)
-- [x] Implementar `GET /search` en `userRouter` protegido por `sessionAuth`: validar query param `q` — no vacío y `<= 100` chars (400 si inválido); si no configurado → 503; llamar `searchItems(q)`, añadir a cada resultado `imageUrl: buildProxiedImageUrl(item.id)` y `streamUrl: buildProxiedStreamUrl(item.id)`; retornar el array
-- [x] Implementar `GET /stream-url/:itemId` en `userRouter` protegido por `sessionAuth`: validar `itemId` con `/^[a-zA-Z0-9]+$/` (400 si inválido); si no configurado → 503; retornar `{streamUrl: buildProxiedStreamUrl(itemId)}`
-- [x] Exportar `{ adminRouter, userRouter }` desde el módulo
-- [x] En `apps/server/src/index.ts`: importar `{adminRouter as jellyfinAdminRouter, userRouter as jellyfinUserRouter}` desde `./routes/jellyfin`; añadir `app.use('/api/admin/jellyfin', jellyfinAdminRouter)` y `app.use('/api/jellyfin', jellyfinUserRouter)` junto a las demás rutas existentes
-- [x] Build & syntax check
-- [x] Commit
+- [ ] Create `apps/client/src/hooks/useWatchProgress.ts` with exported function `useWatchProgress(roomId: string, username: string)` returning `{ isWatched, markWatched, resetProgress, getSeasonProgress }`
+- [ ] In `useWatchProgress.ts`: define `STORAGE_KEY = \`watchjunto_watched_${roomId}_${username}\``; initialize `useState<Record<string, true>>` by parsing `localStorage.getItem(STORAGE_KEY)` — default to `{}` on missing or invalid JSON
+- [ ] In `useWatchProgress.ts`: implement `isWatched(serieId: string, temporada: number, capituloNumero: number): boolean` — returns `!!watched[\`${serieId}-${temporada}-${capituloNumero}\`]`
+- [ ] In `useWatchProgress.ts`: implement `markWatched(serieId: string, temporada: number, capituloNumero: number): void` — builds new map `{ ...watched, [key]: true }`, calls `setWatched`, and synchronously calls `localStorage.setItem(STORAGE_KEY, JSON.stringify(newMap))`; wrap `setItem` in try/catch for storage quota exceptions
+- [ ] In `useWatchProgress.ts`: implement `resetProgress(serieId: string): void` — filters all keys not starting with `"${serieId}-"` from the map, calls `setWatched`, saves reduced map to `localStorage`
+- [ ] In `useWatchProgress.ts`: implement `getSeasonProgress(serieId: string, temporada: number, total: number): number` — counts entries in `watched` matching keys `"${serieId}-${temporada}-*"` using a filter over `Object.keys(watched)`
+- [ ] In `useWatchProgress.ts`: export a standalone utility function (not a hook) `resetProgressAllRooms(serieId: string, username: string, roomIds: string[]): void` that iterates over `roomIds`, constructs each `STORAGE_KEY`, reads, filters, and re-saves reduced maps directly via `localStorage` without React state
+- [ ] Create `apps/client/src/hooks/useSeriesNavigation.ts` with exported function `useSeriesNavigation({ serieDetail, selectedTemporada, selectedEpisodioIndex })` returning `{ hasNext, getNext, hasPrev, getPrev }`
+- [ ] In `useSeriesNavigation.ts`: compute `sortedTemporadas` using `useMemo(() => [...(serieDetail?.temporadas ?? [])].sort((a, b) => a.temporada - b.temporada), [serieDetail])`
+- [ ] In `useSeriesNavigation.ts`: implement `getNext()` — find current temporada by `temporada.temporada === selectedTemporada`; if `selectedEpisodioIndex + 1 < currentTemporada.episodios.length`, return `{ temporada: selectedTemporada, episodioIndex: selectedEpisodioIndex + 1, episodio }`; else find the next temporada in `sortedTemporadas` and return `{ temporada: next.temporada, episodioIndex: 0, episodio: next.episodios[0] }`; return `null` if end of series
+- [ ] In `useSeriesNavigation.ts`: compute `hasNext: boolean = getNext() !== null` using `useMemo`
+- [ ] In `useSeriesNavigation.ts`: implement `getPrev()` with symmetric logic (prev in season, or last of previous season) and compute `hasPrev: boolean`
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 13: API cliente Jellyfin + UI Admin
+### Feature 7: SeriesSelector Component
 
-Añadir los métodos de API al cliente y la sección de configuración en la página de admin.
+Create `SeriesSelector.tsx` with three native `<select>` dropdowns (serie, season, episode), a season progress badge, and Ver/Siguiente action buttons. Accessible to all authenticated users.
 
-- [x] En `apps/client/src/lib/api.ts`: añadir grupo `jellyfinApi` con los métodos `saveConfig(baseUrl, apiKey)` → `POST /api/admin/jellyfin/config`, `getStatus()` → `GET /api/admin/jellyfin/status`, `search(q)` → `GET /api/jellyfin/search?q=`, `getStreamUrl(itemId)` → `GET /api/jellyfin/stream-url/{itemId}`; tipar las respuestas usando `JellyfinSearchResult` de `../../types`
-- [x] En `apps/client/src/pages/AdminPage.tsx`: añadir una sección o tab "Jellyfin" al lado de las secciones existentes
-- [x] En la sección Jellyfin de `AdminPage.tsx`: añadir estado local `const [jellyfinUrl, setJellyfinUrl] = useState('')`, `const [jellyfinKey, setJellyfinKey] = useState('')`, `const [jellyfinStatus, setJellyfinStatus] = useState<{configured: boolean; ok?: boolean; serverName?: string; baseUrl?: string} | null>(null)`
-- [x] Cargar el estado al montar la sección con `jellyfinApi.getStatus()` en un `useEffect`; mostrar badge: verde "Conectado a {serverName}" si `configured && ok`, rojo "No alcanzable" si `configured && !ok`, gris "No configurado" si `!configured`
-- [x] Renderizar input de texto para URL (placeholder `http://192.168.1.x:8096`) enlazado a `jellyfinUrl`; input `type="password"` para API key enlazado a `jellyfinKey` — nunca pre-poblar con datos del servidor
-- [x] Botón "Guardar & Verificar" que llama `jellyfinApi.saveConfig(jellyfinUrl, jellyfinKey)`; en éxito muestra toast verde con nombre del servidor y actualiza el badge; en error muestra toast rojo
-- [x] Build & syntax check
-- [x] Commit
+- [ ] Create `apps/client/src/components/SeriesSelector.tsx` and define `SeriesSelectorProps` interface with all props: `roomId`, `username`, `isAdmin`, `serieDetail`, `seriesList`, `selectedSerieId`, `selectedTemporada`, `selectedEpisodioIndex`, `loadingEpisodes`, `loadingSeries`, `onSerieChange`, `onTemporadaChange`, `onEpisodioChange`, `onPlay`, `onNext`, `hasNext`, `watchProgress` (typed as `ReturnType<typeof useWatchProgress>`)
+- [ ] In `SeriesSelector.tsx`: render outer container `<div className="flex flex-col sm:flex-row gap-2 items-center w-full">`
+- [ ] In `SeriesSelector.tsx`: render Serie `<select>` — iterate `seriesList` producing `<option value={s.id}>{s.name}</option>`; when `loadingSeries` render a single disabled `<option>Cargando...</option>` instead; call `onSerieChange(e.target.value)` on `onChange`
+- [ ] In `SeriesSelector.tsx`: render Temporada `<select>` — iterate `[...serieDetail.temporadas].sort((a,b) => a.temporada - b.temporada)` producing `<option value={t.temporada}>Temporada {t.temporada}</option>`; disabled when `selectedSerieId === null`; show `<Loader2 className="w-4 h-4 animate-spin inline ml-1" />` next to the label when `loadingEpisodes`; call `onTemporadaChange(Number(e.target.value))` on `onChange`
+- [ ] In `SeriesSelector.tsx`: render Episodio `<select>` — iterate the current temporada's `episodios`; each `<option>` text: `"${isWatched ? '[✓] ' : ''}Cap. ${ep.capitulo_numero} — ${ep.titulo}"`; disabled when `selectedTemporada === null`; call `onEpisodioChange(Number(e.target.value))` on `onChange`
+- [ ] In `SeriesSelector.tsx`: apply dark Tailwind styling to all `<select>` elements: `bg-gray-800 border border-white/10 rounded-lg text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500`
+- [ ] In `SeriesSelector.tsx`: render season progress badge between Episodio select and Ver button: `<span className="text-xs text-white/50 whitespace-nowrap">Ep. {watchProgress.getSeasonProgress(...)}/{total}</span>` — compute `total` from the selected temporada's `episodios.length`
+- [ ] In `SeriesSelector.tsx`: render Ver `<button>` that calls `onPlay` — do NOT disable for non-admin users (any user can play); apply violet filled button styles
+- [ ] In `SeriesSelector.tsx`: render Siguiente `<button>` that calls `onNext` — disabled when `!hasNext`; do NOT add any isAdmin condition; apply violet outline button styles
+- [ ] In `SeriesSelector.tsx`: when series list fails to load, render `<span className="flex items-center gap-1 text-red-400 text-sm"><AlertCircle className="w-4 h-4" />Error al cargar series</span>` — import `AlertCircle` from `lucide-react`
+- [ ] Build & syntax check
+- [ ] Commit
 
 ---
 
-## Feature 14: Modal `JellyfinBrowserModal` + integración en `RoomPage`
+### Feature 8: NextEpisodeButton Component
 
-Crear el modal de búsqueda Jellyfin y conectarlo en la toolbar de la sala.
+Create the `NextEpisodeButton.tsx` floating button that appears in the bottom-right of the video player canvas for all users when there is a next episode available.
 
-- [x] Crear `apps/client/src/components/JellyfinBrowserModal.tsx`; props: `open: boolean`, `onClose: () => void`, `roomId: string`; importar `jellyfinApi` de `../lib/api`, `socket` de `../lib/socket`, `JellyfinSearchResult` de `../types`, el componente `Modal` de `./ui/Modal`
-- [x] Al abrir el modal (`open === true`), llamar `jellyfinApi.getStatus()` y si `!configured` mostrar inline: "Jellyfin no está configurado. Un administrador debe configurarlo en el panel de admin." sin mostrar el buscador
-- [x] Añadir input de búsqueda con debounce de 300ms; cuando el valor tenga `>= 2` caracteres llamar `jellyfinApi.search(q)` y actualizar estado `results`
-- [x] Renderizar resultados como grid responsive de tarjetas; cada tarjeta muestra: `<img src={item.imageUrl}>` (poster), `{item.name}` (título), duración calculada con `Math.floor((item.runtimeTicks ?? 0) / 600_000_000)` minutos
-- [x] En cada tarjeta, botón **"▶ Play"**: emite `socket.emit('player-load', {roomId, type: 'iptv', streamUrl: item.streamUrl})` y llama `onClose()`
-- [x] En cada tarjeta, botón **"+ Queue"**: emite `socket.emit('queue-add', {roomId, item: {type: 'movie', title: item.name, streamUrl: item.streamUrl, thumbnail: item.imageUrl}})` y muestra toast breve sin cerrar el modal
-- [x] En `apps/client/src/pages/RoomPage.tsx`: añadir `const [jellyfinOpen, setJellyfinOpen] = useState(false)`; añadir botón **"🎬"** en el toolbar que hace `setJellyfinOpen(true)`; renderizar `<JellyfinBrowserModal open={jellyfinOpen} onClose={() => setJellyfinOpen(false)} roomId={roomId!} />`
-- [x] Build & syntax check
-- [x] Commit
+- [ ] Create `apps/client/src/components/NextEpisodeButton.tsx` and define `NextEpisodeButtonProps` interface: `{ visible: boolean; onClick: () => void; nextEpisodeTitulo?: string }`
+- [ ] In `NextEpisodeButton.tsx`: render a `<button>` with positioning classes `absolute bottom-4 right-4 z-20` (parent must have `relative`)
+- [ ] In `NextEpisodeButton.tsx`: apply pill styling: `flex items-center gap-2 px-4 py-2 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-white text-sm font-medium hover:bg-violet-600/80 hover:border-violet-500 hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] transition-all duration-200 cursor-pointer`
+- [ ] In `NextEpisodeButton.tsx`: apply visibility classes dynamically — `${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300` — never unmount the element to avoid layout shifts
+- [ ] In `NextEpisodeButton.tsx`: render `<SkipForward className="w-4 h-4" />` icon followed by text `"Siguiente episodio"`; import `SkipForward` from `lucide-react`
+- [ ] Build & syntax check
+- [ ] Commit
+
+---
+
+### Feature 9: RoomPage Integration
+
+Wire all new series state, hooks, components, socket events, and player branches into `apps/client/src/pages/RoomPage.tsx`.
+
+- [ ] In `apps/client/src/pages/RoomPage.tsx`: add `useState` declarations for: `seriesList: LibrarySerie[]` (default `[]`), `serieDetail: LibrarySerieDetail | null` (default `null`), `selectedSerieId: string | null`, `selectedTemporada: number | null`, `selectedEpisodioIndex: number | null`, `loadingSeries: boolean`, `loadingEpisodes: boolean`, `seriesError: string | null`, `loadingEmbed: boolean`
+- [ ] In `RoomPage.tsx`: initialize `const watchProgress = useWatchProgress(roomId!, user!.username)` near the top of the component and import `useWatchProgress` from `'../hooks/useWatchProgress'`
+- [ ] In `RoomPage.tsx`: initialize `const { hasNext, getNext } = useSeriesNavigation({ serieDetail, selectedTemporada, selectedEpisodioIndex })` and import `useSeriesNavigation` from `'../hooks/useSeriesNavigation'`
+- [ ] In `RoomPage.tsx`: add `useEffect` triggered when `activeSource === 'series'` — sets `loadingSeries(true)`, calls `libraryApi.listSeries()`, on success sets `seriesList` and auto-calls `handleSerieChange(data[0].id)` if `selectedSerieId` is null, on error sets `seriesError`, finally sets `loadingSeries(false)`
+- [ ] In `RoomPage.tsx`: implement `handleSerieChange(serieId: string)` — sets `selectedSerieId`, resets `selectedTemporada` and `selectedEpisodioIndex` to null, clears `serieDetail`, sets `loadingEpisodes(true)`, calls `libraryApi.getSerieDetail(serieId)`, on success sets `serieDetail` and auto-selects `data.temporadas[0]?.temporada`, on error sets `seriesError`, finally sets `loadingEpisodes(false)`
+- [ ] In `RoomPage.tsx`: implement `handleTemporadaChange(temporada: number)` — sets `selectedTemporada`, resets `selectedEpisodioIndex` to null
+- [ ] In `RoomPage.tsx`: implement `handleEpisodioChange(index: number)` — sets `selectedEpisodioIndex`
+- [ ] In `RoomPage.tsx`: implement `handlePlay()` — guard: return if `selectedSerieId == null || selectedTemporada == null || selectedEpisodioIndex == null`; no isAdmin check; find `LibraryEpisodio` from `serieDetail.temporadas`; set `loadingEmbed(true)` and disable Ver/Siguiente buttons; call `libraryApi.resolveEmbed(episodio.url)`; on success emit `socket.emit('series-episode-change', { roomId, serieId, serieName, temporada, episodioIndex, embedUrl, titulo })`; on error call `toast.error('Error al cargar el episodio')`; finally set `loadingEmbed(false)`
+- [ ] In `RoomPage.tsx`: implement `handleNext()` — guard: `if (!hasNext) return`; no isAdmin check; call `getNext()`, if null call `toast('¡Terminaste la serie!')` and return; call `markWatched` for the current episode; set `selectedTemporada(next.temporada)` and `selectedEpisodioIndex(next.episodioIndex)`; call `libraryApi.resolveEmbed(next.episodio.url)`, emit `series-episode-change` with new data
+- [ ] In `RoomPage.tsx`: update `handleEnded` `useCallback` — add branch at the start: if `activeSource === 'series' && selectedSerieId && selectedTemporada != null && selectedEpisodioIndex != null`, extract current `LibraryEpisodio` from `serieDetail`, call `markWatched`, then call `handleNext()`; else fall through to existing `queue-next` logic; update the dependency array to include all new series state vars and `handleNext`
+- [ ] In `RoomPage.tsx`: in the socket subscriptions `useEffect`, add `socket.on('series-episode-change', onSeriesEpisodeChange)` where `onSeriesEpisodeChange(data)` updates `selectedSerieId`, `selectedTemporada`, `selectedEpisodioIndex`, and loads the embed (using `isDirectVideoUrl(data.embedUrl)` to decide between `loadStream` / iframe path); add `socket.off('series-episode-change', onSeriesEpisodeChange)` in the cleanup return
+- [ ] In `RoomPage.tsx`: in the `onPlayerLoad` handler, add `else if (data.type === 'series')` branch — set `currentStreamUrl(data.embedUrl)`, check `isDirectVideoUrl` to set `urlActivePlayer` to `'stream'` or `'iframe'`, call `loadStream` if stream, optionally set `nowTitle(data.title)`
+- [ ] In `RoomPage.tsx`: in the `onSyncState` handler, add `else if (state.sourceType === 'series')` branch — if `state.streamUrl`, treat as `embedUrl`, use `isDirectVideoUrl` to choose player path
+- [ ] In `RoomPage.tsx`: in the bottom-toolbar JSX, replace the URL/stream controls section with a conditional: `{activeSource === 'series' ? <SeriesSelector roomId={roomId!} username={user!.username} isAdmin={!!user?.isAdmin} seriesList={seriesList} serieDetail={serieDetail} selectedSerieId={selectedSerieId} selectedTemporada={selectedTemporada} selectedEpisodioIndex={selectedEpisodioIndex} loadingEpisodes={loadingEpisodes} loadingSeries={loadingSeries} onSerieChange={handleSerieChange} onTemporadaChange={handleTemporadaChange} onEpisodioChange={handleEpisodioChange} onPlay={handlePlay} onNext={handleNext} hasNext={hasNext} watchProgress={watchProgress} /> : /* existing controls */}`
+- [ ] In `RoomPage.tsx`: verify the player container `<div>` has `className="relative ..."` and add `<NextEpisodeButton visible={activeSource === 'series' && hasNext} onClick={handleNext} />` as the last child of the player container (no isAdmin condition)
+- [ ] In `RoomPage.tsx`: import all new types (`LibrarySerie`, `LibrarySerieDetail`, `LibraryEpisodio`), new hooks, new components, and `libraryApi` at the top of the file
+- [ ] Build & syntax check
+- [ ] Commit
+
+---
+
+### Feature 10: AdminPage Progress Reset
+
+Add a "Series Clásicas" section to `apps/client/src/pages/AdminPage.tsx` with per-series progress reset controls.
+
+- [ ] In `apps/client/src/pages/AdminPage.tsx`: add `useState<LibrarySerie[]>([])` for `seriesList` and `useState(false)` for `loadingSeriesLibrary`
+- [ ] In `AdminPage.tsx`: add `useEffect` on mount that calls `libraryApi.listSeries()`, sets `seriesList`, sets `loadingSeriesLibrary` during load, handles error with `toast.error('Error al cargar la biblioteca')`
+- [ ] In `AdminPage.tsx`: import `resetProgressAllRooms` from `'../hooks/useWatchProgress'` (the standalone utility function, not the hook)
+- [ ] In `AdminPage.tsx`: get `rooms` from the Zustand store with `useStore(state => state.rooms)` for use in `resetProgressAllRooms`
+- [ ] In `AdminPage.tsx`: add a "Series Clásicas" section with a heading using `<Library className="w-5 h-5 inline mr-2" />` icon from `lucide-react`
+- [ ] In `AdminPage.tsx`: render a list row per `serie` in `seriesList` showing `serie.name` and a "Resetear mi progreso" `<button>` that calls `resetProgressAllRooms(serie.id, user!.username, rooms.map(r => r.id))` on click; show a brief `toast.success` confirmation after reset
+- [ ] In `AdminPage.tsx`: show a loading spinner or skeleton while `loadingSeriesLibrary` is true
+- [ ] Build & syntax check
+- [ ] Commit
+
+---
+
+### Feature 11: Documentation
+
+Create architecture documentation in `docs/` and add TSDoc comments to all new code files.
+
+- [ ] Create `docs/series-architecture.md` documenting: overview of the Series Clásicas room type, full data flow (frontend dropdown selection → `handlePlay` → `libraryApi.resolveEmbed` → socket `series-episode-change` emission → server broadcast → all clients update), state management decisions (local `useState` + localStorage for progress, not Zustand), player type detection using `isDirectVideoUrl()`, socket event payloads (`series-episode-change`, `player-load` with `type: 'series'`), and the `library.json` config schema
+- [ ] Create `docs/lacartoons-scraper.md` documenting: scraping strategy overview, target URLs (`https://www.lacartoons.com/serie/[lacartoons_serie_id]` for episode lists, `https://www.lacartoons.com/serie/capitulo/[id]?t=[temporada]` for embed URL extraction), the cheerio selectors used and why, cache TTL values (5 min series list, 10 min episode detail), `library.json` config schema with a complete example entry, and instructions for adding a new serie (add entry to `library.json`, find the `lacartoons_serie_id` from the LACartoons URL, set `active: true`)
+- [ ] Add TSDoc comments to `fetchSeriesList`, `fetchSerieDetail`, `resolveEpisodeEmbed` in `apps/server/src/services/libraryService.ts` — include `@param`, `@returns`, and `@throws` tags
+- [ ] Add TSDoc comments to `useWatchProgress`, `isWatched`, `markWatched`, `resetProgress`, `getSeasonProgress`, and `resetProgressAllRooms` in `apps/client/src/hooks/useWatchProgress.ts`
+- [ ] Add TSDoc comments to `useSeriesNavigation`, `getNext`, `getPrev`, `hasNext`, `hasPrev` in `apps/client/src/hooks/useSeriesNavigation.ts`
+- [ ] Add TSDoc comment to the `SeriesSelectorProps` interface and the `SeriesSelector` component export in `apps/client/src/components/SeriesSelector.tsx`
+- [ ] Add TSDoc comments to `createLibraryRouter` and each route handler in `apps/server/src/routes/library.ts`
+- [ ] Build & syntax check
+- [ ] Commit

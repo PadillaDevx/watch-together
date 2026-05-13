@@ -44,9 +44,8 @@ export function ProfileModal({ open, onClose }: Props) {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
+              }`}
           >
             {label}
           </button>
@@ -261,11 +260,10 @@ function TemaTab() {
             <button
               key={c.value}
               onClick={() => handleSelect(c.value)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${
-                accent === c.value
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${accent === c.value
                   ? 'border-white/30 bg-white/8'
                   : 'border-white/[0.06] hover:bg-white/[0.04]'
-              }`}
+                }`}
             >
               <span
                 className="w-5 h-5 rounded-full flex-shrink-0"

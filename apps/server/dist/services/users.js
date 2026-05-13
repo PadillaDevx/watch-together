@@ -14,10 +14,12 @@ exports.getUser = getUser;
 exports.listUsers = listUsers;
 exports.changePassword = changePassword;
 const crypto_1 = __importDefault(require("crypto"));
-const users = new Map();
+const drizzle_orm_1 = require("drizzle-orm");
+const index_1 = require("../db/index");
+const schema_1 = require("../db/schema");
 const sessions = new Map();
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_AVATAR_SIZE = 700_000;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function hashPassword(password, salt) {
     return crypto_1.default.pbkdf2Sync(password, salt, 100_000, 64, 'sha256').toString('hex');
 }
@@ -29,24 +31,31 @@ function generateRecoveryCode() {
         code += chars[bytes[i] % chars.length];
     return code.slice(0, 5) + '-' + code.slice(5);
 }
-function registerUser(username, password) {
-    const key = username.toLowerCase();
-    if (users.has(key))
+// ─── User CRUD ────────────────────────────────────────────────────────────────
+async function registerUser(username, password) {
+    const existing = await index_1.db.select({ id: schema_1.users.id })
+        .from(schema_1.users)
+        .where((0, drizzle_orm_1.sql) `lower(${schema_1.users.username}) = lower(${username})`)
+        .limit(1);
+    if (existing.length > 0)
         return { ok: false, code: 'USERNAME_TAKEN' };
     const salt = crypto_1.default.randomBytes(16).toString('hex');
     const recoveryCode = generateRecoveryCode();
-    users.set(key, {
+    await index_1.db.insert(schema_1.users).values({
         username,
         passwordHash: hashPassword(password, salt),
         passwordSalt: salt,
         recoveryCode,
         avatar: null,
-        createdAt: Date.now(),
+        isAdmin: false,
     });
     return { ok: true, recoveryCode };
 }
-function loginUser(username, password) {
-    const user = users.get(username.toLowerCase());
+async function loginUser(username, password) {
+    const [user] = await index_1.db.select()
+        .from(schema_1.users)
+        .where((0, drizzle_orm_1.sql) `lower(${schema_1.users.username}) = lower(${username})`)
+        .limit(1);
     if (!user)
         return { ok: false, code: 'INVALID_CREDENTIALS' };
     const hash = hashPassword(password, user.passwordSalt);
@@ -88,43 +97,67 @@ function isAdminSession(token) {
         return false;
     return sessions.get(token)?.isAdmin === true;
 }
-function updateAvatar(username, avatarDataUrl) {
-    const user = users.get(username.toLowerCase());
-    if (!user)
-        return { ok: false, code: 'USER_NOT_FOUND' };
+async function updateAvatar(username, avatarDataUrl) {
+    const MAX_AVATAR_SIZE = 700_000;
     if (avatarDataUrl && !avatarDataUrl.startsWith('data:image/')) {
         return { ok: false, code: 'INVALID_AVATAR' };
     }
     if (avatarDataUrl && avatarDataUrl.length > MAX_AVATAR_SIZE) {
         return { ok: false, code: 'AVATAR_TOO_LARGE' };
     }
-    user.avatar = avatarDataUrl ?? null;
+    const result = await index_1.db.update(schema_1.users)
+        .set({ avatar: avatarDataUrl ?? null })
+        .where((0, drizzle_orm_1.sql) `lower(${schema_1.users.username}) = lower(${username})`)
+        .returning({ id: schema_1.users.id });
+    if (result.length === 0)
+        return { ok: false, code: 'USER_NOT_FOUND' };
     return { ok: true };
 }
-function getUser(username) {
-    const u = users.get(username.toLowerCase());
+async function getUser(username) {
+    const [u] = await index_1.db.select({
+        username: schema_1.users.username,
+        avatar: schema_1.users.avatar,
+        recoveryCode: schema_1.users.recoveryCode,
+        createdAt: schema_1.users.createdAt,
+    })
+        .from(schema_1.users)
+        .where((0, drizzle_orm_1.sql) `lower(${schema_1.users.username}) = lower(${username})`)
+        .limit(1);
     if (!u)
         return null;
-    return { username: u.username, avatar: u.avatar, recoveryCode: u.recoveryCode, createdAt: u.createdAt };
+    return { username: u.username, avatar: u.avatar, recoveryCode: u.recoveryCode, createdAt: u.createdAt.getTime() };
 }
-function listUsers() {
-    return Array.from(users.values()).map(u => ({
+async function listUsers() {
+    const all = await index_1.db.select({
+        username: schema_1.users.username,
+        avatar: schema_1.users.avatar,
+        recoveryCode: schema_1.users.recoveryCode,
+        createdAt: schema_1.users.createdAt,
+    }).from(schema_1.users);
+    return all.map(u => ({
         username: u.username,
         avatar: u.avatar,
         recoveryCode: u.recoveryCode,
-        createdAt: u.createdAt,
+        createdAt: u.createdAt.getTime(),
     }));
 }
-function changePassword(username, recoveryCode, newPassword) {
-    const user = users.get(username.toLowerCase());
+async function changePassword(username, recoveryCode, newPassword) {
+    const [user] = await index_1.db.select()
+        .from(schema_1.users)
+        .where((0, drizzle_orm_1.sql) `lower(${schema_1.users.username}) = lower(${username})`)
+        .limit(1);
     if (!user)
         return { ok: false, code: 'USER_NOT_FOUND' };
     if (user.recoveryCode !== recoveryCode)
         return { ok: false, code: 'INVALID_CODE' };
     const salt = crypto_1.default.randomBytes(16).toString('hex');
-    user.passwordHash = hashPassword(newPassword, salt);
-    user.passwordSalt = salt;
     const newRecoveryCode = generateRecoveryCode();
-    user.recoveryCode = newRecoveryCode;
+    await index_1.db.update(schema_1.users)
+        .set({
+        passwordHash: hashPassword(newPassword, salt),
+        passwordSalt: salt,
+        recoveryCode: newRecoveryCode,
+    })
+        .where((0, drizzle_orm_1.sql) `lower(${schema_1.users.username}) = lower(${username})`);
     return { ok: true, newRecoveryCode };
 }

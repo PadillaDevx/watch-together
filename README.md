@@ -116,3 +116,86 @@ IPTV lists are managed by admins from the **Listas IPTV** tab in the admin panel
 ### CORS Proxy Security
 
 The proxy endpoint `/api/iptv/proxy` requires authentication and only forwards requests to domains that belong to admin-registered IPTV list URLs. Arbitrary URL proxying is rejected with `403 Forbidden`.
+
+---
+
+## Deployment
+
+WatchJunto is deployed as a Docker stack. PostgreSQL is used for persistent storage.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) ≥ 24 with the Compose plugin
+- A domain name (optional — required for Cloudflare Tunnel)
+
+### 1. Clone and configure
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with secure values:
+
+| Variable | Description |
+|----------|-------------|
+| `DB_PASSWORD` | PostgreSQL password (used internally by docker-compose) |
+| `ADMIN_USERNAME` | Admin login username |
+| `ADMIN_PASSWORD` | Admin login password |
+| `SECRET_KEY` | Random string ≥ 32 chars for cookie signing |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Cloudflare Tunnel token (see below) |
+
+### 2. Start the stack
+
+```bash
+npm run docker:up
+```
+
+This builds the image, starts PostgreSQL, runs DB migrations + seed, and starts the app on port 3000.
+
+| Script | Action |
+|--------|--------|
+| `npm run docker:up` | Build & start all services in background |
+| `npm run docker:down` | Stop all services |
+| `npm run docker:logs` | Follow app container logs |
+| `npm run docker:reset` | Destroy volumes + rebuild from scratch |
+
+### 3. Cloudflare Tunnel (remote access)
+
+Cloudflare Tunnel lets you expose WatchJunto on the internet without opening firewall ports.
+
+1. Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com) → **Networks → Tunnels → Create a tunnel**.
+2. Choose **Cloudflared** as the connector type.
+3. Copy the **Tunnel Token** shown during setup and paste it in `.env` as `CLOUDFLARE_TUNNEL_TOKEN`.
+4. Set the tunnel's **Public Hostname** to point to `http://app:3000` (the internal Docker service name).
+5. Run `npm run docker:up` — the `cloudflared` service will automatically connect.
+
+> If you don't need remote access, comment out the `cloudflared` service in `docker-compose.yml` and leave `CLOUDFLARE_TUNNEL_TOKEN` empty.
+
+### 4. Database management
+
+| Command | Description |
+|---------|-------------|
+| `npm run db:generate --workspace=apps/server` | Generate a new migration from schema changes |
+| `npm run db:migrate --workspace=apps/server` | Apply pending migrations |
+| `npm run db:seed --workspace=apps/server` | Re-run the seed (idempotent) |
+| `npm run db:studio --workspace=apps/server` | Open Drizzle Studio (DB browser UI) |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│  docker-compose                              │
+│                                              │
+│  ┌──────────┐    ┌──────────┐               │
+│  │  app     │───▶│    db    │  postgres:16   │
+│  │  :3000   │    │  :5432   │               │
+│  └────▲─────┘    └──────────┘               │
+│       │                                      │
+│  ┌────┴─────────┐                            │
+│  │ cloudflared  │  Cloudflare Tunnel         │
+│  └──────────────┘                            │
+└─────────────────────────────────────────────┘
+         │
+         ▼
+   Internet (via Cloudflare)
+```
