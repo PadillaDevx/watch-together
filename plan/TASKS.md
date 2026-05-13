@@ -127,16 +127,16 @@ Add the `series-episode-change` handler in `apps/server/src/socket/index.ts`. An
 
 Replace the emoji-based source-type cards with icon cards, add the `'series'` option, remove `'url'`, and apply violet hover glow styles.
 
-- [ ] In `apps/client/src/components/CreateRoomModal.tsx`: change the `sourceType` local state type to `'youtube' | 'iptv' | 'movie' | 'series'`; update the `useState` initial value and `handleSourceSelect` parameter type accordingly
-- [ ] In `CreateRoomModal.tsx`: replace the entire `<div className="grid grid-cols-2 gap-3">` card section with 4 new cards: YouTube (`<Youtube />`), Lista IPTV (`<Tv />`), Jellyfin (`<Film />`), Series Clásicas (`<Library />`) — remove the `'url'` card entirely
-- [ ] In `CreateRoomModal.tsx`: apply base card Tailwind: `flex flex-col items-center gap-3 p-5 rounded-xl border transition-all text-white border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 hover:shadow-[0_0_12px_rgba(139,92,246,0.3)]`
-- [ ] In `CreateRoomModal.tsx`: apply selected-state classes when `sourceType === option`: `border-violet-500 bg-violet-600/20 shadow-[0_0_12px_rgba(139,92,246,0.3)]` — merge with base classes conditionally
-- [ ] In `CreateRoomModal.tsx`: wrap each icon in `<div className="p-3 rounded-full bg-white/10">` before the icon component
-- [ ] In `CreateRoomModal.tsx`: replace the back-button source badge ternary chain with a `const sourceLabels: Record<string, ReactNode>` map keyed by `sourceType` that maps to `<><Icon className="w-3 h-3 inline mr-1" /> Label</>` and render as `sourceLabels[sourceType]`
-- [ ] In `CreateRoomModal.tsx`: ensure the IPTV list selector block is guarded strictly by `sourceType === 'iptv'` so it never renders for `'series'` rooms
-- [ ] In `CreateRoomModal.tsx`: verify the `adminApi.createRoom(name, maxUsers, isOpen, sourceType, iptvListId)` call passes `sourceType` correctly — `iptvListId` will be `undefined` for `'series'` which is correct; no change needed to the call itself
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] In `apps/client/src/components/CreateRoomModal.tsx`: change the `sourceType` local state type to `'youtube' | 'iptv' | 'movie' | 'series'`; update the `useState` initial value and `handleSourceSelect` parameter type accordingly
+- [x] In `CreateRoomModal.tsx`: replace the entire `<div className="grid grid-cols-2 gap-3">` card section with 4 new cards: YouTube (`<Youtube />`), Lista IPTV (`<Tv />`), Jellyfin (`<Film />`), Series Clásicas (`<Library />`) — remove the `'url'` card entirely
+- [x] In `CreateRoomModal.tsx`: apply base card Tailwind: `flex flex-col items-center gap-3 p-5 rounded-xl border transition-all text-white border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 hover:shadow-[0_0_12px_rgba(139,92,246,0.3)]`
+- [x] In `CreateRoomModal.tsx`: apply selected-state classes when `sourceType === option`: `border-violet-500 bg-violet-600/20 shadow-[0_0_12px_rgba(139,92,246,0.3)]` — merge with base classes conditionally
+- [x] In `CreateRoomModal.tsx`: wrap each icon in `<div className="p-3 rounded-full bg-white/10">` before the icon component
+- [x] In `CreateRoomModal.tsx`: replace the back-button source badge ternary chain with a `const sourceLabels: Record<string, ReactNode>` map keyed by `sourceType` that maps to `<><Icon className="w-3 h-3 inline mr-1" /> Label</>` and render as `sourceLabels[sourceType]`
+- [x] In `CreateRoomModal.tsx`: ensure the IPTV list selector block is guarded strictly by `sourceType === 'iptv'` so it never renders for `'series'` rooms
+- [x] In `CreateRoomModal.tsx`: verify the `adminApi.createRoom(name, maxUsers, isOpen, sourceType, iptvListId)` call passes `sourceType` correctly — `iptvListId` will be `undefined` for `'series'` which is correct; no change needed to the call itself
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 

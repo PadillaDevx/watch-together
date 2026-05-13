@@ -14,7 +14,7 @@ interface CreateRoomModalProps {
 
 export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [sourceType, setSourceType] = useState<'youtube' | 'iptv' | 'movie' | 'url'>('youtube');
+  const [sourceType, setSourceType] = useState<'youtube' | 'iptv' | 'movie' | 'series'>('youtube');
   const [name, setName] = useState('');
   const [maxUsers, setMaxUsers] = useState('10');
   const [isOpen, setIsOpen] = useState(true);
@@ -48,7 +48,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
     }
   }, [open, step, sourceType]);
 
-  function handleSourceSelect(type: 'youtube' | 'iptv' | 'movie' | 'url') {
+  function handleSourceSelect(type: 'youtube' | 'iptv' | 'movie' | 'series') {
     setSourceType(type);
     setStep(2);
   }
@@ -92,42 +92,32 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
         <div className="space-y-4">
           <p className="text-sm text-white/60">Elige el tipo de fuente para esta sala:</p>
           <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleSourceSelect('youtube')}
-              className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
-            >
-              <Youtube className="w-8 h-8" />
-              <span className="font-semibold">YouTube</span>
-              <span className="text-xs text-white/50 text-center">Videos y búsqueda de YouTube</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSourceSelect('iptv')}
-              className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
-            >
-              <Tv className="w-8 h-8" />
-              <span className="font-semibold">Lista IPTV</span>
-              <span className="text-xs text-white/50 text-center">Canales HLS y VOD</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSourceSelect('movie')}
-              className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
-            >
-              <Film className="w-8 h-8" />
-              <span className="font-semibold">Movies (Jellyfin)</span>
-              <span className="text-xs text-white/50 text-center">Películas y series desde tu servidor Jellyfin</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSourceSelect('url')}
-              className="flex flex-col items-center gap-3 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 transition-all text-white"
-            >
-              <Library className="w-8 h-8" />
-              <span className="font-semibold">URL directa</span>
-              <span className="text-xs text-white/50 text-center">YouTube, .m3u8, .mp4 u otro enlace de video</span>
-            </button>
+            {(
+              [
+                { type: 'youtube', Icon: Youtube, label: 'YouTube', desc: 'Videos de YouTube' },
+                { type: 'iptv',    Icon: Tv,      label: 'Lista IPTV',       desc: 'Canales en vivo y VOD' },
+                { type: 'movie',   Icon: Film,    label: 'Jellyfin',          desc: 'Tu servidor de películas' },
+                { type: 'series',  Icon: Library, label: 'Series Clásicas',   desc: 'Cartoons clásicos de tu biblioteca' },
+              ] as const
+            ).map(({ type, Icon, label, desc }) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handleSourceSelect(type)}
+                className={[
+                  'flex flex-col items-center gap-3 p-5 rounded-xl border transition-all text-white',
+                  sourceType === type
+                    ? 'border-violet-500 bg-violet-600/20 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
+                    : 'border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 hover:shadow-[0_0_12px_rgba(139,92,246,0.3)]',
+                ].join(' ')}
+              >
+                <div className="p-3 rounded-full bg-white/10">
+                  <Icon className="w-6 h-6" />
+                </div>
+                <span className="font-semibold">{label}</span>
+                <span className="text-xs text-white/50 text-center">{desc}</span>
+              </button>
+            ))}
           </div>
         </div>
       ) : (
@@ -139,7 +129,12 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
           >
             ← Cambiar fuente
             <span className="text-violet-400 font-medium">
-              {sourceType === 'youtube' ? <><Youtube className="w-3 h-3 inline mr-1" />YouTube</> : sourceType === 'movie' ? <><Film className="w-3 h-3 inline mr-1" />Movies (Jellyfin)</> : sourceType === 'url' ? <><Library className="w-3 h-3 inline mr-1" />URL directa</> : <><Tv className="w-3 h-3 inline mr-1" />Lista IPTV</>}
+              {{
+                youtube: <><Youtube className="w-3 h-3 inline mr-1" />YouTube</>,
+                iptv:    <><Tv      className="w-3 h-3 inline mr-1" />Lista IPTV</>,
+                movie:   <><Film    className="w-3 h-3 inline mr-1" />Jellyfin</>,
+                series:  <><Library className="w-3 h-3 inline mr-1" />Series Clásicas</>,
+              }[sourceType]}
             </span>
           </button>
           <Input
