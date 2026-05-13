@@ -9,6 +9,7 @@ import { createAdminRouter } from './routes/admin';
 import { searchRouter } from './routes/search';
 import { iptvRouter } from './routes/iptv';
 import { adminRouter as jellyfinAdminRouter, userRouter as jellyfinUserRouter } from './routes/jellyfin';
+import { createLibraryRouter } from './routes/library';
 import { getRoomList } from './services/rooms';
 import { validateToken } from './services/tokens';
 import { setupSocket } from './socket/index';
@@ -40,6 +41,7 @@ app.use('/api/admin/jellyfin', jellyfinAdminRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/iptv', iptvRouter);
 app.use('/api/jellyfin', jellyfinUserRouter);
+app.use('/api/library', createLibraryRouter());
 app.get('/api/rooms', (_req, res) => res.json({ rooms: getRoomList() }));
 app.get('/join/:token', async (req, res) => {
   await validateToken(req.params['token'] ?? '');

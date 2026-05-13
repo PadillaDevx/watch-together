@@ -14,6 +14,7 @@ const admin_1 = require("./routes/admin");
 const search_1 = require("./routes/search");
 const iptv_1 = require("./routes/iptv");
 const jellyfin_1 = require("./routes/jellyfin");
+const library_1 = require("./routes/library");
 const rooms_1 = require("./services/rooms");
 const tokens_1 = require("./services/tokens");
 const index_1 = require("./socket/index");
@@ -40,6 +41,7 @@ app.use('/api/admin/jellyfin', jellyfin_1.adminRouter);
 app.use('/api/search', search_1.searchRouter);
 app.use('/api/iptv', iptv_1.iptvRouter);
 app.use('/api/jellyfin', jellyfin_1.userRouter);
+app.use('/api/library', (0, library_1.createLibraryRouter)());
 app.get('/api/rooms', (_req, res) => res.json({ rooms: (0, rooms_1.getRoomList)() }));
 app.get('/join/:token', async (req, res) => {
     await (0, tokens_1.validateToken)(req.params['token'] ?? '');

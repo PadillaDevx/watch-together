@@ -98,6 +98,30 @@ export interface IPTVEntry {
   logo?: string;
 }
 
+export interface LibrarySerie {
+  id: string;
+  name: string;
+  lacartoons_serie_id: number;
+  thumbnail?: string;
+  active: boolean;
+}
+
+export interface LibraryEpisodio {
+  capitulo_numero: number;
+  titulo: string;
+  /** Raw path to the episode page (NOT the embed URL) */
+  url: string;
+}
+
+export interface LibraryTemporada {
+  temporada: number;
+  episodios: LibraryEpisodio[];
+}
+
+export interface LibrarySerieDetail extends LibrarySerie {
+  temporadas: LibraryTemporada[];
+}
+
 export interface ServerToClientEvents {
   'room-list': (rooms: RoomListItem[]) => void;
   'room-users': (users: Array<{ socketId: string; username: string; joinedAt: Date }>) => void;

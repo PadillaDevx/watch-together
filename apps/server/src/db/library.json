@@ -1,0 +1,23 @@
+[
+  {
+    "id": "coraje",
+    "name": "Coraje el Perro Cobarde",
+    "lacartoons_serie_id": 23,
+    "thumbnail": null,
+    "active": true
+  },
+  {
+    "id": "tom-y-jerry",
+    "name": "Tom y Jerry",
+    "lacartoons_serie_id": 1,
+    "thumbnail": null,
+    "active": true
+  },
+  {
+    "id": "scooby-doo",
+    "name": "Scooby-Doo",
+    "lacartoons_serie_id": 5,
+    "thumbnail": null,
+    "active": true
+  }
+]

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Room, AdminUser, Connection, Token, VideoSearchResult, IPTVList, IPTVEntry, JellyfinSearchResult } from '../types';
+import type { Room, AdminUser, Connection, Token, VideoSearchResult, IPTVList, IPTVEntry, JellyfinSearchResult, LibrarySerie, LibrarySerieDetail } from '../types';
 
 const api = axios.create({ withCredentials: true });
 
@@ -58,4 +58,13 @@ export const jellyfinApi = {
     api.get<Array<JellyfinSearchResult & { imageUrl: string; streamUrl: string }>>('/api/jellyfin/search', { params: { q } }),
   getStreamUrl: (itemId: string) =>
     api.get<{ streamUrl: string }>(`/api/jellyfin/stream-url/${itemId}`),
+};
+
+export const libraryApi = {
+  listSeries: () =>
+    api.get<LibrarySerie[]>('/api/library/series'),
+  getSerieDetail: (serieId: string) =>
+    api.get<LibrarySerieDetail>(`/api/library/series/${serieId}/episodes`),
+  resolveEmbed: (path: string) =>
+    api.get<{ embedUrl: string }>('/api/library/episode', { params: { path } }),
 };
