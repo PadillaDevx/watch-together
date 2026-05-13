@@ -3,6 +3,7 @@ import { Play, SkipForward, Loader2, AlertCircle } from 'lucide-react';
 import { useWatchProgress } from '../hooks/useWatchProgress';
 import type { LibrarySerie, LibrarySerieDetail } from '../types';
 
+/** Props for the SeriesSelector component. */
 interface SeriesSelectorProps {
   roomId: string;
   username: string;
@@ -26,6 +27,10 @@ interface SeriesSelectorProps {
 const selectClass =
   'bg-gray-800 border border-white/10 rounded-lg text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer min-w-0';
 
+/**
+ * Three-dropdown selector for serie/season/episode in a Series Clásicas room.
+ * Any authenticated user can trigger playback and episode navigation.
+ */
 export default function SeriesSelector({
   seriesList,
   serieDetail,

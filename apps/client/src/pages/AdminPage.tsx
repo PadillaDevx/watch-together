@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
-  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server,
+  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server, Library, Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Sidebar } from '../components/Sidebar';
@@ -9,10 +9,11 @@ import { CreateRoomModal } from '../components/CreateRoomModal';
 import { IPTVListManager } from '../components/IPTVListManager';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
-import { adminApi, jellyfinApi } from '../lib/api';
+import { adminApi, jellyfinApi, libraryApi } from '../lib/api';
+import { resetProgressAllRooms } from '../hooks/useWatchProgress';
 import { copyToClipboard } from '../lib/utils';
 import { useStore } from '../store';
-import type { AdminUser, Connection, Token, Room } from '../types';
+import type { AdminUser, Connection, Token, Room, LibrarySerie } from '../types';
 
 type Tab = 'rooms' | 'users' | 'connections' | 'tokens' | 'iptv' | 'jellyfin';
 
@@ -20,6 +21,16 @@ export function AdminPage() {
   const { user, rooms } = useStore();
   const [tab, setTab] = useState<Tab>('rooms');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [seriesList, setSeriesList] = useState<LibrarySerie[]>([]);
+  const [loadingSeriesLibrary, setLoadingSeriesLibrary] = useState(false);
+
+  useEffect(() => {
+    setLoadingSeriesLibrary(true);
+    libraryApi.listSeries()
+      .then(({ data }) => setSeriesList(data))
+      .catch(() => toast.error('Error al cargar la biblioteca'))
+      .finally(() => setLoadingSeriesLibrary(false));
+  }, []);
 
   if (!user?.isAdmin) return <Navigate to="/" replace />;
 
@@ -64,13 +75,44 @@ export function AdminPage() {
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-auto px-8 py-6">
+        <div className="flex-1 overflow-auto px-8 py-6 space-y-10">
           {tab === 'rooms' && <RoomsTab rooms={rooms} />}
           {tab === 'users' && <UsersTab />}
           {tab === 'connections' && <ConnectionsTab />}
           {tab === 'tokens' && <TokensTab />}
           {tab === 'iptv' && <IPTVListManager />}
           {tab === 'jellyfin' && <JellyfinTab />}
+
+          {/* Series Clásicas — Mi Progreso */}
+          <section className="border-t border-white/[0.06] pt-8">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
+              <Library className="w-5 h-5" />
+              Series Clásicas — Mi Progreso
+            </h2>
+            {loadingSeriesLibrary ? (
+              <div className="flex items-center gap-2 text-white/50">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Cargando series...
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {seriesList.map((serie) => (
+                  <div key={serie.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                    <span className="text-white text-sm">{serie.name}</span>
+                    <button
+                      onClick={() => {
+                        resetProgressAllRooms(serie.id, user!.username, rooms.map((r) => r.id));
+                        toast.success(`Progreso de ${serie.name} reseteado`);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
+                    >
+                      Resetear mi progreso
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </main>
 

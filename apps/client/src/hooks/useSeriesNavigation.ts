@@ -13,6 +13,14 @@ interface NavigationResult {
   episodio: LibraryEpisodio;
 }
 
+/**
+ * Computes next/previous episode navigation for a series room.
+ *
+ * @param params.serieDetail - Currently loaded serie with all seasons/episodes.
+ * @param params.selectedTemporada - Active season number.
+ * @param params.selectedEpisodioIndex - Active episode index within the season.
+ * @returns `{ hasNext, getNext, hasPrev, getPrev }`
+ */
 export function useSeriesNavigation({
   serieDetail,
   selectedTemporada,
@@ -23,6 +31,7 @@ export function useSeriesNavigation({
     [serieDetail],
   );
 
+  /** Returns the next episode across seasons, or `null` if at the end of the series. */
   const getNext = useCallback((): NavigationResult | null => {
     if (!serieDetail || selectedTemporada === null || selectedEpisodioIndex === null) {
       return null;
@@ -55,6 +64,7 @@ export function useSeriesNavigation({
     return null;
   }, [sortedTemporadas, selectedTemporada, selectedEpisodioIndex, serieDetail]);
 
+  /** Returns the previous episode across seasons, or `null` if at the start of the series. */
   const getPrev = useCallback((): NavigationResult | null => {
     if (!serieDetail || selectedTemporada === null || selectedEpisodioIndex === null) {
       return null;

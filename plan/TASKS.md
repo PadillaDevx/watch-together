@@ -223,15 +223,15 @@ Wire all new series state, hooks, components, socket events, and player branches
 
 Add a "Series Clásicas" section to `apps/client/src/pages/AdminPage.tsx` with per-series progress reset controls.
 
-- [ ] In `apps/client/src/pages/AdminPage.tsx`: add `useState<LibrarySerie[]>([])` for `seriesList` and `useState(false)` for `loadingSeriesLibrary`
-- [ ] In `AdminPage.tsx`: add `useEffect` on mount that calls `libraryApi.listSeries()`, sets `seriesList`, sets `loadingSeriesLibrary` during load, handles error with `toast.error('Error al cargar la biblioteca')`
-- [ ] In `AdminPage.tsx`: import `resetProgressAllRooms` from `'../hooks/useWatchProgress'` (the standalone utility function, not the hook)
-- [ ] In `AdminPage.tsx`: get `rooms` from the Zustand store with `useStore(state => state.rooms)` for use in `resetProgressAllRooms`
-- [ ] In `AdminPage.tsx`: add a "Series Clásicas" section with a heading using `<Library className="w-5 h-5 inline mr-2" />` icon from `lucide-react`
-- [ ] In `AdminPage.tsx`: render a list row per `serie` in `seriesList` showing `serie.name` and a "Resetear mi progreso" `<button>` that calls `resetProgressAllRooms(serie.id, user!.username, rooms.map(r => r.id))` on click; show a brief `toast.success` confirmation after reset
-- [ ] In `AdminPage.tsx`: show a loading spinner or skeleton while `loadingSeriesLibrary` is true
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] In `apps/client/src/pages/AdminPage.tsx`: add `useState<LibrarySerie[]>([])` for `seriesList` and `useState(false)` for `loadingSeriesLibrary`
+- [x] In `AdminPage.tsx`: add `useEffect` on mount that calls `libraryApi.listSeries()`, sets `seriesList`, sets `loadingSeriesLibrary` during load, handles error with `toast.error('Error al cargar la biblioteca')`
+- [x] In `AdminPage.tsx`: import `resetProgressAllRooms` from `'../hooks/useWatchProgress'` (the standalone utility function, not the hook)
+- [x] In `AdminPage.tsx`: get `rooms` from the Zustand store with `useStore(state => state.rooms)` for use in `resetProgressAllRooms`
+- [x] In `AdminPage.tsx`: add a "Series Clásicas" section with a heading using `<Library className="w-5 h-5 inline mr-2" />` icon from `lucide-react`
+- [x] In `AdminPage.tsx`: render a list row per `serie` in `seriesList` showing `serie.name` and a "Resetear mi progreso" `<button>` that calls `resetProgressAllRooms(serie.id, user!.username, rooms.map(r => r.id))` on click; show a brief `toast.success` confirmation after reset
+- [x] In `AdminPage.tsx`: show a loading spinner or skeleton while `loadingSeriesLibrary` is true
+- [x] Build & syntax check
+- [x] Commit
 
 ---
 
@@ -239,12 +239,12 @@ Add a "Series Clásicas" section to `apps/client/src/pages/AdminPage.tsx` with p
 
 Create architecture documentation in `docs/` and add TSDoc comments to all new code files.
 
-- [ ] Create `docs/series-architecture.md` documenting: overview of the Series Clásicas room type, full data flow (frontend dropdown selection → `handlePlay` → `libraryApi.resolveEmbed` → socket `series-episode-change` emission → server broadcast → all clients update), state management decisions (local `useState` + localStorage for progress, not Zustand), player type detection using `isDirectVideoUrl()`, socket event payloads (`series-episode-change`, `player-load` with `type: 'series'`), and the `library.json` config schema
-- [ ] Create `docs/lacartoons-scraper.md` documenting: scraping strategy overview, target URLs (`https://www.lacartoons.com/serie/[lacartoons_serie_id]` for episode lists, `https://www.lacartoons.com/serie/capitulo/[id]?t=[temporada]` for embed URL extraction), the cheerio selectors used and why, cache TTL values (5 min series list, 10 min episode detail), `library.json` config schema with a complete example entry, and instructions for adding a new serie (add entry to `library.json`, find the `lacartoons_serie_id` from the LACartoons URL, set `active: true`)
-- [ ] Add TSDoc comments to `fetchSeriesList`, `fetchSerieDetail`, `resolveEpisodeEmbed` in `apps/server/src/services/libraryService.ts` — include `@param`, `@returns`, and `@throws` tags
-- [ ] Add TSDoc comments to `useWatchProgress`, `isWatched`, `markWatched`, `resetProgress`, `getSeasonProgress`, and `resetProgressAllRooms` in `apps/client/src/hooks/useWatchProgress.ts`
-- [ ] Add TSDoc comments to `useSeriesNavigation`, `getNext`, `getPrev`, `hasNext`, `hasPrev` in `apps/client/src/hooks/useSeriesNavigation.ts`
-- [ ] Add TSDoc comment to the `SeriesSelectorProps` interface and the `SeriesSelector` component export in `apps/client/src/components/SeriesSelector.tsx`
-- [ ] Add TSDoc comments to `createLibraryRouter` and each route handler in `apps/server/src/routes/library.ts`
-- [ ] Build & syntax check
-- [ ] Commit
+- [x] Create `docs/series-architecture.md` documenting: overview of the Series Clásicas room type, full data flow (frontend dropdown selection → `handlePlay` → `libraryApi.resolveEmbed` → socket `series-episode-change` emission → server broadcast → all clients update), state management decisions (local `useState` + localStorage for progress, not Zustand), player type detection using `isDirectVideoUrl()`, socket event payloads (`series-episode-change`, `player-load` with `type: 'series'`), and the `library.json` config schema
+- [x] Create `docs/lacartoons-scraper.md` documenting: scraping strategy overview, target URLs (`https://www.lacartoons.com/serie/[lacartoons_serie_id]` for episode lists, `https://www.lacartoons.com/serie/capitulo/[id]?t=[temporada]` for embed URL extraction), the cheerio selectors used and why, cache TTL values (5 min series list, 10 min episode detail), `library.json` config schema with a complete example entry, and instructions for adding a new serie (add entry to `library.json`, find the `lacartoons_serie_id` from the LACartoons URL, set `active: true`)
+- [x] Add TSDoc comments to `fetchSeriesList`, `fetchSerieDetail`, `resolveEpisodeEmbed` in `apps/server/src/services/libraryService.ts` — include `@param`, `@returns`, and `@throws` tags
+- [x] Add TSDoc comments to `useWatchProgress`, `isWatched`, `markWatched`, `resetProgress`, `getSeasonProgress`, and `resetProgressAllRooms` in `apps/client/src/hooks/useWatchProgress.ts`
+- [x] Add TSDoc comments to `useSeriesNavigation`, `getNext`, `getPrev`, `hasNext`, `hasPrev` in `apps/client/src/hooks/useSeriesNavigation.ts`
+- [x] Add TSDoc comment to the `SeriesSelectorProps` interface and the `SeriesSelector` component export in `apps/client/src/components/SeriesSelector.tsx`
+- [x] Add TSDoc comments to `createLibraryRouter` and each route handler in `apps/server/src/routes/library.ts`
+- [x] Build & syntax check
+- [x] Commit

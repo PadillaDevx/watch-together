@@ -2,6 +2,18 @@ import { Router, type Request, type Response } from 'express';
 import { sessionAuth } from '../middleware/auth';
 import { fetchSeriesList, fetchSerieDetail, resolveEpisodeEmbed } from '../services/libraryService';
 
+/**
+ * Creates the Express router for the `/api/library` namespace.
+ *
+ * Routes:
+ * - `GET /series` — list active series
+ * - `GET /series/:serieId/episodes` — get episodes for a serie
+ * - `GET /episode?path=...` — resolve iframe embed URL for an episode
+ *
+ * All routes require session authentication.
+ *
+ * @returns Configured Express `Router`.
+ */
 export function createLibraryRouter(): Router {
   const router = Router();
 

@@ -4,6 +4,18 @@ exports.createLibraryRouter = createLibraryRouter;
 const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const libraryService_1 = require("../services/libraryService");
+/**
+ * Creates the Express router for the `/api/library` namespace.
+ *
+ * Routes:
+ * - `GET /series` — list active series
+ * - `GET /series/:serieId/episodes` — get episodes for a serie
+ * - `GET /episode?path=...` — resolve iframe embed URL for an episode
+ *
+ * All routes require session authentication.
+ *
+ * @returns Configured Express `Router`.
+ */
 function createLibraryRouter() {
     const router = (0, express_1.Router)();
     // GET /api/library/series — list all active series

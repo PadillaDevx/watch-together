@@ -52,6 +52,12 @@ function isFresh(key, ttl) {
     return ts !== undefined && Date.now() - ts < ttl;
 }
 // ── fetchSeriesList ──────────────────────────────────────────────────────────
+/**
+ * Returns the list of active series from `library.json`.
+ * Results are cached for {@link TTL_SERIES} ms.
+ *
+ * @returns Active `LibrarySerie` entries.
+ */
 async function fetchSeriesList() {
     const CACHE_KEY = 'all';
     if (isFresh(CACHE_KEY, TTL_SERIES) && seriesCache.has(CACHE_KEY)) {
@@ -80,6 +86,14 @@ async function fetchSeriesList() {
 //   Fallback (flat list with no season wrappers):
 //     If no season containers are found, all episode links are grouped into
 //     a single Temporada 1.
+/**
+ * Fetches and parses episode data for a serie by scraping LACartoons HTML.
+ * Results are cached for {@link TTL_EPISODES} ms.
+ *
+ * @param serieId - Slug matching an `id` in `library.json`.
+ * @returns Parsed `LibrarySerieDetail` with seasons and episodes.
+ * @throws `Error` if the serie is not in `library.json` or scraping fails.
+ */
 async function fetchSerieDetail(serieId) {
     const cached = episodesCache.get(serieId);
     if (cached && isFresh(serieId, TTL_EPISODES)) {
@@ -199,6 +213,14 @@ async function fetchSerieDetail(serieId) {
 // Episode page URL format: https://www.lacartoons.com/serie/capitulo/{id}?t={temporada}
 // The embed iframe has src containing "cubeembed":
 //   <iframe src="https://cubeembed.com/embed/..."></iframe>
+/**
+ * Fetches an episode page and extracts the cubeembed iframe `src` URL.
+ *
+ * @param episodePath - Raw path from `LibraryEpisodio.url` (e.g. `/serie/capitulo/42?t=1`).
+ *   May also be a full URL.
+ * @returns The embed URL string.
+ * @throws `Error` if the page is unreachable or no cubeembed iframe is found.
+ */
 async function resolveEpisodeEmbed(episodePath) {
     const fullUrl = episodePath.startsWith('/')
         ? `${LACARTOONS_BASE_URL}${episodePath}`
