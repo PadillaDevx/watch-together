@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Users, RotateCcw, Send, Link, Check,
   Play, Loader2, MessageSquare, Search, Tv, AlertCircle,
-  Film, Youtube, SkipForward,
+  Film, Youtube, SkipForward, Trophy,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useYouTube } from '../hooks/useYouTube';
@@ -17,7 +17,12 @@ import { copyToClipboard } from '../lib/utils';
 import { useStore } from '../store';
 import { Button } from '../components/ui/Button';
 import QueuePanel from '../components/QueuePanel';
-import type { ChatMessage, RoomUser, IPTVEntry, QueueItem } from '../types';
+import SeriesSelector from '../components/SeriesSelector';
+import NextEpisodeButton from '../components/NextEpisodeButton';
+import { useWatchProgress } from '../hooks/useWatchProgress';
+import { useSeriesNavigation } from '../hooks/useSeriesNavigation';
+import { libraryApi } from '../lib/api';
+import type { ChatMessage, RoomUser, IPTVEntry, QueueItem, LibrarySerie, LibrarySerieDetail } from '../types';
 
 function extractVideoId(input: string): string | null {
   const trimmed = input.trim();
@@ -70,6 +75,16 @@ export function RoomPage() {
   const [nowThumbnail, setNowThumbnail] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
   const [activeSource, setActiveSource] = useState<'youtube' | 'iptv' | 'movie' | 'url' | 'series'>(room?.sourceType ?? 'youtube');
+  // Series Classic states
+  const [seriesList, setSeriesList] = useState<LibrarySerie[]>([]);
+  const [serieDetail, setSerieDetail] = useState<LibrarySerieDetail | null>(null);
+  const [selectedSerieId, setSelectedSerieId] = useState<string | null>(null);
+  const [selectedTemporada, setSelectedTemporada] = useState<number | null>(null);
+  const [selectedEpisodioIndex, setSelectedEpisodioIndex] = useState<number | null>(null);
+  const [loadingSeries, setLoadingSeries] = useState(false);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [loadingEmbed, setLoadingEmbed] = useState(false);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
   // For 'url' rooms: tracks what player is currently active
   const [urlActivePlayer, setUrlActivePlayer] = useState<'youtube' | 'stream' | 'iframe' | null>(null);
   const urlActivePlayerRef = useRef<'youtube' | 'stream' | 'iframe' | null>(null);
@@ -83,11 +98,26 @@ export function RoomPage() {
   }, [room?.sourceType]);
 
   const isLiveRef = useRef<boolean>(false);
+
+  // Series Classic hooks
+  const watchProgress = useWatchProgress(roomId ?? '', user?.username ?? '');
+  const { hasNext, getNext } = useSeriesNavigation({ serieDetail, selectedTemporada, selectedEpisodioIndex });
+
+  // Ref to hold latest handleNext without circular deps (handleEnded -> handleNext -> loadStream)
+  const handleNextRef = useRef<() => void>(() => {});
+
   const handleEnded = useCallback(() => {
+    if (activeSource === 'series' && selectedSerieId && selectedTemporada !== null && selectedEpisodioIndex !== null) {
+      const temporadaData = serieDetail?.temporadas.find(t => t.temporada === selectedTemporada);
+      const episodio = temporadaData?.episodios[selectedEpisodioIndex];
+      if (episodio) watchProgress.markWatched(selectedSerieId, selectedTemporada, episodio.capitulo_numero);
+      handleNextRef.current();
+      return;
+    }
     if (!isLiveRef.current) {
       socket.emit('queue-next', { roomId: roomId! });
     }
-  }, [roomId]);
+  }, [roomId, activeSource, selectedSerieId, selectedTemporada, selectedEpisodioIndex, serieDetail, watchProgress]);
 
   // YouTube player
   const { loadVideo, remotePlay, remotePause, remoteSeek, getCurrentTime } = useYouTube({
@@ -116,6 +146,53 @@ export function RoomPage() {
   });
   useEffect(() => { isLiveRef.current = isLive; }, [isLive]);
 
+  // handleNext for series — defined after loadStream to avoid circular dependency
+  const handleNext = useCallback(async () => {
+    if (!hasNext) {
+      if (selectedSerieId) {
+        toast('¡Terminaste la serie!', { icon: <Trophy className="w-4 h-4" /> });
+      }
+      return;
+    }
+    const next = getNext();
+    if (!next) return;
+    // Mark current episode as watched
+    if (selectedSerieId && selectedTemporada !== null && selectedEpisodioIndex !== null) {
+      const temporadaData = serieDetail?.temporadas.find(t => t.temporada === selectedTemporada);
+      const currentEpisodio = temporadaData?.episodios[selectedEpisodioIndex];
+      if (currentEpisodio) watchProgress.markWatched(selectedSerieId, selectedTemporada, currentEpisodio.capitulo_numero);
+    }
+    setSelectedTemporada(next.temporada);
+    setSelectedEpisodioIndex(next.episodioIndex);
+    try {
+      const { data } = await libraryApi.resolveEmbed(next.episodio.url);
+      const embedUrl = data.embedUrl;
+      socket.emit('series-episode-change', {
+        roomId: roomId!,
+        serieId: selectedSerieId!,
+        serieName: serieDetail!.name,
+        temporada: next.temporada,
+        episodioIndex: next.episodioIndex,
+        embedUrl,
+        titulo: next.episodio.titulo,
+      });
+      if (isDirectVideoUrl(embedUrl)) {
+        loadStream(embedUrl);
+      } else {
+        setCurrentStreamUrl(embedUrl);
+        setUrlActivePlayer('iframe');
+        urlActivePlayerRef.current = 'iframe';
+      }
+    } catch {
+      toast.error('Error al cargar el siguiente episodio');
+    }
+  }, [hasNext, getNext, selectedSerieId, selectedTemporada, selectedEpisodioIndex, serieDetail, watchProgress, roomId, loadStream]);
+
+  // Keep handleNextRef in sync so handleEnded can call the latest version
+  useEffect(() => {
+    handleNextRef.current = handleNext;
+  }, [handleNext]);
+
   // Join room on mount, leave on unmount
   useEffect(() => {
     if (!roomId) return;
@@ -129,7 +206,7 @@ export function RoomPage() {
   // Socket events
   useEffect(() => {
     function onRoomUsers(list: RoomUser[]) { setUsers(list); }
-    function onSyncState(state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url'; queue?: QueueItem[]; title?: string | null; thumbnail?: string | null }) {
+    function onSyncState(state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; queue?: QueueItem[]; title?: string | null; thumbnail?: string | null }) {
       setActiveSource(state.sourceType);
       sourceTypeRef.current = state.sourceType;
       if (state.queue) setQueue(state.queue);
@@ -166,6 +243,18 @@ export function RoomPage() {
             else remotePause(state.currentTime);
           }, 1000);
         }
+      } else if (state.sourceType === 'series') {
+        if (state.streamUrl) {
+          setCurrentStreamUrl(state.streamUrl);
+          if (isDirectVideoUrl(state.streamUrl)) {
+            setUrlActivePlayer('stream');
+            urlActivePlayerRef.current = 'stream';
+            loadStream(state.streamUrl);
+          } else {
+            setUrlActivePlayer('iframe');
+            urlActivePlayerRef.current = 'iframe';
+          }
+        }
       }
     }
     function onPlayerPlay({ currentTime }: { currentTime: number }) {
@@ -193,7 +282,7 @@ export function RoomPage() {
         else if (urlActivePlayerRef.current === 'stream') hlsSeek(currentTime);
       } else remoteSeek(currentTime);
     }
-    function onPlayerLoad(data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string }) {
+    function onPlayerLoad(data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string } | { type: 'series'; embedUrl: string; title?: string }) {
       if (data.type === 'youtube') {
         setCurrentVideoId(data.videoId);
         setEmbedError(null);
@@ -213,6 +302,17 @@ export function RoomPage() {
         } else {
           loadStream(data.streamUrl);
         }
+      } else if (data.type === 'series') {
+        if (isDirectVideoUrl(data.embedUrl)) {
+          loadStream(data.embedUrl);
+          setUrlActivePlayer('stream');
+          urlActivePlayerRef.current = 'stream';
+        } else {
+          setCurrentStreamUrl(data.embedUrl);
+          setUrlActivePlayer('iframe');
+          urlActivePlayerRef.current = 'iframe';
+        }
+        if (data.title) setNowTitle(data.title);
       }
     }
     function onChatMessage(msg: ChatMessage) {
@@ -235,17 +335,32 @@ export function RoomPage() {
       if (code === 'WRONG_PIN') { toast.error('PIN incorrecto'); navigate('/'); }
     }
     function onQueueUpdate(q: QueueItem[]) { setQueue(q); }
-    function onSourceSwitched(data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' }) {
+    function onSourceSwitched(data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' }) {
       sourceTypeRef.current = data.sourceType;
       setActiveSource(data.sourceType);
       setQueue([]);
       setNowTitle(null);
       setNowThumbnail(null);
-      if (data.sourceType === 'url') {
+      if (data.sourceType === 'url' || data.sourceType === 'series') {
         setUrlActivePlayer(null);
         urlActivePlayerRef.current = null;
       }
     }
+
+    const onSeriesEpisodeChange = (data: { serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => {
+      setSelectedSerieId(data.serieId);
+      setSelectedTemporada(data.temporada);
+      setSelectedEpisodioIndex(data.episodioIndex);
+      if (isDirectVideoUrl(data.embedUrl)) {
+        loadStream(data.embedUrl);
+        setUrlActivePlayer('stream');
+        urlActivePlayerRef.current = 'stream';
+      } else {
+        setCurrentStreamUrl(data.embedUrl);
+        setUrlActivePlayer('iframe');
+        urlActivePlayerRef.current = 'iframe';
+      }
+    };
 
     socket.on('room-users', onRoomUsers);
     socket.on('sync-state', onSyncState);
@@ -259,6 +374,7 @@ export function RoomPage() {
     socket.on('error', onError);
     socket.on('queue-update', onQueueUpdate);
     socket.on('source-switched', onSourceSwitched);
+    socket.on('series-episode-change', onSeriesEpisodeChange);
 
     return () => {
       socket.off('room-users', onRoomUsers);
@@ -273,6 +389,7 @@ export function RoomPage() {
       socket.off('error', onError);
       socket.off('queue-update', onQueueUpdate);
       socket.off('source-switched', onSourceSwitched);
+      socket.off('series-episode-change', onSeriesEpisodeChange);
     };
   }, [loadVideo, remotePlay, remotePause, remoteSeek, loadStream, hlsPlay, hlsPause, hlsSeek, navigate]);
 
@@ -347,6 +464,84 @@ export function RoomPage() {
     socket.emit('chat-message', { roomId: roomId!, text: chatInput.trim() });
     setChatInput('');
   }
+
+  const handleSerieChange = useCallback(async (serieId: string) => {
+    setSelectedSerieId(serieId);
+    setSelectedTemporada(null);
+    setSelectedEpisodioIndex(null);
+    setSerieDetail(null);
+    setLoadingEpisodes(true);
+    try {
+      const { data } = await libraryApi.getSerieDetail(serieId);
+      setSerieDetail(data);
+      if (data.temporadas.length > 0) {
+        setSelectedTemporada([...data.temporadas].sort((a, b) => a.temporada - b.temporada)[0].temporada);
+      }
+    } catch {
+      setSeriesError('Error al cargar los episodios');
+    } finally {
+      setLoadingEpisodes(false);
+    }
+  }, []);
+
+  function handleTemporadaChange(temporada: number) {
+    setSelectedTemporada(temporada);
+    setSelectedEpisodioIndex(null);
+  }
+
+  function handleEpisodioChange(index: number) {
+    setSelectedEpisodioIndex(index);
+  }
+
+  const handlePlay = useCallback(async () => {
+    if (selectedSerieId == null || selectedTemporada == null || selectedEpisodioIndex == null) return;
+    const temporadaData = serieDetail?.temporadas.find(t => t.temporada === selectedTemporada);
+    const episodio = temporadaData?.episodios[selectedEpisodioIndex];
+    if (!episodio) return;
+    setLoadingEmbed(true);
+    try {
+      const { data } = await libraryApi.resolveEmbed(episodio.url);
+      const embedUrl = data.embedUrl;
+      socket.emit('series-episode-change', {
+        roomId: roomId!,
+        serieId: selectedSerieId,
+        serieName: serieDetail!.name,
+        temporada: selectedTemporada,
+        episodioIndex: selectedEpisodioIndex,
+        embedUrl,
+        titulo: episodio.titulo,
+      });
+      if (isDirectVideoUrl(embedUrl)) {
+        loadStream(embedUrl);
+        setUrlActivePlayer('stream');
+        urlActivePlayerRef.current = 'stream';
+      } else {
+        setCurrentStreamUrl(embedUrl);
+        setUrlActivePlayer('iframe');
+        urlActivePlayerRef.current = 'iframe';
+      }
+    } catch {
+      toast.error('Error al cargar el episodio');
+    } finally {
+      setLoadingEmbed(false);
+    }
+  }, [selectedSerieId, selectedTemporada, selectedEpisodioIndex, serieDetail, roomId, loadStream]);
+
+  // Load series list when room source is 'series'
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (activeSource !== 'series' || seriesList.length > 0) return;
+    setLoadingSeries(true);
+    libraryApi.listSeries()
+      .then(({ data }) => {
+        setSeriesList(data);
+        if (selectedSerieId === null && data.length > 0) {
+          handleSerieChange(data[0].id);
+        }
+      })
+      .catch(() => setSeriesError('Error al cargar las series'))
+      .finally(() => setLoadingSeries(false));
+  }, [activeSource]);
 
   async function copyRoomLink() {
     await copyToClipboard(window.location.href);
@@ -477,6 +672,40 @@ export function RoomPage() {
               </>
             )}
 
+            {/* Series Classic player */}
+            {activeSource === 'series' && (
+              <>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full"
+                  controls
+                  playsInline
+                  style={{ display: urlActivePlayer === 'stream' ? 'block' : 'none' }}
+                />
+                {urlActivePlayer === 'iframe' && currentStreamUrl && (
+                  <div className="absolute inset-0">
+                    <iframe
+                      ref={iframeRef}
+                      src={currentStreamUrl}
+                      className="w-full h-full border-0"
+                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+                {urlActivePlayer === null && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-3 pointer-events-none">
+                    <Film className="h-12 w-12" />
+                    <p className="text-sm">Selecciona una serie y episodio para comenzar</p>
+                  </div>
+                )}
+                <NextEpisodeButton
+                  visible={hasNext}
+                  onClick={handleNext}
+                />
+              </>
+            )}
+
             {/* URL room: auto-detect player */}
             {activeSource === 'url' && (
               <>
@@ -579,6 +808,26 @@ export function RoomPage() {
               >
                 <Film className="h-4 w-4" /> Jellyfin
               </button>
+            ) : activeSource === 'series' ? (
+              <SeriesSelector
+                roomId={roomId!}
+                username={user?.username ?? ''}
+                seriesList={seriesList}
+                serieDetail={serieDetail}
+                selectedSerieId={selectedSerieId}
+                selectedTemporada={selectedTemporada}
+                selectedEpisodioIndex={selectedEpisodioIndex}
+                loadingEpisodes={loadingEpisodes}
+                loadingSeries={loadingSeries}
+                loadingEmbed={loadingEmbed}
+                onSerieChange={handleSerieChange}
+                onTemporadaChange={handleTemporadaChange}
+                onEpisodioChange={handleEpisodioChange}
+                onPlay={handlePlay}
+                onNext={handleNext}
+                hasNext={hasNext}
+                watchProgress={watchProgress}
+              />
             ) : (
               <form onSubmit={handleLoadUrl} className="flex-1 flex gap-2">
                 <div className="flex-1 relative">
