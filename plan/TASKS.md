@@ -202,7 +202,7 @@ Coverage target: >= 80% for tested files.
   - [x] Run `vitest run --coverage` from `apps/client/` and confirm >= 80% coverage on tested files
   - [x] Fix any failing tests
   - [x] **Build check**: run `tsc --noEmit` from `apps/client/` — zero TypeScript errors
-  - [ ] **Commit**: `feat: add vitest test suite for series hooks`
+  - [x] **Commit**: `feat: add vitest test suite for series hooks`
 
 ---
 
@@ -211,7 +211,7 @@ There are 42 files with uncommitted changes representing improvements to all ser
 features, design system (CSS variables, scrollbar), LobbyPage redesign, typing indicators,
 latency compensation (`sentAt`), and fake fullscreen. Consolidate into a clean commit.
 
-  - [ ] Run `tsc --noEmit` in both `apps/client/` and `apps/server/` — confirm zero errors
-  - [ ] Run `npm run build` from project root — confirm build succeeds
-  - [ ] Review `git diff --stat HEAD` to confirm all expected files are staged
-  - [ ] Commit all changes: `feat: improvements — fake fullscreen, design system, typing indicators, latency compensation`
+  - [x] Run `tsc --noEmit` in both `apps/client/` and `apps/server/` — confirm zero errors
+  - [x] Run `npm run build` from project root — confirm build succeeds
+  - [x] Review `git diff --stat HEAD` to confirm all expected files are staged
+  - [x] Commit all changes: `feat: improvements — fake fullscreen, design system, typing indicators, latency compensation`
