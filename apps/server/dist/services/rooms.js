@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports._rooms = void 0;
+exports.addTypingUser = addTypingUser;
+exports.removeTypingUser = removeTypingUser;
+exports.removeTypingUserFromAll = removeTypingUserFromAll;
 exports.initRooms = initRooms;
 exports.createRoom = createRoom;
 exports.deleteRoom = deleteRoom;
@@ -24,8 +27,25 @@ const schema_1 = require("../db/schema");
 // Room metadata is persisted in DB. Connected users, chat, and player state
 // are ephemeral and stored only in memory during a session.
 exports._rooms = new Map();
+// Typing indicator state: roomId -> Set<username>
+const _typingUsers = new Map();
+function addTypingUser(roomId, username) {
+    if (!_typingUsers.has(roomId))
+        _typingUsers.set(roomId, new Set());
+    _typingUsers.get(roomId).add(username);
+    return Array.from(_typingUsers.get(roomId));
+}
+function removeTypingUser(roomId, username) {
+    _typingUsers.get(roomId)?.delete(username);
+    return Array.from(_typingUsers.get(roomId) ?? []);
+}
+function removeTypingUserFromAll(username) {
+    for (const typingSet of _typingUsers.values()) {
+        typingSet.delete(username);
+    }
+}
 // ─── DB helpers ───────────────────────────────────────────────────────────────
-function buildRoomFromDb(dbRoom, queue = []) {
+function buildRoomFromDb(dbRoom, queue = [], createdByUsername) {
     return {
         id: dbRoom.id,
         name: dbRoom.name,
@@ -35,6 +55,7 @@ function buildRoomFromDb(dbRoom, queue = []) {
         createdAt: dbRoom.createdAt.getTime(),
         sourceType: dbRoom.sourceType,
         iptvListId: dbRoom.iptvListId ?? undefined,
+        createdByUsername,
         playerState: {
             videoId: null,
             streamUrl: null,
@@ -74,7 +95,7 @@ async function initRooms() {
     console.log(`[Rooms] Loaded ${dbRooms.length} room(s) from DB`);
 }
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
-async function createRoom(name, maxUsers, isOpen, sourceType = 'youtube', iptvListId) {
+async function createRoom(name, maxUsers, isOpen, sourceType = 'youtube', iptvListId, createdByUsername) {
     const pin = isOpen ? null : String(Math.floor(100000 + Math.random() * 900000));
     const [dbRoom] = await index_1.db.insert(schema_1.rooms).values({
         name,
@@ -84,7 +105,7 @@ async function createRoom(name, maxUsers, isOpen, sourceType = 'youtube', iptvLi
         sourceType,
         iptvListId: iptvListId ?? null,
     }).returning();
-    const room = buildRoomFromDb(dbRoom);
+    const room = buildRoomFromDb(dbRoom, [], createdByUsername);
     exports._rooms.set(room.id, room);
     return room;
 }
@@ -109,6 +130,7 @@ function getRoomList() {
         isOpen: room.isOpen,
         pinProtected: !!room.pin,
         createdAt: room.createdAt,
+        createdByUsername: room.createdByUsername,
         sourceType: room.sourceType,
         iptvListId: room.iptvListId,
         playerState: room.playerState,

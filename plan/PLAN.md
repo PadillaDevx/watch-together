@@ -1,3 +1,105 @@
+<CUSTOM_PLAN>
+
+# WatchJunto — Implementation Plan (Processed)
+
+**Status:** Plan fully analyzed. Ready for implementation.
+**Date processed:** 2026-05-14
+**Plan version:** 1.0 (Original + Detailed)
+
+---
+
+## Codebase Pre-Implementation Audit
+
+Before writing a single line of code, the following was verified against the
+live workspace at `apps/client/src/` and `apps/server/src/`:
+
+### Already Implemented (can skip or verify-only)
+
+| Phase | Item | Status |
+|-------|------|--------|
+| Phase 0 | Emoji removal from `apps/client/src/` | DONE — no emoji characters found in any .tsx/.ts file |
+| Phase 1 | `sourceType` union extended to include `series` in `client/types.ts` | DONE |
+| Phase 1 | `sourceType` union includes `series` in all server type locations (`types.ts`) | DONE |
+| Phase 1 | `player-load` discriminated union includes `{ type: series; embedUrl: string }` | DONE |
+| Phase 1 | `series-episode-change` event in both `ServerToClientEvents` and `ClientToServerEvents` | DONE |
+| Phase 2 | `apps/server/src/services/libraryService.ts` created | EXISTS |
+| Phase 3 | `apps/server/src/routes/library.ts` created | EXISTS |
+| Phase 7 | `apps/client/src/hooks/useWatchProgress.ts` created | EXISTS |
+| Phase 7 | `apps/client/src/hooks/useSeriesNavigation.ts` created | EXISTS |
+| Phase 8 | `apps/client/src/components/SeriesSelector.tsx` created | EXISTS |
+| Phase 8 | `apps/client/src/components/NextEpisodeButton.tsx` created | EXISTS |
+
+### Remaining Work (must be verified and completed)
+
+- **Phase 3** — Verify `createLibraryRouter()` is registered in `apps/server/src/index.ts`
+- **Phase 4** — Verify `series-episode-change` socket handler exists in `apps/server/src/socket/index.ts`
+- **Phase 5** — Verify `series` is accepted in `routes/admin.ts` room creation handler
+- **Phase 6** — Verify `CreateRoomModal.tsx` has been redesigned (4 cards with lucide-react icons, "Series Clasicas" option)
+- **Phase 9** — Verify `RoomPage.tsx` integrates `SeriesSelector`, `NextEpisodeButton`, `useWatchProgress`, `useSeriesNavigation`
+- **Phase 10** — Verify `AdminPage.tsx` has the progress-reset section for Classic Series
+- **Phase 11** — Run `npx tsc --noEmit` in both `apps/client/` and `apps/server/`; run final emoji scan
+
+---
+
+## Critical Implementation Notes
+
+### 1. LACartoons scraper selectors (Phase 2 — highest risk)
+`libraryService.ts` exists but its cheerio selectors for
+`fetchSerieDetail()` and `resolveEpisodeEmbed()` must be validated against
+the live HTML of `https://www.lacartoons.com`. The selector for the cubeembed
+iframe (`iframe[src*="cubeembed"]`) and season/episode DOM structure must match
+the actual page. If the site has changed its HTML structure, update the selectors
+and document them in `docs/lacartoons-scraper.md`.
+
+### 2. `library.ts` route registration (Phase 3)
+Confirm `app.use("/api/library", createLibraryRouter())` is present in
+`apps/server/src/index.ts`. If missing, add it alongside the existing
+`app.use("/api/...") ` lines.
+
+### 3. `sync-state` sourceType bug (Phase 1)
+The original plan noted that `ServerToClientEvents["sync-state"]` previously
+narrowed `sourceType` to `youtube | iptv | movie` (missing `url`).
+This bug has been fixed in the current `types.ts` which now includes all five
+variants including `series`. No action needed if already confirmed.
+
+### 4. Any-user episode control (intentional)
+The `series-episode-change` socket handler does NOT require admin status.
+Any authenticated user in the room can change the current episode.
+This is intentional product behavior for Classic Series rooms.
+Do not add an isAdmin guard to this handler.
+
+### 5. Iframe playback sync limitation (known)
+`player-play`, `player-pause`, and `player-seek` socket events are no-ops for
+cross-origin iframe content (series embed URLs). This is the same known
+limitation that already exists for `sourceType === "url"` rooms. Do not attempt
+to fix this — it is out of scope for this plan.
+
+### 6. Watch progress is local (localStorage only)
+The `useWatchProgress` hook stores episode progress in `localStorage` keyed by
+`watchjunto_watched_{roomId}_{username}`. This is intentionally not synced to
+the database. The progress is per-device, per-user, per-room. The AdminPage
+reset button only clears localStorage on the local device.
+
+### 7. Ordered implementation sequence (from DETAILED_PLAN)
+If implementing from scratch or completing remaining phases, follow this order
+to minimize TypeScript errors:
+  1. Phase 1 — Types (client + server)
+  2. Phase 0 — Emoji audit
+  3. Phase 2 — libraryService.ts
+  4. Phase 3 — library.ts route + api.ts libraryApi
+  5. Phase 4 — series-episode-change socket handler
+  6. Phase 5 — Room creation with series sourceType
+  7. Phase 6 — CreateRoomModal redesign
+  8. Phase 7 — useWatchProgress + useSeriesNavigation hooks
+  9. Phase 8 — SeriesSelector + NextEpisodeButton components
+  10. Phase 9 — RoomPage.tsx full integration
+  11. Phase 10 — AdminPage progress reset
+  12. Phase 11 — tsc --noEmit + emoji scan
+
+---
+
+</CUSTOM_PLAN>
+
 <ORIGINAL_PLAN>
 
 Implementa las siguientes mejoras en WatchJunto. Todo completo y funcional.

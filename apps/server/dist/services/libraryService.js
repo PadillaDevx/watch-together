@@ -117,39 +117,30 @@ async function fetchSerieDetail(serieId) {
     }
     const $ = cheerio.load(html);
     const temporadas = [];
-    // ── Attempt 1: season containers with class .temporada ────────────────────
-    // Expected markup:
-    //   <div class="temporada" data-temporada="1">
-    //     <h3>Temporada 1</h3>
-    //     <ul>
-    //       <li><a href="/serie/capitulo/42?t=1">Título del episodio</a></li>
-    //     </ul>
-    //   </div>
-    const seasonContainers = $('.temporada, [data-temporada], .season, .capitulos-temporada');
-    if (seasonContainers.length > 0) {
-        seasonContainers.each((_i, el) => {
-            const $el = $(el);
-            // Determine season number from data attribute, heading text, or index
-            const dataTem = $el.attr('data-temporada') ?? $el.attr('data-season');
-            let temporadaNum = dataTem ? parseInt(dataTem, 10) : NaN;
-            if (isNaN(temporadaNum)) {
-                // Try to read it from a heading inside the container
-                const headingText = $el.find('h1, h2, h3, h4').first().text();
-                const match = headingText.match(/\d+/);
-                temporadaNum = match ? parseInt(match[0], 10) : temporadas.length + 1;
-            }
+    // ── Attempt 1: LACartoons structure ───────────────────────────────────────
+    // Season headers: <h4 class="accordion estilo-temporada" data-temporada-id="N">
+    // Episodes panel: <div class="episodio-panel"> (immediately next sibling of h4)
+    const seasonHeaders = $('h4[data-temporada-id]');
+    if (seasonHeaders.length > 0) {
+        seasonHeaders.each((_i, el) => {
+            const $header = $(el);
+            const temporadaId = $header.attr('data-temporada-id');
+            const temporadaNum = temporadaId ? parseInt(temporadaId, 10) : temporadas.length + 1;
+            // Episodes are in the next sibling div.episodio-panel
+            const $panel = $header.next('.episodio-panel');
             const episodios = [];
-            // Episode links: <a href="/serie/capitulo/ID?t=N">Title</a>
-            $el.find('a[href*="/serie/capitulo/"]').each((_j, anchor) => {
+            $panel.find('a[href*="/serie/capitulo/"]').each((_j, anchor) => {
                 const $a = $(anchor);
                 const href = $a.attr('href') ?? '';
-                const titulo = $a.text().trim();
                 if (!href)
                     return;
-                // Extract capitulo number from URL path or title prefix (e.g. "Cap. 3 - ...")
+                // Normalize whitespace: span + text nodes produce extra spaces
+                const titulo = $a.text().trim().replace(/\s+/g, ' ');
+                // Chapter number: "Capitulo X" in title takes priority over URL id
+                const capMatch = titulo.match(/Capitulo[s]?\s+(\d+)/i)
+                    ?? titulo.match(/Cap\.?\s*(\d+)/i);
                 const urlMatch = href.match(/\/serie\/capitulo\/(\d+)/);
                 let capNum;
-                const capMatch = titulo.match(/^(?:Cap(?:ítulo)?\.?\s*)?(\d+)/i);
                 if (capMatch) {
                     capNum = parseInt(capMatch[1], 10);
                 }
@@ -211,8 +202,8 @@ async function fetchSerieDetail(serieId) {
 }
 // ── resolveEpisodeEmbed ──────────────────────────────────────────────────────
 // Episode page URL format: https://www.lacartoons.com/serie/capitulo/{id}?t={temporada}
-// The embed iframe has src containing "cubeembed":
-//   <iframe src="https://cubeembed.com/embed/..."></iframe>
+// The embed iframe has src from ok.ru:
+//   <iframe src="https://ok.ru/videoembed/..."></iframe>
 /**
  * Fetches an episode page and extracts the cubeembed iframe `src` URL.
  *
@@ -237,9 +228,21 @@ async function resolveEpisodeEmbed(episodePath) {
         throw new Error(`LACartoons: no se pudo obtener la página del episodio: ${String(err)}`);
     }
     const $ = cheerio.load(html);
-    // Expected: <iframe src="https://...cubeembed..."> anywhere in body
-    const iframe = $('iframe[src*="cubeembed"]');
-    const embedSrc = iframe.attr('src');
+    // LACartoons uses ok.ru/videoembed iframes, but we try multiple known patterns
+    // to be resilient to future changes:
+    //   1. ok.ru/videoembed (current, confirmed May 2026)
+    //   2. Any <iframe> inside the main content area as fallback
+    let embedSrc;
+    // Pattern 1: ok.ru embed (confirmed)
+    embedSrc = $('iframe[src*="ok.ru"]').attr('src');
+    // Pattern 2: any iframe with a video embed src (cubeembed, rutube, etc.)
+    if (!embedSrc) {
+        embedSrc = $('iframe[src*="embed"]').attr('src');
+    }
+    // Pattern 3: any iframe at all (last resort)
+    if (!embedSrc) {
+        embedSrc = $('iframe').first().attr('src');
+    }
     if (!embedSrc) {
         throw new Error(`LACartoons: embed no encontrado en ${fullUrl}`);
     }

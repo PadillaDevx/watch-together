@@ -10,11 +10,32 @@ import type { Room, RoomListItem, PlayerState, ChatMessage, QueueItem } from '..
 
 export const _rooms = new Map<string, Room>();
 
+// Typing indicator state: roomId -> Set<username>
+const _typingUsers = new Map<string, Set<string>>();
+
+export function addTypingUser(roomId: string, username: string): string[] {
+  if (!_typingUsers.has(roomId)) _typingUsers.set(roomId, new Set());
+  _typingUsers.get(roomId)!.add(username);
+  return Array.from(_typingUsers.get(roomId)!);
+}
+
+export function removeTypingUser(roomId: string, username: string): string[] {
+  _typingUsers.get(roomId)?.delete(username);
+  return Array.from(_typingUsers.get(roomId) ?? []);
+}
+
+export function removeTypingUserFromAll(username: string): void {
+  for (const typingSet of _typingUsers.values()) {
+    typingSet.delete(username);
+  }
+}
+
 // ─── DB helpers ───────────────────────────────────────────────────────────────
 
 function buildRoomFromDb(
   dbRoom: typeof roomsTable.$inferSelect,
   queue: QueueItem[] = [],
+  createdByUsername?: string,
 ): Room {
   return {
     id: dbRoom.id,
@@ -25,6 +46,7 @@ function buildRoomFromDb(
     createdAt: dbRoom.createdAt.getTime(),
     sourceType: dbRoom.sourceType as 'youtube' | 'iptv' | 'movie' | 'url' | 'series',
     iptvListId: dbRoom.iptvListId ?? undefined,
+    createdByUsername,
     playerState: {
       videoId: null,
       streamUrl: null,
@@ -78,6 +100,7 @@ export async function createRoom(
   isOpen: boolean,
   sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' = 'youtube',
   iptvListId?: string,
+  createdByUsername?: string,
 ): Promise<Room> {
   const pin = isOpen ? null : String(Math.floor(100000 + Math.random() * 900000));
 
@@ -90,7 +113,7 @@ export async function createRoom(
     iptvListId: iptvListId ?? null,
   }).returning();
 
-  const room = buildRoomFromDb(dbRoom!);
+  const room = buildRoomFromDb(dbRoom!, [], createdByUsername);
   _rooms.set(room.id, room);
   return room;
 }
@@ -120,6 +143,7 @@ export function getRoomList(): RoomListItem[] {
     isOpen: room.isOpen,
     pinProtected: !!room.pin,
     createdAt: room.createdAt,
+    createdByUsername: room.createdByUsername,
     sourceType: room.sourceType,
     iptvListId: room.iptvListId,
     playerState: room.playerState,

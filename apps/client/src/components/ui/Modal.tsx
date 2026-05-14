@@ -27,7 +27,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-md', u
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className={clsx('relative w-full bg-surface-raised border border-white/[0.08] rounded-2xl shadow-2xl animate-slide-up', maxWidth)}
+        className={clsx('relative w-full bg-raised border border-white/[0.08] rounded-2xl shadow-2xl animate-slide-up', maxWidth)}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (

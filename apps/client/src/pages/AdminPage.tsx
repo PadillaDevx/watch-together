@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
-  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server, Library, Loader2,
+  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server, Library, Loader2, Menu,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Sidebar } from '../components/Sidebar';
@@ -9,6 +9,8 @@ import { CreateRoomModal } from '../components/CreateRoomModal';
 import { IPTVListManager } from '../components/IPTVListManager';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
+import { MobileDrawer } from '../components/MobileDrawer';
+import { useMobileDrawer } from '../hooks/useMobileDrawer';
 import { adminApi, jellyfinApi, libraryApi } from '../lib/api';
 import { resetProgressAllRooms } from '../hooks/useWatchProgress';
 import { copyToClipboard } from '../lib/utils';
@@ -23,6 +25,7 @@ export function AdminPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [seriesList, setSeriesList] = useState<LibrarySerie[]>([]);
   const [loadingSeriesLibrary, setLoadingSeriesLibrary] = useState(false);
+  const sidebarDrawer = useMobileDrawer();
 
   useEffect(() => {
     setLoadingSeriesLibrary(true);
@@ -35,25 +38,40 @@ export function AdminPage() {
   if (!user?.isAdmin) return <Navigate to="/" replace />;
 
   return (
-    <div className="flex h-screen bg-[#0d0d1f] text-white overflow-hidden">
+    <div className="flex h-screen bg-base text-white overflow-hidden">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
+
+      <MobileDrawer isOpen={sidebarDrawer.isOpen} onClose={sidebarDrawer.close} side="left">
+        <Sidebar embedded onNavigate={sidebarDrawer.close} />
+      </MobileDrawer>
+
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <div className="px-8 py-6 border-b border-white/[0.06] flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white">Panel de administración</h1>
-              <p className="text-sm text-white/40 mt-0.5">Gestiona salas, usuarios y conexiones</p>
+        <div className="px-4 sm:px-6 md:px-8 py-4 md:py-6 border-b border-white/[0.06] flex-shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={sidebarDrawer.toggle}
+                className="md:hidden p-2 -ml-2 rounded-lg text-white/60 hover:text-white hover:bg-white/8 transition-colors flex-shrink-0"
+                aria-label="Abrir menú"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-xl font-bold text-white truncate">Panel de administración</h1>
+                <p className="text-xs md:text-sm text-white/40 mt-0.5 hidden sm:block">Gestiona salas, usuarios y conexiones</p>
+              </div>
             </div>
             {tab === 'rooms' && (
-              <Button onClick={() => setIsCreateOpen(true)}>
-                <Plus className="h-4 w-4" /> Nueva sala
+              <Button onClick={() => setIsCreateOpen(true)} className="flex-shrink-0">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nueva sala</span>
               </Button>
             )}
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-5">
+          {/* Tabs — horizontal scroll on mobile */}
+          <div className="flex gap-1 mt-4 md:mt-5 overflow-x-auto -mx-1 px-1 pb-1">
             {([
               { id: 'rooms', label: 'Salas', icon: Tv },
               { id: 'users', label: 'Usuarios', icon: Users },
@@ -65,7 +83,7 @@ export function AdminPage() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap ${tab === id ? 'bg-accent-muted text-accent-lighter' : 'text-white/40 hover:text-white hover:bg-white/5'
                   }`}
               >
                 <Icon className="h-3.5 w-3.5" /> {label}
@@ -75,7 +93,7 @@ export function AdminPage() {
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-auto px-8 py-6 space-y-10">
+        <div className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-6 space-y-10">
           {tab === 'rooms' && <RoomsTab rooms={rooms} />}
           {tab === 'users' && <UsersTab />}
           {tab === 'connections' && <ConnectionsTab />}
@@ -149,36 +167,62 @@ function RoomsTab({ rooms }: { rooms: Room[] }) {
       {rooms.length === 0 ? (
         <EmptyState message="No hay salas" />
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-white/40 border-b border-white/[0.06]">
-              <th className="text-left pb-3">Nombre</th>
-              <th className="text-left pb-3">Estado</th>
-              <th className="text-left pb-3">Usuarios</th>
-              <th className="text-left pb-3">Video</th>
-              <th className="pb-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+        <>
+          {/* Mobile: card list */}
+          <div className="md:hidden space-y-2">
             {rooms.map((r) => (
-              <tr key={r.id} className="hover:bg-white/[0.02]">
-                <td className="py-3 text-white font-medium">{r.name}</td>
-                <td className="py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${r.isOpen ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
-                    {r.isOpen ? 'Pública' : 'Privada'}
-                  </span>
-                </td>
-                <td className="py-3 text-white/60">{r.users.length}/{r.maxUsers}</td>
-                <td className="py-3 text-white/40 font-mono text-xs">{r.playerState.videoId ?? '—'}</td>
-                <td className="py-3 text-right">
-                  <button onClick={() => handleDelete(r.id)} className="p-1 text-white/30 hover:text-red-400 transition-colors">
+              <div key={r.id} className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.05] space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-white truncate">{r.name}</p>
+                  <button onClick={() => handleDelete(r.id)} className="p-1 text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                </td>
-              </tr>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className={`px-2 py-0.5 rounded-full ${r.isOpen ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                    {r.isOpen ? 'Pública' : 'Privada'}
+                  </span>
+                  <span className="text-white/60">{r.users.length}/{r.maxUsers} usuarios</span>
+                </div>
+                {r.playerState.videoId && (
+                  <p className="text-xs text-white/40 font-mono truncate">Video: {r.playerState.videoId}</p>
+                )}
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+
+          {/* Desktop: table */}
+          <table className="hidden md:table w-full text-sm">
+            <thead>
+              <tr className="text-xs text-white/40 border-b border-white/[0.06]">
+                <th className="text-left pb-3">Nombre</th>
+                <th className="text-left pb-3">Estado</th>
+                <th className="text-left pb-3">Usuarios</th>
+                <th className="text-left pb-3">Video</th>
+                <th className="pb-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.04]">
+              {rooms.map((r) => (
+                <tr key={r.id} className="hover:bg-white/[0.02]">
+                  <td className="py-3 text-white font-medium">{r.name}</td>
+                  <td className="py-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${r.isOpen ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                      {r.isOpen ? 'Pública' : 'Privada'}
+                    </span>
+                  </td>
+                  <td className="py-3 text-white/60">{r.users.length}/{r.maxUsers}</td>
+                  <td className="py-3 text-white/40 font-mono text-xs">{r.playerState.videoId ?? '—'}</td>
+                  <td className="py-3 text-right">
+                    <button onClick={() => handleDelete(r.id)} className="p-1 text-white/30 hover:text-red-400 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   );
@@ -240,26 +284,43 @@ function ConnectionsTab() {
         <Button variant="ghost" size="sm" onClick={refresh}><RefreshCw className="h-3.5 w-3.5" /> Refrescar</Button>
       </div>
       {loading ? <LoadingState /> : conns.length === 0 ? <EmptyState message="No hay conexiones activas" /> : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-white/40 border-b border-white/[0.06]">
-              <th className="text-left pb-3">Usuario</th>
-              <th className="text-left pb-3">Sala</th>
-              <th className="text-left pb-3">Socket ID</th>
-              <th className="text-left pb-3">Conectado</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
             {conns.map((c) => (
-              <tr key={c.socketId} className="hover:bg-white/[0.02]">
-                <td className="py-3 text-white font-medium">{c.username}</td>
-                <td className="py-3 text-white/60">{c.roomName}</td>
-                <td className="py-3 text-white/30 font-mono text-xs">{c.socketId.slice(0, 12)}...</td>
-                <td className="py-3 text-white/40 text-xs">{new Date(c.joinedAt).toLocaleTimeString('es')}</td>
-              </tr>
+              <div key={c.socketId} className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.05] space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-white truncate">{c.username}</p>
+                  <span className="text-xs text-white/40 flex-shrink-0">{new Date(c.joinedAt).toLocaleTimeString('es')}</span>
+                </div>
+                <p className="text-xs text-white/60 truncate">Sala: {c.roomName}</p>
+                <p className="text-xs text-white/30 font-mono truncate">{c.socketId}</p>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+
+          {/* Desktop table */}
+          <table className="hidden md:table w-full text-sm">
+            <thead>
+              <tr className="text-xs text-white/40 border-b border-white/[0.06]">
+                <th className="text-left pb-3">Usuario</th>
+                <th className="text-left pb-3">Sala</th>
+                <th className="text-left pb-3">Socket ID</th>
+                <th className="text-left pb-3">Conectado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.04]">
+              {conns.map((c) => (
+                <tr key={c.socketId} className="hover:bg-white/[0.02]">
+                  <td className="py-3 text-white font-medium">{c.username}</td>
+                  <td className="py-3 text-white/60">{c.roomName}</td>
+                  <td className="py-3 text-white/30 font-mono text-xs">{c.socketId.slice(0, 12)}...</td>
+                  <td className="py-3 text-white/40 text-xs">{new Date(c.joinedAt).toLocaleTimeString('es')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   );
@@ -299,8 +360,8 @@ function TokensTab() {
   return (
     <div className="space-y-4">
       {newToken && (
-        <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl">
-          <p className="text-sm font-medium text-violet-300 mb-2">Token de invitación generado</p>
+        <div className="p-4 bg-accent-muted border border-accent-muted rounded-xl">
+          <p className="text-sm font-medium text-accent-lighter mb-2">Token de invitación generado</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 text-xs text-white/60 bg-white/5 rounded px-2 py-1.5 font-mono break-all">{newToken.url}</code>
             <button onClick={copyUrl} className="p-2 bg-white/8 hover:bg-white/12 rounded-lg transition-colors flex-shrink-0">
@@ -396,7 +457,7 @@ function JellyfinTab() {
             value={jellyfinUrl}
             onChange={(e) => setJellyfinUrl(e.target.value)}
             placeholder="http://192.168.1.x:8096"
-            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/40"
+            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent-muted"
           />
         </div>
 
@@ -408,7 +469,7 @@ function JellyfinTab() {
             onChange={(e) => setJellyfinKey(e.target.value)}
             placeholder="••••••••••••••••"
             autoComplete="new-password"
-            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/40"
+            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent-muted"
           />
           <p className="text-xs text-white/30">La clave nunca se muestra una vez guardada</p>
         </div>

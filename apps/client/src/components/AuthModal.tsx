@@ -53,7 +53,7 @@ export function AuthModal({ open }: { open: boolean }) {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${tab === id ? 'bg-violet-600 text-white shadow' : 'text-white/50 hover:text-white'
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${tab === id ? 'bg-accent text-white shadow' : 'text-white/50 hover:text-white'}
               }`}
           >
             {label}

@@ -75,7 +75,7 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '', r
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Busca un video, artista, película..."
             autoFocus
-            className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+            className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-accent"
           />
           {query && (
             <button
@@ -90,7 +90,7 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '', r
         <button
           type="submit"
           disabled={!query.trim() || loading}
-          className="px-4 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 rounded-xl text-sm text-white font-medium transition-colors flex items-center gap-2"
+          className="px-4 py-2.5 bg-accent hover:bg-accent-light disabled:opacity-40 rounded-xl text-sm text-white font-medium transition-colors flex items-center gap-2"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           Buscar
@@ -185,17 +185,17 @@ function VideoResultRow({
         <button
           onClick={() => onPlayNow(result)}
           title="Reproducir ahora"
-          className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
+          className="px-2.5 py-1 bg-accent hover:bg-accent-light text-white text-xs rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
         >
           <Play className="h-3 w-3 fill-white" />
-          Play Now
+          Reproducir
         </button>
         <button
           onClick={() => onAddToQueue(result)}
           title="Añadir a la cola"
           className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-xs rounded-lg transition-colors whitespace-nowrap"
         >
-          + Queue
+          + Cola
         </button>
       </div>
     </div>

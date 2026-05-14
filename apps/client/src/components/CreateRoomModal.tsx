@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { Modal } from './ui/Modal';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
-import { adminApi, iptvApi } from '../lib/api';
+import { roomsApi, iptvApi } from '../lib/api';
 import type { IPTVList } from '../types';
 
 interface CreateRoomModalProps {
@@ -62,7 +62,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
     }
     setLoading(true);
     try {
-      const { data } = await adminApi.createRoom(
+      const { data } = await roomsApi.createRoom(
         name.trim(),
         Number(maxUsers) || 10,
         isOpen,
@@ -95,9 +95,9 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
             {(
               [
                 { type: 'youtube', Icon: Youtube, label: 'YouTube', desc: 'Videos de YouTube' },
-                { type: 'iptv',    Icon: Tv,      label: 'Lista IPTV',       desc: 'Canales en vivo y VOD' },
-                { type: 'movie',   Icon: Film,    label: 'Jellyfin',          desc: 'Tu servidor de películas' },
-                { type: 'series',  Icon: Library, label: 'Series Clásicas',   desc: 'Cartoons clásicos de tu biblioteca' },
+                { type: 'iptv', Icon: Tv, label: 'Lista IPTV', desc: 'Canales en vivo y VOD' },
+                { type: 'movie', Icon: Film, label: 'Jellyfin', desc: 'Tu servidor de películas' },
+                { type: 'series', Icon: Library, label: 'Series Clásicas', desc: 'Cartoons clásicos de tu biblioteca' },
               ] as const
             ).map(({ type, Icon, label, desc }) => (
               <button
@@ -107,8 +107,8 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
                 className={[
                   'flex flex-col items-center gap-3 p-5 rounded-xl border transition-all text-white',
                   sourceType === type
-                    ? 'border-violet-500 bg-violet-600/20 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                    : 'border-white/10 bg-white/5 hover:bg-violet-600/20 hover:border-violet-500 hover:shadow-[0_0_12px_rgba(139,92,246,0.3)]',
+                    ? 'border-accent bg-accent-muted shadow-accent'
+                    : 'border-white/10 bg-white/5 hover:bg-accent-muted hover:border-accent hover:shadow-accent',
                 ].join(' ')}
               >
                 <div className="p-3 rounded-full bg-white/10">
@@ -128,12 +128,12 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
             className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors mb-1"
           >
             ← Cambiar fuente
-            <span className="text-violet-400 font-medium">
+            <span className="text-accent-lighter font-medium">
               {{
                 youtube: <><Youtube className="w-3 h-3 inline mr-1" />YouTube</>,
-                iptv:    <><Tv      className="w-3 h-3 inline mr-1" />Lista IPTV</>,
-                movie:   <><Film    className="w-3 h-3 inline mr-1" />Jellyfin</>,
-                series:  <><Library className="w-3 h-3 inline mr-1" />Series Clásicas</>,
+                iptv: <><Tv className="w-3 h-3 inline mr-1" />Lista IPTV</>,
+                movie: <><Film className="w-3 h-3 inline mr-1" />Jellyfin</>,
+                series: <><Library className="w-3 h-3 inline mr-1" />Series Clásicas</>,
               }[sourceType]}
             </span>
           </button>
@@ -166,10 +166,10 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
                 <select
                   value={selectedIptvListId}
                   onChange={(e) => setSelectedIptvListId(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
                 >
                   {enabledLists.map(list => (
-                    <option key={list.id} value={list.id} className="bg-[#1a1a2e]">
+                    <option key={list.id} value={list.id} className="bg-card">
                       {list.name} ({list.entryCount} entradas)
                     </option>
                   ))}
@@ -180,7 +180,7 @@ export function CreateRoomModal({ open, onClose }: CreateRoomModalProps) {
           <label className="flex items-center gap-3 cursor-pointer">
             <div
               onClick={() => setIsOpen(!isOpen)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isOpen ? 'bg-violet-600' : 'bg-white/15'}`}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOpen ? 'bg-accent' : 'bg-white/15'}`}
             >
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOpen ? 'translate-x-5' : ''}`} />
             </div>

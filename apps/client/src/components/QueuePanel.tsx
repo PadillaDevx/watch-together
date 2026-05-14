@@ -38,12 +38,12 @@ export default function QueuePanel({ queue, roomId, currentUsername, isAdmin }: 
     }
 
     return (
-        <div className="flex flex-col h-full bg-surface-raised border border-white/[0.08] rounded-xl overflow-hidden">
+        <div className="flex flex-col h-full bg-raised border border-white/[0.08] rounded-xl overflow-hidden">
             {/* Header */}
             <div className="px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
-                <h3 className="text-sm font-semibold text-white">Queue</h3>
+                <h3 className="text-sm font-semibold text-white">Cola</h3>
                 <p className="text-xs text-white/40 mt-0.5">
-                    {queue.length} item{queue.length !== 1 ? 's' : ''}
+                    {queue.length} {queue.length !== 1 ? 'videos' : 'video'}
                 </p>
             </div>
 
@@ -71,7 +71,7 @@ export default function QueuePanel({ queue, roomId, currentUsername, isAdmin }: 
                                     'flex items-center gap-3 px-3 py-2 group transition-colors select-none',
                                     isAdmin && 'cursor-grab active:cursor-grabbing',
                                     isDragTarget
-                                        ? 'bg-violet-500/20 border-l-2 border-violet-500'
+                                        ? 'bg-accent-muted border-l-2 border-accent'
                                         : 'hover:bg-white/[0.04]',
                                 )}
                             >

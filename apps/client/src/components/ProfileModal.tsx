@@ -8,18 +8,12 @@ import { Input } from './ui/Input';
 import { authApi } from '../lib/api';
 import { copyToClipboard, getApiError } from '../lib/utils';
 import { useStore } from '../store';
+import { ACCENT_COLORS, DEFAULT_ACCENT, applyAccent } from '../lib/theme';
 import type { User } from '../types';
 
 type Tab = 'perfil' | 'seguridad' | 'tema';
 
-const ACCENT_COLORS = [
-  { name: 'Violeta', value: 'violet', hex: '#7c3aed' },
-  { name: 'Azul', value: 'blue', hex: '#2563eb' },
-  { name: 'Esmeralda', value: 'emerald', hex: '#059669' },
-  { name: 'Rosa', value: 'pink', hex: '#db2777' },
-  { name: 'Naranja', value: 'orange', hex: '#ea580c' },
-  { name: 'Rojo', value: 'red', hex: '#dc2626' },
-];
+// ACCENT_COLORS is imported from lib/theme.ts — single source of truth
 
 interface Props {
   open: boolean;
@@ -44,7 +38,7 @@ export function ProfileModal({ open, onClose }: Props) {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-accent-muted text-accent-lighter' : 'text-white/40 hover:text-white hover:bg-white/5'
               }`}
           >
             {label}
@@ -237,17 +231,13 @@ function SeguridadTab({ user, onUpdated }: { user: NonNullable<User>; onUpdated:
 // ─── Tema Tab ─────────────────────────────────────────────────────────────────
 
 function TemaTab() {
-  const saved = localStorage.getItem('wj_accent') ?? 'violet';
+  const saved = localStorage.getItem('wj_accent') ?? DEFAULT_ACCENT;
   const [accent, setAccent] = useState(saved);
 
   function handleSelect(value: string) {
     setAccent(value);
     localStorage.setItem('wj_accent', value);
-    // Apply immediately via CSS variable
-    const color = ACCENT_COLORS.find((c) => c.value === value);
-    if (color) {
-      document.documentElement.style.setProperty('--accent', color.hex);
-    }
+    applyAccent(value);
     toast.success('Tema guardado');
   }
 
@@ -261,8 +251,8 @@ function TemaTab() {
               key={c.value}
               onClick={() => handleSelect(c.value)}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${accent === c.value
-                  ? 'border-white/30 bg-white/8'
-                  : 'border-white/[0.06] hover:bg-white/[0.04]'
+                ? 'border-white/30 bg-white/8'
+                : 'border-white/[0.06] hover:bg-white/[0.04]'
                 }`}
             >
               <span

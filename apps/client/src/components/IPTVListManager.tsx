@@ -164,7 +164,7 @@ export function IPTVListManager() {
             {/* Table */}
             {loading ? (
                 <div className="flex justify-center py-12">
-                    <div className="w-5 h-5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-accent-muted border-t-accent rounded-full animate-spin" />
                 </div>
             ) : lists.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-white/30 gap-3">
@@ -216,7 +216,7 @@ export function IPTVListManager() {
                                     <td className="py-3 pr-4 text-center">
                                         <button
                                             onClick={() => handleToggle(list)}
-                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${list.enabled ? 'bg-violet-600' : 'bg-white/10'
+                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${list.enabled ? 'bg-accent' : 'bg-white/10'
                                                 }`}
                                             title={list.enabled ? 'Desactivar lista' : 'Activar lista'}
                                         >
@@ -234,7 +234,7 @@ export function IPTVListManager() {
                                                 onClick={() => handleRefresh(list)}
                                                 disabled={list.url === '(archivo local)'}
                                                 title={list.url === '(archivo local)' ? 'Lista local — no se puede actualizar remotamente' : 'Re-fetch y re-parse'}
-                                                className="p-1.5 text-white/30 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white/30 disabled:hover:bg-transparent"
+                                                className="p-1.5 text-white/30 hover:text-accent-light hover:bg-accent-subtle rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white/30 disabled:hover:bg-transparent"
                                             >
                                                 <RotateCcw className="h-3.5 w-3.5" />
                                             </button>
@@ -284,8 +284,8 @@ export function IPTVListManager() {
                                 type="button"
                                 onClick={() => setModal((m) => ({ ...m, mode: 'url' }))}
                                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 transition-colors ${modal.mode === 'url'
-                                        ? 'bg-violet-600/20 text-violet-300'
-                                        : 'text-white/40 hover:text-white hover:bg-white/5'
+                                    ? 'bg-accent-muted text-accent-lighter'
+                                    : 'text-white/40 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <Link className="h-3.5 w-3.5" /> URL
@@ -294,8 +294,8 @@ export function IPTVListManager() {
                                 type="button"
                                 onClick={() => setModal((m) => ({ ...m, mode: 'file' }))}
                                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 transition-colors ${modal.mode === 'file'
-                                        ? 'bg-violet-600/20 text-violet-300'
-                                        : 'text-white/40 hover:text-white hover:bg-white/5'
+                                    ? 'bg-accent-muted text-accent-lighter'
+                                    : 'text-white/40 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <Upload className="h-3.5 w-3.5" /> Archivo local
@@ -321,7 +321,7 @@ export function IPTVListManager() {
 
                     {/* Local file note — shown when editing a locally-uploaded list */}
                     {modal.target && modal.target.url === '(archivo local)' && (
-                        <div className="flex items-center gap-2 rounded-lg bg-violet-500/10 border border-violet-500/20 px-3 py-2.5 text-xs text-violet-300">
+                        <div className="flex items-center gap-2 rounded-lg bg-accent-muted border border-accent-muted px-3 py-2.5 text-xs text-accent-lighter">
                             <Upload className="h-3.5 w-3.5 shrink-0" />
                             Lista cargada desde archivo local. Solo puedes cambiar el nombre.
                         </div>
@@ -333,8 +333,8 @@ export function IPTVListManager() {
                             <label className="block text-xs text-white/50 mb-1">Archivo .m3u / .m3u8</label>
                             <label
                                 className={`flex flex-col items-center justify-center gap-2 w-full h-28 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${modal.fileContent
-                                        ? 'border-violet-500/60 bg-violet-500/5'
-                                        : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
+                                    ? 'border-accent-muted bg-accent-subtle'
+                                    : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
                                     }`}
                             >
                                 <input
@@ -345,8 +345,8 @@ export function IPTVListManager() {
                                 />
                                 {modal.fileContent ? (
                                     <>
-                                        <Upload className="h-5 w-5 text-violet-400" />
-                                        <span className="text-sm text-violet-300 font-medium">{modal.fileName}</span>
+                                        <Upload className="h-5 w-5 text-accent-light" />
+                                        <span className="text-sm text-accent-lighter font-medium">{modal.fileName}</span>
                                         <span className="text-xs text-white/30">Click para cambiar</span>
                                     </>
                                 ) : (

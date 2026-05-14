@@ -16,8 +16,8 @@ const TTL_SERIES = 5 * 60 * 1000;    // 5 minutes
 const TTL_EPISODES = 10 * 60 * 1000; // 10 minutes
 
 function isFresh(key: string, ttl: number): boolean {
-  const ts = cacheTimestamps.get(key);
-  return ts !== undefined && Date.now() - ts < ttl;
+    const ts = cacheTimestamps.get(key);
+    return ts !== undefined && Date.now() - ts < ttl;
 }
 
 // ── fetchSeriesList ──────────────────────────────────────────────────────────
@@ -29,16 +29,16 @@ function isFresh(key: string, ttl: number): boolean {
  * @returns Active `LibrarySerie` entries.
  */
 export async function fetchSeriesList(): Promise<LibrarySerie[]> {
-  const CACHE_KEY = 'all';
+    const CACHE_KEY = 'all';
 
-  if (isFresh(CACHE_KEY, TTL_SERIES) && seriesCache.has(CACHE_KEY)) {
-    return seriesCache.get(CACHE_KEY)!;
-  }
+    if (isFresh(CACHE_KEY, TTL_SERIES) && seriesCache.has(CACHE_KEY)) {
+        return seriesCache.get(CACHE_KEY)!;
+    }
 
-  const activeSeries = libraryData.filter((s) => s.active === true);
-  seriesCache.set(CACHE_KEY, activeSeries);
-  cacheTimestamps.set(CACHE_KEY, Date.now());
-  return activeSeries;
+    const activeSeries = libraryData.filter((s) => s.active === true);
+    seriesCache.set(CACHE_KEY, activeSeries);
+    cacheTimestamps.set(CACHE_KEY, Date.now());
+    return activeSeries;
 }
 
 // ── fetchSerieDetail ─────────────────────────────────────────────────────────
@@ -69,140 +69,130 @@ export async function fetchSeriesList(): Promise<LibrarySerie[]> {
  * @throws `Error` if the serie is not in `library.json` or scraping fails.
  */
 export async function fetchSerieDetail(serieId: string): Promise<LibrarySerieDetail> {
-  const cached = episodesCache.get(serieId);
-  if (cached && isFresh(serieId, TTL_EPISODES)) {
-    return cached;
-  }
-
-  const serieConfig = libraryData.find((s) => s.id === serieId);
-  if (!serieConfig) {
-    throw new Error(`Serie "${serieId}" no encontrada en library.json`);
-  }
-
-  const url = `${LACARTOONS_BASE_URL}/serie/${serieConfig.lacartoons_serie_id}`;
-  let html: string;
-
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) {
-      throw new Error(`LACartoons: respuesta ${res.status} para serie ${serieId}`);
+    const cached = episodesCache.get(serieId);
+    if (cached && isFresh(serieId, TTL_EPISODES)) {
+        return cached;
     }
-    html = await res.text();
-  } catch (err) {
-    throw new Error(`LACartoons: no se pudo obtener la página de la serie "${serieId}": ${String(err)}`);
-  }
 
-  const $ = cheerio.load(html);
-  const temporadas: LibraryTemporada[] = [];
+    const serieConfig = libraryData.find((s) => s.id === serieId);
+    if (!serieConfig) {
+        throw new Error(`Serie "${serieId}" no encontrada en library.json`);
+    }
 
-  // ── Attempt 1: season containers with class .temporada ────────────────────
-  // Expected markup:
-  //   <div class="temporada" data-temporada="1">
-  //     <h3>Temporada 1</h3>
-  //     <ul>
-  //       <li><a href="/serie/capitulo/42?t=1">Título del episodio</a></li>
-  //     </ul>
-  //   </div>
-  const seasonContainers = $('.temporada, [data-temporada], .season, .capitulos-temporada');
+    const url = `${LACARTOONS_BASE_URL}/serie/${serieConfig.lacartoons_serie_id}`;
+    let html: string;
 
-  if (seasonContainers.length > 0) {
-    seasonContainers.each((_i, el) => {
-      const $el = $(el);
-
-      // Determine season number from data attribute, heading text, or index
-      const dataTem = $el.attr('data-temporada') ?? $el.attr('data-season');
-      let temporadaNum = dataTem ? parseInt(dataTem, 10) : NaN;
-
-      if (isNaN(temporadaNum)) {
-        // Try to read it from a heading inside the container
-        const headingText = $el.find('h1, h2, h3, h4').first().text();
-        const match = headingText.match(/\d+/);
-        temporadaNum = match ? parseInt(match[0], 10) : temporadas.length + 1;
-      }
-
-      const episodios: LibraryEpisodio[] = [];
-
-      // Episode links: <a href="/serie/capitulo/ID?t=N">Title</a>
-      $el.find('a[href*="/serie/capitulo/"]').each((_j, anchor) => {
-        const $a = $(anchor);
-        const href = $a.attr('href') ?? '';
-        const titulo = $a.text().trim();
-        if (!href) return;
-
-        // Extract capitulo number from URL path or title prefix (e.g. "Cap. 3 - ...")
-        const urlMatch = href.match(/\/serie\/capitulo\/(\d+)/);
-        let capNum: number | undefined;
-
-        const capMatch = titulo.match(/^(?:Cap(?:ítulo)?\.?\s*)?(\d+)/i);
-        if (capMatch) {
-          capNum = parseInt(capMatch[1], 10);
-        } else if (urlMatch) {
-          capNum = parseInt(urlMatch[1], 10);
-        } else {
-          capNum = episodios.length + 1;
+    try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) {
+            throw new Error(`LACartoons: respuesta ${res.status} para serie ${serieId}`);
         }
-
-        episodios.push({
-          capitulo_numero: capNum,
-          titulo,
-          url: href.startsWith('/') ? href : `/${href}`,
-        });
-      });
-
-      if (episodios.length > 0) {
-        temporadas.push({ temporada: temporadaNum, episodios });
-      }
-    });
-  }
-
-  // ── Fallback: flat list — all episode links on the page ───────────────────
-  if (temporadas.length === 0) {
-    const episodios: LibraryEpisodio[] = [];
-
-    $('a[href*="/serie/capitulo/"]').each((_i, anchor) => {
-      const $a = $(anchor);
-      const href = $a.attr('href') ?? '';
-      const titulo = $a.text().trim();
-      if (!href || !titulo) return;
-
-      const capMatch = titulo.match(/^(?:Cap(?:ítulo)?\.?\s*)?(\d+)/i);
-      const urlMatch = href.match(/\/serie\/capitulo\/(\d+)/);
-      let capNum: number;
-
-      if (capMatch) {
-        capNum = parseInt(capMatch[1], 10);
-      } else if (urlMatch) {
-        capNum = parseInt(urlMatch[1], 10);
-      } else {
-        capNum = episodios.length + 1;
-      }
-
-      episodios.push({
-        capitulo_numero: capNum,
-        titulo,
-        url: href.startsWith('/') ? href : `/${href}`,
-      });
-    });
-
-    if (episodios.length > 0) {
-      temporadas.push({ temporada: 1, episodios });
+        html = await res.text();
+    } catch (err) {
+        throw new Error(`LACartoons: no se pudo obtener la página de la serie "${serieId}": ${String(err)}`);
     }
-  }
 
-  const detail: LibrarySerieDetail = {
-    ...serieConfig,
-    temporadas,
-  };
+    const $ = cheerio.load(html);
+    const temporadas: LibraryTemporada[] = [];
 
-  episodesCache.set(serieId, detail);
-  cacheTimestamps.set(serieId, Date.now());
-  return detail;
+    // ── Attempt 1: LACartoons structure ───────────────────────────────────────
+    // Season headers: <h4 class="accordion estilo-temporada" data-temporada-id="N">
+    // Episodes panel: <div class="episodio-panel"> (immediately next sibling of h4)
+    const seasonHeaders = $('h4[data-temporada-id]');
+
+    if (seasonHeaders.length > 0) {
+        seasonHeaders.each((_i, el) => {
+            const $header = $(el);
+            const temporadaId = $header.attr('data-temporada-id');
+            const temporadaNum = temporadaId ? parseInt(temporadaId, 10) : temporadas.length + 1;
+
+            // Episodes are in the next sibling div.episodio-panel
+            const $panel = $header.next('.episodio-panel');
+            const episodios: LibraryEpisodio[] = [];
+
+            $panel.find('a[href*="/serie/capitulo/"]').each((_j, anchor) => {
+                const $a = $(anchor);
+                const href = $a.attr('href') ?? '';
+                if (!href) return;
+
+                // Normalize whitespace: span + text nodes produce extra spaces
+                const titulo = $a.text().trim().replace(/\s+/g, ' ');
+
+                // Chapter number: "Capitulo X" in title takes priority over URL id
+                const capMatch = titulo.match(/Capitulo[s]?\s+(\d+)/i)
+                    ?? titulo.match(/Cap\.?\s*(\d+)/i);
+                const urlMatch = href.match(/\/serie\/capitulo\/(\d+)/);
+
+                let capNum: number;
+                if (capMatch) {
+                    capNum = parseInt(capMatch[1], 10);
+                } else if (urlMatch) {
+                    capNum = parseInt(urlMatch[1], 10);
+                } else {
+                    capNum = episodios.length + 1;
+                }
+
+                episodios.push({
+                    capitulo_numero: capNum,
+                    titulo,
+                    url: href.startsWith('/') ? href : `/${href}`,
+                });
+            });
+
+            if (episodios.length > 0) {
+                temporadas.push({ temporada: temporadaNum, episodios });
+            }
+        });
+    }
+
+    // ── Fallback: flat list — all episode links on the page ───────────────────
+    if (temporadas.length === 0) {
+        const episodios: LibraryEpisodio[] = [];
+
+        $('a[href*="/serie/capitulo/"]').each((_i, anchor) => {
+            const $a = $(anchor);
+            const href = $a.attr('href') ?? '';
+            const titulo = $a.text().trim();
+            if (!href || !titulo) return;
+
+            const capMatch = titulo.match(/^(?:Cap(?:ítulo)?\.?\s*)?(\d+)/i);
+            const urlMatch = href.match(/\/serie\/capitulo\/(\d+)/);
+            let capNum: number;
+
+            if (capMatch) {
+                capNum = parseInt(capMatch[1], 10);
+            } else if (urlMatch) {
+                capNum = parseInt(urlMatch[1], 10);
+            } else {
+                capNum = episodios.length + 1;
+            }
+
+            episodios.push({
+                capitulo_numero: capNum,
+                titulo,
+                url: href.startsWith('/') ? href : `/${href}`,
+            });
+        });
+
+        if (episodios.length > 0) {
+            temporadas.push({ temporada: 1, episodios });
+        }
+    }
+
+    const detail: LibrarySerieDetail = {
+        ...serieConfig,
+        temporadas,
+    };
+
+    episodesCache.set(serieId, detail);
+    cacheTimestamps.set(serieId, Date.now());
+    return detail;
 }
 
 // ── resolveEpisodeEmbed ──────────────────────────────────────────────────────
 // Episode page URL format: https://www.lacartoons.com/serie/capitulo/{id}?t={temporada}
-// The embed iframe has src containing "cubeembed":
-//   <iframe src="https://cubeembed.com/embed/..."></iframe>
+// The embed iframe has src from ok.ru:
+//   <iframe src="https://ok.ru/videoembed/..."></iframe>
 
 /**
  * Fetches an episode page and extracts the cubeembed iframe `src` URL.
@@ -213,31 +203,46 @@ export async function fetchSerieDetail(serieId: string): Promise<LibrarySerieDet
  * @throws `Error` if the page is unreachable or no cubeembed iframe is found.
  */
 export async function resolveEpisodeEmbed(episodePath: string): Promise<string> {
-  const fullUrl = episodePath.startsWith('/')
-    ? `${LACARTOONS_BASE_URL}${episodePath}`
-    : episodePath;
+    const fullUrl = episodePath.startsWith('/')
+        ? `${LACARTOONS_BASE_URL}${episodePath}`
+        : episodePath;
 
-  let html: string;
+    let html: string;
 
-  try {
-    const res = await fetch(fullUrl, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) {
-      throw new Error(`LACartoons: respuesta ${res.status} al obtener episodio`);
+    try {
+        const res = await fetch(fullUrl, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) {
+            throw new Error(`LACartoons: respuesta ${res.status} al obtener episodio`);
+        }
+        html = await res.text();
+    } catch (err) {
+        throw new Error(`LACartoons: no se pudo obtener la página del episodio: ${String(err)}`);
     }
-    html = await res.text();
-  } catch (err) {
-    throw new Error(`LACartoons: no se pudo obtener la página del episodio: ${String(err)}`);
-  }
 
-  const $ = cheerio.load(html);
+    const $ = cheerio.load(html);
 
-  // Expected: <iframe src="https://...cubeembed..."> anywhere in body
-  const iframe = $('iframe[src*="cubeembed"]');
-  const embedSrc = iframe.attr('src');
+    // LACartoons uses ok.ru/videoembed iframes, but we try multiple known patterns
+    // to be resilient to future changes:
+    //   1. ok.ru/videoembed (current, confirmed May 2026)
+    //   2. Any <iframe> inside the main content area as fallback
+    let embedSrc: string | undefined;
 
-  if (!embedSrc) {
-    throw new Error(`LACartoons: embed no encontrado en ${fullUrl}`);
-  }
+    // Pattern 1: ok.ru embed (confirmed)
+    embedSrc = $('iframe[src*="ok.ru"]').attr('src');
 
-  return embedSrc;
+    // Pattern 2: any iframe with a video embed src (cubeembed, rutube, etc.)
+    if (!embedSrc) {
+        embedSrc = $('iframe[src*="embed"]').attr('src');
+    }
+
+    // Pattern 3: any iframe at all (last resort)
+    if (!embedSrc) {
+        embedSrc = $('iframe').first().attr('src');
+    }
+
+    if (!embedSrc) {
+        throw new Error(`LACartoons: embed no encontrado en ${fullUrl}`);
+    }
+
+    return embedSrc;
 }

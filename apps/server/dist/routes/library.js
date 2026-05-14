@@ -60,7 +60,8 @@ function createLibraryRouter() {
             const embedUrl = await (0, libraryService_1.resolveEpisodeEmbed)(episodePath);
             res.json({ embedUrl });
         }
-        catch {
+        catch (err) {
+            console.error('[Library] resolveEpisodeEmbed error:', err instanceof Error ? err.message : err);
             res.status(502).json({ error: 'No se pudo obtener el embed del episodio' });
         }
     });

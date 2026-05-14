@@ -74,7 +74,7 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Buscar canal..."
-                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                 </div>
 
@@ -85,7 +85,7 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                             <button
                                 onClick={() => setSelectedGroup('__all__')}
                                 className={`w-full text-left px-4 py-2 text-xs truncate transition-colors ${selectedGroup === '__all__'
-                                    ? 'text-violet-300 bg-violet-600/15 font-medium'
+                                    ? 'text-accent-lighter bg-accent-muted font-medium'
                                     : 'text-white/50 hover:text-white hover:bg-white/5'
                                     }`}
                             >
@@ -96,7 +96,7 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                                     key={g}
                                     onClick={() => setSelectedGroup(g)}
                                     className={`w-full text-left px-4 py-2 text-xs truncate transition-colors ${selectedGroup === g
-                                        ? 'text-violet-300 bg-violet-600/15 font-medium'
+                                        ? 'text-accent-lighter bg-accent-muted font-medium'
                                         : 'text-white/50 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
@@ -150,15 +150,15 @@ export function IPTVBrowserModal({ open, onClose, listId, onSelect, roomId }: IP
                                 <div className="flex gap-1.5 flex-shrink-0 ml-2">
                                     <button
                                         onClick={() => handlePlayNow(entry)}
-                                        className="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                                        className="px-2.5 py-1 bg-accent hover:bg-accent-light text-white text-xs rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
                                     >
-                                        <Play className="h-3 w-3 fill-current" /> Play Now
+                                        <Play className="h-3 w-3 fill-current" /> Reproducir
                                     </button>
                                     <button
                                         onClick={() => handleAddToQueue(entry)}
                                         className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-xs rounded-lg transition-colors whitespace-nowrap"
                                     >
-                                        + Queue
+                                        + Cola
                                     </button>
                                 </div>
                             </div>

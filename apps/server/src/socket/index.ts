@@ -6,6 +6,7 @@ import {
   getRoom, getRoomList, addUserToRoom, removeUserFromRoom,
   updatePlayerState, appendChatMessage, getLiveCurrentTime, _rooms,
   addToQueue, removeFromQueue, shiftQueue, reorderQueue, switchRoomSource,
+  addTypingUser, removeTypingUser, removeTypingUserFromAll,
 } from '../services/rooms';
 import { trustHostname } from '../routes/iptv';
 import type { QueueItem, ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
@@ -74,14 +75,15 @@ export function setupSocket(io: IO): void {
       io.emit('room-list', getRoomList());
     });
 
-    socket.on('player-play', ({ roomId, currentTime }) => {
+    socket.on('player-play', ({ roomId, currentTime, sentAt }) => {
       updatePlayerState(roomId, { isPlaying: true, currentTime });
-      socket.to(roomId).emit('player-play', { currentTime });
+      // Forward sentAt so receiver can compensate for network latency
+      socket.to(roomId).emit('player-play', { currentTime, sentAt: sentAt ?? Date.now() });
     });
 
-    socket.on('player-pause', ({ roomId, currentTime }) => {
+    socket.on('player-pause', ({ roomId, currentTime, sentAt }) => {
       updatePlayerState(roomId, { isPlaying: false, currentTime });
-      socket.to(roomId).emit('player-pause', { currentTime });
+      socket.to(roomId).emit('player-pause', { currentTime, sentAt: sentAt ?? Date.now() });
     });
 
     socket.on('player-seek', ({ roomId, currentTime }) => {
@@ -145,6 +147,27 @@ export function setupSocket(io: IO): void {
         title: room?.playerState.title ?? null,
         thumbnail: room?.playerState.thumbnail ?? null,
       });
+    });
+
+    // Feature 4: unified player-action with latency compensation
+    socket.on('player-action', ({ roomId, action, currentTime, timestamp, videoId, streamUrl, embedUrl, title, thumbnail }: {
+      roomId: string; action: string; currentTime?: number; timestamp: number;
+      videoId?: string; streamUrl?: string; embedUrl?: string; title?: string; thumbnail?: string;
+    }) => {
+      if (!socket.data.authenticated) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      const latencyMs = Date.now() - (timestamp ?? Date.now());
+      const latencyS = latencyMs / 1000;
+      const adjustedTime = (currentTime ?? 0) + latencyS / 2;
+      if (action === 'play') {
+        updatePlayerState(roomId, { currentTime: adjustedTime, isPlaying: true });
+      } else if (action === 'pause') {
+        updatePlayerState(roomId, { currentTime: currentTime ?? 0, isPlaying: false });
+      } else if (action === 'seek') {
+        updatePlayerState(roomId, { currentTime: adjustedTime });
+      }
+      socket.to(roomId).emit('player-sync', { action: action as 'pause' | 'play' | 'seek' | 'load' | 'episode-change', currentTime: adjustedTime, serverTime: Date.now() });
     });
 
     socket.on('queue-add', async ({ roomId, item }) => {
@@ -224,7 +247,22 @@ export function setupSocket(io: IO): void {
       io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo });
     });
 
+    socket.on('typing-start', ({ roomId, username }) => {
+      if (!socket.data.authenticated) return;
+      const typingUsers = addTypingUser(roomId, username);
+      socket.to(roomId).emit('typing-update', { roomId, typingUsers });
+    });
+
+    socket.on('typing-stop', ({ roomId, username }) => {
+      if (!socket.data.authenticated) return;
+      const typingUsers = removeTypingUser(roomId, username);
+      socket.to(roomId).emit('typing-update', { roomId, typingUsers });
+    });
+
     socket.on('disconnect', () => {
+      if (socket.data.username) {
+        removeTypingUserFromAll(socket.data.username);
+      }
       for (const room of _rooms.values()) {
         if (room.users.has(socket.id)) {
           removeUserFromRoom(room.id, socket.id);
@@ -235,4 +273,16 @@ export function setupSocket(io: IO): void {
       }
     });
   });
+
+  // Feature 4: heartbeat for active rooms — large interval to avoid disrupting
+  // playback. Clients only correct drifts >5s (see onPlayerHeartbeat in RoomPage)
+  setInterval(() => {
+    for (const room of _rooms.values()) {
+      if (room.playerState.isPlaying && room.users.size > 1) {
+        const elapsed = (Date.now() - (room.playerState.updatedAt ?? Date.now())) / 1000;
+        const estimatedTime = (room.playerState.currentTime ?? 0) + elapsed;
+        io.to(room.id).emit('player-heartbeat', { currentTime: estimatedTime, isPlaying: true });
+      }
+    }
+  }, 120000);
 }

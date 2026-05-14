@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Users, RotateCcw, Send, Link, Check,
   Play, Loader2, MessageSquare, Search, Tv, AlertCircle,
-  Film, Youtube, SkipForward, Trophy,
+  Film, Youtube, SkipForward, Trophy, BookOpen, X, Maximize, Minimize,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useYouTube } from '../hooks/useYouTube';
@@ -19,6 +19,7 @@ import { Button } from '../components/ui/Button';
 import QueuePanel from '../components/QueuePanel';
 import SeriesSelector from '../components/SeriesSelector';
 import NextEpisodeButton from '../components/NextEpisodeButton';
+import { Modal } from '../components/ui/Modal';
 import { useWatchProgress } from '../hooks/useWatchProgress';
 import { useSeriesNavigation } from '../hooks/useSeriesNavigation';
 import { libraryApi } from '../lib/api';
@@ -85,12 +86,27 @@ export function RoomPage() {
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
   const [loadingEmbed, setLoadingEmbed] = useState(false);
   const [seriesError, setSeriesError] = useState<string | null>(null);
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [seriesSelectorOpen, setSeriesSelectorOpen] = useState(false);
   // For 'url' rooms: tracks what player is currently active
   const [urlActivePlayer, setUrlActivePlayer] = useState<'youtube' | 'stream' | 'iframe' | null>(null);
   const urlActivePlayerRef = useRef<'youtube' | 'stream' | 'iframe' | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+
+  // Feature 1: typing indicator
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Feature 3: fullscreen overlay
+  // isNativeFullscreen: driven by the browser Fullscreen API (desktop / Android)
+  // isCSSFullscreen: simulated fullscreen via position:fixed — works on iOS Chrome
+  const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
+  const [isCSSFullscreen, setIsCSSFullscreen] = useState(false);
+  const isFullscreen = isNativeFullscreen || isCSSFullscreen;
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   // Track sourceType in a ref to avoid stale closures in socket handlers
   const sourceTypeRef = useRef<'youtube' | 'iptv' | 'movie' | 'url' | 'series'>(room?.sourceType ?? 'youtube');
   useEffect(() => {
@@ -104,7 +120,7 @@ export function RoomPage() {
   const { hasNext, getNext } = useSeriesNavigation({ serieDetail, selectedTemporada, selectedEpisodioIndex });
 
   // Ref to hold latest handleNext without circular deps (handleEnded -> handleNext -> loadStream)
-  const handleNextRef = useRef<() => void>(() => {});
+  const handleNextRef = useRef<() => void>(() => { });
 
   const handleEnded = useCallback(() => {
     if (activeSource === 'series' && selectedSerieId && selectedTemporada !== null && selectedEpisodioIndex !== null) {
@@ -122,8 +138,8 @@ export function RoomPage() {
   // YouTube player
   const { loadVideo, remotePlay, remotePause, remoteSeek, getCurrentTime } = useYouTube({
     containerId: 'yt-player',
-    onPlay: (t) => socket.emit('player-play', { roomId: roomId!, currentTime: t }),
-    onPause: (t) => socket.emit('player-pause', { roomId: roomId!, currentTime: t }),
+    onPlay: (t) => socket.emit('player-play', { roomId: roomId!, currentTime: t, sentAt: Date.now() }),
+    onPause: (t) => socket.emit('player-pause', { roomId: roomId!, currentTime: t, sentAt: Date.now() }),
     onEnded: handleEnded,
     onEmbedError: (vid) => setEmbedError(vid),
   });
@@ -140,8 +156,8 @@ export function RoomPage() {
     retryStream,
   } = useHlsPlayer({
     videoRef,
-    onPlay: (t) => socket.emit('player-play', { roomId: roomId!, currentTime: t }),
-    onPause: (t) => socket.emit('player-pause', { roomId: roomId!, currentTime: t }),
+    onPlay: (t) => socket.emit('player-play', { roomId: roomId!, currentTime: t, sentAt: Date.now() }),
+    onPause: (t) => socket.emit('player-pause', { roomId: roomId!, currentTime: t, sentAt: Date.now() }),
     onEnded: handleEnded,
   });
   useEffect(() => { isLiveRef.current = isLive; }, [isLive]);
@@ -167,6 +183,7 @@ export function RoomPage() {
     try {
       const { data } = await libraryApi.resolveEmbed(next.episodio.url);
       const embedUrl = data.embedUrl;
+      setNowTitle(next.episodio.titulo);
       socket.emit('series-episode-change', {
         roomId: roomId!,
         serieId: selectedSerieId!,
@@ -250,6 +267,14 @@ export function RoomPage() {
             setUrlActivePlayer('stream');
             urlActivePlayerRef.current = 'stream';
             loadStream(state.streamUrl);
+            // Seek to currentTime after HLS initializes
+            if (state.currentTime > 2) {
+              setTimeout(() => {
+                hlsSeek(state.currentTime);
+                if (state.isPlaying) hlsPlay(state.currentTime);
+                else hlsPause(state.currentTime);
+              }, 1500);
+            }
           } else {
             setUrlActivePlayer('iframe');
             urlActivePlayerRef.current = 'iframe';
@@ -257,16 +282,18 @@ export function RoomPage() {
         }
       }
     }
-    function onPlayerPlay({ currentTime }: { currentTime: number }) {
+    function onPlayerPlay({ currentTime }: { currentTime: number; sentAt?: number }) {
+      // No latency compensation: clock skew between clients can make 'elapsed' negative,
+      // which causes seek-back → buffer reload → black flash. The natural ~100–200ms
+      // network delay is imperceptible; large drifts get corrected by the heartbeat.
       const st = sourceTypeRef.current;
       if (st === 'iptv' || st === 'movie') hlsPlay(currentTime);
       else if (st === 'url') {
         if (urlActivePlayerRef.current === 'youtube') remotePlay(currentTime);
         else if (urlActivePlayerRef.current === 'stream') hlsPlay(currentTime);
-        // iframe: no-op, can't control programmatically
       } else remotePlay(currentTime);
     }
-    function onPlayerPause({ currentTime }: { currentTime: number }) {
+    function onPlayerPause({ currentTime }: { currentTime: number; sentAt?: number }) {
       const st = sourceTypeRef.current;
       if (st === 'iptv' || st === 'movie') hlsPause(currentTime);
       else if (st === 'url') {
@@ -351,6 +378,7 @@ export function RoomPage() {
       setSelectedSerieId(data.serieId);
       setSelectedTemporada(data.temporada);
       setSelectedEpisodioIndex(data.episodioIndex);
+      setNowTitle(data.titulo);
       if (isDirectVideoUrl(data.embedUrl)) {
         loadStream(data.embedUrl);
         setUrlActivePlayer('stream');
@@ -376,6 +404,42 @@ export function RoomPage() {
     socket.on('source-switched', onSourceSwitched);
     socket.on('series-episode-change', onSeriesEpisodeChange);
 
+    // Feature 1: typing indicator
+    function onTypingUpdate(data: { roomId: string; typingUsers: string[] }) {
+      if (data.roomId === roomId) {
+        setTypingUsers(data.typingUsers.filter((u: string) => u !== user?.username));
+      }
+    }
+    socket.on('typing-update', onTypingUpdate);
+
+    // Feature 4: robust sync events
+    function onPlayerSync(data: { action: string; currentTime?: number; isPlaying?: boolean; serverTime: number }) {
+      const latency = (Date.now() - data.serverTime) / 2;
+      const adjustedTime = (data.currentTime ?? 0) + latency / 1000;
+      const src = sourceTypeRef.current;
+      const isStream = src === 'iptv' || src === 'movie' || (src === 'url' && urlActivePlayerRef.current === 'stream');
+      if (data.action === 'play') {
+        if (isStream) { hlsSeek(adjustedTime); hlsPlay(adjustedTime); } else { remoteSeek(adjustedTime); remotePlay(adjustedTime); }
+      } else if (data.action === 'pause') {
+        if (isStream) { hlsSeek(adjustedTime); hlsPause(adjustedTime); } else { remoteSeek(adjustedTime); remotePause(adjustedTime); }
+      } else if (data.action === 'seek') {
+        if (isStream) { hlsSeek(adjustedTime); } else { remoteSeek(adjustedTime); }
+      }
+    }
+    socket.on('player-sync', onPlayerSync);
+
+    function onPlayerHeartbeat(data: { currentTime: number; isPlaying: boolean }) {
+      const src = sourceTypeRef.current;
+      const isStream = src === 'iptv' || src === 'movie' || (src === 'url' && urlActivePlayerRef.current === 'stream');
+      const localTime = isStream ? hlsGetTime() : getCurrentTime();
+      const diff = Math.abs(localTime - data.currentTime);
+      // Only correct large drifts (>5s) — small drifts are normal and correcting them causes visible jumps
+      if (diff > 5) {
+        if (isStream) { hlsSeek(data.currentTime); } else { remoteSeek(data.currentTime); }
+      }
+    }
+    socket.on('player-heartbeat', onPlayerHeartbeat);
+
     return () => {
       socket.off('room-users', onRoomUsers);
       socket.off('sync-state', onSyncState);
@@ -390,6 +454,9 @@ export function RoomPage() {
       socket.off('queue-update', onQueueUpdate);
       socket.off('source-switched', onSourceSwitched);
       socket.off('series-episode-change', onSeriesEpisodeChange);
+      socket.off('typing-update', onTypingUpdate);
+      socket.off('player-sync', onPlayerSync);
+      socket.off('player-heartbeat', onPlayerHeartbeat);
     };
   }, [loadVideo, remotePlay, remotePause, remoteSeek, loadStream, hlsPlay, hlsPause, hlsSeek, navigate]);
 
@@ -397,6 +464,89 @@ export function RoomPage() {
   useEffect(() => {
     if (panelTab === 'chat') chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, panelTab]);
+
+  // Fullscreen detection
+  useEffect(() => {
+    function handleFsChange() {
+      setIsNativeFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    }
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    // Exit CSS fullscreen when user presses Escape
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setIsCSSFullscreen(false);
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Lock body scroll when CSS fullscreen is active
+  useEffect(() => {
+    document.body.style.overflow = isCSSFullscreen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isCSSFullscreen]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (isNativeFullscreen) { document.exitFullscreen?.(); return; }
+    if (isCSSFullscreen) { setIsCSSFullscreen(false); return; }
+    if (document.fullscreenEnabled) {
+      playerContainerRef.current?.requestFullscreen?.();
+    } else {
+      setIsCSSFullscreen(true);
+    }
+  }, [isNativeFullscreen, isCSSFullscreen]);
+
+  // Feature 5: Visual Viewport resize for iOS keyboard
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handler = () => {
+      if (document.activeElement === chatInputRef.current) {
+        setTimeout(() => chatInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 100);
+      }
+    };
+    window.visualViewport.addEventListener('resize', handler);
+    return () => { window.visualViewport?.removeEventListener('resize', handler); };
+  }, []);
+
+  // Block popups originating from the series iframe at the parent window level
+  // (Cross-origin iframes can't be modified directly; instead we monkey-patch
+  // window.open on the parent and detect/close popups that match suspicious patterns)
+  useEffect(() => {
+    if (urlActivePlayer !== 'iframe' || !currentStreamUrl) return;
+    const originalOpen = window.open;
+    // Override parent window.open to block any popup attempted while iframe player is mounted
+    window.open = function (url?: string | URL, target?: string, features?: string): Window | null {
+      const urlStr = url ? String(url) : '';
+      // Allow same-origin / known safe URLs (about:blank handshake, etc.)
+      const sameOrigin = !urlStr || urlStr.startsWith('/') || urlStr.startsWith(window.location.origin) || urlStr.startsWith('about:');
+      if (sameOrigin) {
+        return originalOpen.call(window, url ?? '', target ?? '_blank', features ?? '');
+      }
+      console.warn('[WJ] Blocked popup attempt to:', urlStr);
+      return null;
+    };
+    return () => {
+      window.open = originalOpen;
+    };
+  }, [urlActivePlayer, currentStreamUrl]);
+
+  // Detect tab-stealing popups: if a new window steals focus, refocus parent
+  useEffect(() => {
+    if (urlActivePlayer !== 'iframe' || !currentStreamUrl) return;
+    function handleBlur() {
+      // When the iframe steals focus (e.g. a popup opened), refocus the parent after a tick
+      setTimeout(() => {
+        if (document.hidden) return;
+        window.focus();
+      }, 0);
+    }
+    window.addEventListener('blur', handleBlur);
+    return () => { window.removeEventListener('blur', handleBlur); };
+  }, [urlActivePlayer, currentStreamUrl]);
 
   function switchTab(t: PanelTab) {
     setPanelTab(t);
@@ -450,12 +600,23 @@ export function RoomPage() {
 
   function handleResync() {
     const isStreamPlayer = activeSource === 'iptv' || activeSource === 'movie' ||
-      (activeSource === 'url' && urlActivePlayer === 'stream');
-    const currentTime = isStreamPlayer ? hlsGetTime() : getCurrentTime();
+      (activeSource === 'url' && urlActivePlayer === 'stream') ||
+      (activeSource === 'series' && urlActivePlayer === 'stream');
+    const currentTime = isStreamPlayer ? hlsGetTime() : (activeSource === 'series' ? 0 : getCurrentTime());
+    const isPlaying = isStreamPlayer ? !videoRef.current?.paused : (activeSource === 'youtube');
     setSyncStatus('syncing');
-    socket.emit('resync-all', { roomId: roomId!, currentTime, isPlaying: true });
+    socket.emit('resync-all', { roomId: roomId!, currentTime, isPlaying });
     setTimeout(() => setSyncStatus('synced'), 2500);
-    toast('Sincronizando a todos...', { icon: <RotateCcw className="w-4 h-4 text-violet-400" />, duration: 2000 });
+    toast('Sincronizando a todos...', { icon: <RotateCcw className="w-4 h-4 text-accent-lighter" />, duration: 2000 });
+  }
+
+  function handleTyping() {
+    if (!roomId || !user?.username) return;
+    socket.emit('typing-start', { roomId, username: user.username });
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      socket.emit('typing-stop', { roomId, username: user.username! });
+    }, 1500);
   }
 
   function handleSendMessage(e: React.FormEvent) {
@@ -551,36 +712,36 @@ export function RoomPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#0d0d1f] text-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-base text-white overflow-hidden">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-surface flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/[0.06] bg-base flex-shrink-0 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={() => navigate('/')}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors"
+            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div>
-            <h1 className="text-sm font-semibold text-white leading-tight">{room?.name ?? 'Sala'}</h1>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-white leading-tight truncate">{room?.name ?? 'Sala'}</h1>
             <p className="text-xs text-white/35 flex items-center gap-1">
               <Users className="h-3 w-3" /> {users.length} espectador{users.length !== 1 ? 'es' : ''}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           <button
             onClick={handleResync}
             title="Sincronizar a todos a tu posición actual"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${syncStatus === 'syncing'
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${syncStatus === 'syncing'
               ? 'bg-yellow-500/15 text-yellow-400'
-              : 'bg-white/5 text-white/50 hover:bg-violet-600/20 hover:text-violet-300'
+              : 'bg-white/5 text-white/50 hover:bg-accent-muted hover:text-accent-lighter'
               }`}
           >
             {syncStatus === 'syncing'
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
               : <RotateCcw className="h-3.5 w-3.5" />}
-            {syncStatus === 'syncing' ? 'Sincronizando...' : 'Re-sincronizar'}
+            <span className="hidden sm:inline">{syncStatus === 'syncing' ? 'Sincronizando...' : 'Re-sincronizar'}</span>
           </button>
           <button onClick={copyRoomLink} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors">
             {isCopied ? <Check className="h-4 w-4 text-emerald-400" /> : <Link className="h-4 w-4" />}
@@ -589,12 +750,12 @@ export function RoomPage() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Player side */}
-        <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        {/* Player side — no flex-1 on mobile so chat gets the leftover space */}
+        <div className="flex-shrink-0 md:flex-1 flex flex-col min-w-0">
           {/* Now playing title bar */}
           {nowTitle !== null && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-[#13132b] border-b border-white/[0.06] flex-shrink-0">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-raised border-b border-white/[0.06] flex-shrink-0">
               {nowThumbnail && (
                 <img src={nowThumbnail} alt="" className="h-9 w-16 object-cover rounded flex-shrink-0" />
               )}
@@ -603,11 +764,22 @@ export function RoomPage() {
           )}
 
           {/* Video */}
-          <div className="flex-1 bg-black relative">
+          <div ref={playerContainerRef} className={isCSSFullscreen
+            ? 'fixed inset-0 z-[999] bg-black flex flex-col'
+            : 'bg-black relative w-full aspect-video md:aspect-auto md:flex-1'
+          }>
+            {/* Fullscreen button — always visible (no hover on touch devices). Lives inside the container so it shows in native fullscreen too. */}
+            <button
+              onClick={toggleFullscreen}
+              className="absolute top-3 right-3 z-[1001] bg-black/70 hover:bg-black/90 backdrop-blur-sm p-2 rounded-full text-white touch-manipulation shadow-lg transition-colors"
+              aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </button>
             {/* YouTube player */}
             {activeSource === 'youtube' && (
               <>
-                <div id="yt-player" className="w-full h-full" />
+                <div id="yt-player" className="w-full h-full transform-gpu" style={{ transform: 'translateZ(0)' }} />
                 {!currentVideoId && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-3 pointer-events-none">
                     <Play className="h-12 w-12" />
@@ -642,7 +814,8 @@ export function RoomPage() {
               <>
                 <video
                   ref={videoRef}
-                  className="w-full h-full"
+                  className="w-full h-full transform-gpu"
+                  style={{ transform: 'translateZ(0)' }}
                   controls
                   playsInline
                 />
@@ -657,7 +830,7 @@ export function RoomPage() {
                     <p className="text-sm text-white/70">Error al cargar el stream</p>
                     <button
                       onClick={retryStream}
-                      className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors"
+                      className="px-4 py-1.5 bg-accent hover:bg-accent-light rounded-lg text-sm text-white transition-colors"
                     >
                       Reintentar
                     </button>
@@ -685,6 +858,7 @@ export function RoomPage() {
                 {urlActivePlayer === 'iframe' && currentStreamUrl && (
                   <div className="absolute inset-0">
                     <iframe
+                      key={currentStreamUrl}
                       ref={iframeRef}
                       src={currentStreamUrl}
                       className="w-full h-full border-0"
@@ -699,10 +873,7 @@ export function RoomPage() {
                     <p className="text-sm">Selecciona una serie y episodio para comenzar</p>
                   </div>
                 )}
-                <NextEpisodeButton
-                  visible={hasNext}
-                  onClick={handleNext}
-                />
+
               </>
             )}
 
@@ -740,7 +911,7 @@ export function RoomPage() {
                           Nueva pestaña
                         </a>
                         <button
-                          onClick={() => iframeRef.current?.requestFullscreen?.()}
+                          onClick={toggleFullscreen}
                           className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white/80 transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
@@ -766,7 +937,7 @@ export function RoomPage() {
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3 z-20">
                     <AlertCircle className="h-10 w-10 text-red-400" />
                     <p className="text-sm text-white/70">Error al cargar el video</p>
-                    <button onClick={retryStream} className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors">Reintentar</button>
+                    <button onClick={retryStream} className="px-4 py-1.5 bg-accent hover:bg-accent-light rounded-lg text-sm text-white transition-colors">Reintentar</button>
                   </div>
                 )}
                 {urlActivePlayer === null && (
@@ -790,12 +961,12 @@ export function RoomPage() {
           </div>
 
           {/* URL + search bar */}
-          <div className="bg-[#13132b] border-t border-white/[0.06] px-4 py-3 flex items-center gap-2 flex-shrink-0">
+          <div className="bg-raised border-t border-white/[0.06] px-4 py-3 flex items-center gap-2 flex-shrink-0">
             {activeSource === 'iptv' ? (
               <button
                 type="button"
                 onClick={() => setIptvBrowserOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-light rounded-lg text-sm text-white transition-colors"
               >
                 <Tv className="h-4 w-4" />
                 Cambiar canal
@@ -804,30 +975,46 @@ export function RoomPage() {
               <button
                 type="button"
                 onClick={() => setJellyfinOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-light rounded-lg text-sm text-white transition-colors"
               >
                 <Film className="h-4 w-4" /> Jellyfin
               </button>
             ) : activeSource === 'series' ? (
-              <SeriesSelector
-                roomId={roomId!}
-                username={user?.username ?? ''}
-                seriesList={seriesList}
-                serieDetail={serieDetail}
-                selectedSerieId={selectedSerieId}
-                selectedTemporada={selectedTemporada}
-                selectedEpisodioIndex={selectedEpisodioIndex}
-                loadingEpisodes={loadingEpisodes}
-                loadingSeries={loadingSeries}
-                loadingEmbed={loadingEmbed}
-                onSerieChange={handleSerieChange}
-                onTemporadaChange={handleTemporadaChange}
-                onEpisodioChange={handleEpisodioChange}
-                onPlay={handlePlay}
-                onNext={handleNext}
-                hasNext={hasNext}
-                watchProgress={watchProgress}
-              />
+              <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto">
+                {selectedSerieId && serieDetail ? (
+                  <span className="text-xs text-white/60 truncate shrink-0 max-w-[120px] sm:max-w-xs">
+                    {serieDetail.name}
+                    {selectedTemporada !== null ? ` · T${selectedTemporada}` : ''}
+                    {selectedEpisodioIndex !== null ? ` E${selectedEpisodioIndex + 1}` : ''}
+                  </span>
+                ) : (
+                  <span className="text-xs text-white/35 shrink-0">Sin episodio</span>
+                )}
+                <button
+                  onClick={() => setSeriesSelectorOpen(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/8 hover:bg-white/12 text-xs text-white/70 hover:text-white transition-colors shrink-0 cursor-pointer"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Episodios
+                </button>
+                <button
+                  onClick={handlePlay}
+                  disabled={loadingEmbed || selectedEpisodioIndex === null}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-light disabled:opacity-50 disabled:cursor-not-allowed text-xs text-white transition-colors shrink-0 cursor-pointer"
+                >
+                  {loadingEmbed ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5 fill-current" />}
+                  Ver
+                </button>
+                {hasNext && (
+                  <button
+                    onClick={handleNext}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-accent-muted text-accent-lighter hover:bg-accent-muted text-xs transition-colors shrink-0 cursor-pointer"
+                  >
+                    <SkipForward className="h-3.5 w-3.5" />
+                    Sig.
+                  </button>
+                )}
+              </div>
             ) : (
               <form onSubmit={handleLoadUrl} className="flex-1 flex gap-2">
                 <div className="flex-1 relative">
@@ -835,13 +1022,13 @@ export function RoomPage() {
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     placeholder={activeSource === 'url' ? 'Pega una URL (YouTube, .m3u8, .mp4...)' : 'URL de YouTube, ID de video o término de búsqueda...'}
-                    className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-violet-500/50 pr-6"
+                    className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-accent pr-6"
                   />
                   {urlInput && (
                     <button type="button" onClick={() => setUrlInput('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/25 hover:text-white leading-none">×</button>
                   )}
                 </div>
-                <button type="submit" className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm text-white transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                <button type="submit" className="px-3 py-1.5 bg-accent hover:bg-accent-light rounded-lg text-sm text-white transition-colors flex items-center gap-1.5 whitespace-nowrap">
                   {activeSource === 'url'
                     ? <><Play className="h-3.5 w-3.5 fill-current" /> Reproducir</>
                     : urlInput && !extractVideoId(urlInput.trim())
@@ -859,7 +1046,7 @@ export function RoomPage() {
           </div>
 
           {/* Queue & source controls */}
-          <div className="bg-[#13132b] border-t border-white/[0.06] px-4 py-2 flex items-center gap-2 flex-shrink-0">
+          <div className="bg-raised border-t border-white/[0.06] px-4 py-2 flex items-center gap-2 flex-shrink-0">
             {queue.length > 0 && (
               <Button
                 size="xs"
@@ -872,43 +1059,43 @@ export function RoomPage() {
             <button
               type="button"
               onClick={() => setQueueOpen((o) => !o)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${queueOpen ? 'bg-violet-600/30 text-violet-300' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${queueOpen ? 'bg-accent-muted text-accent-lighter' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
             >
               Cola{queue.length > 0 ? ` (${queue.length})` : ''}
             </button>
             <div className="flex-1" />
             {/* Source switcher */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 overflow-x-auto flex-shrink-0 max-w-[55vw] sm:max-w-none pb-0.5 sm:pb-0">
               <button
                 type="button"
                 onClick={() => {
                   if (!room?.iptvListId) { alert('Esta sala no tiene una lista IPTV configurada'); return; }
                   socket.emit('switch-source', { roomId: roomId!, sourceType: 'iptv', iptvListId: room.iptvListId });
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'iptv' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${activeSource === 'iptv' ? 'bg-accent text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
                 <Tv className="h-4 w-4 inline mr-1" />TV
               </button>
               <button
                 type="button"
                 onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'youtube' })}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'youtube' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${activeSource === 'youtube' ? 'bg-accent text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
                 <Youtube className="h-4 w-4 inline mr-1" />YouTube
               </button>
               <button
                 type="button"
                 onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'movie' })}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'movie' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'movie' ? 'bg-accent text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
-                <Film className="h-4 w-4 inline mr-1" />Movies
+                <Film className="h-4 w-4 inline mr-1" />Películas
               </button>
               <button
                 type="button"
-                onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'url' })}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'url' ? 'bg-violet-600 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+                onClick={() => socket.emit('switch-source', { roomId: roomId!, sourceType: 'series' })}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${activeSource === 'series' ? 'bg-accent text-white' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
               >
-                <Link className="h-4 w-4 inline mr-1" />URL
+                <BookOpen className="h-4 w-4 inline mr-1" />Series
               </button>
             </div>
           </div>
@@ -924,8 +1111,10 @@ export function RoomPage() {
           )}
         </div>
 
-        {/* Right panel */}
-        <div className="w-72 flex-shrink-0 border-l border-white/[0.06] flex flex-col bg-[#13132b]">
+        {/* Right panel — inline below controls on mobile, sidebar on desktop */}
+        <div
+          className="flex-1 md:flex-none md:w-72 md:flex-shrink-0 border-t md:border-t-0 md:border-l border-white/[0.06] flex flex-col bg-raised overflow-hidden"
+        >
           {/* Tab bar */}
           <div className="flex border-b border-white/[0.06] flex-shrink-0">
             <PanelTabBtn active={panelTab === 'users'} onClick={() => switchTab('users')}
@@ -944,7 +1133,7 @@ export function RoomPage() {
                   <Avatar username={u.username} size="xs" />
                   <span className="text-sm text-white/80 truncate flex-1">{u.username}</span>
                   {u.username === user?.username && (
-                    <span className="text-xs text-violet-400 flex-shrink-0">Tú</span>
+                    <span className="text-xs text-accent-lighter flex-shrink-0">Tú</span>
                   )}
                 </div>
               ))}
@@ -964,15 +1153,29 @@ export function RoomPage() {
                 )}
                 <div ref={chatEndRef} />
               </div>
+              {typingUsers.length > 0 && (
+                <div className="px-3 py-1 text-xs text-white/40 flex items-center gap-1.5 border-t border-white/[0.04] flex-shrink-0">
+                  <span className="flex gap-0.5">
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                  </span>
+                  <span>
+                    {typingUsers.length === 1 ? (typingUsers[0] + ' est\xE1 escribiendo...') : 'Varios est\xE1n escribiendo...'}
+                  </span>
+                </div>
+              )}
               <form onSubmit={handleSendMessage} className="p-3 border-t border-white/[0.06] flex gap-2 flex-shrink-0">
                 <input
+                  ref={chatInputRef}
                   value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
+                  onChange={(e) => { setChatInput(e.target.value); handleTyping(); }}
+                  onFocus={() => { setTimeout(() => chatInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 100); }}
                   placeholder="Mensaje..."
                   maxLength={500}
-                  className="flex-1 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                  className="flex-1 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-accent"
                 />
-                <button type="submit" className="p-2 bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors flex-shrink-0">
+                <button type="submit" className="p-2 bg-accent hover:bg-accent-light rounded-lg transition-colors flex-shrink-0">
                   <Send className="h-3.5 w-3.5 text-white" />
                 </button>
               </form>
@@ -980,6 +1183,34 @@ export function RoomPage() {
           )}
         </div>
       </div>
+
+      {/* Series episode picker modal */}
+      <Modal
+        open={seriesSelectorOpen}
+        onClose={() => setSeriesSelectorOpen(false)}
+        title="Seleccionar episodio"
+        maxWidth="max-w-lg"
+      >
+        <SeriesSelector
+          roomId={roomId!}
+          username={user?.username ?? ''}
+          seriesList={seriesList}
+          serieDetail={serieDetail}
+          selectedSerieId={selectedSerieId}
+          selectedTemporada={selectedTemporada}
+          selectedEpisodioIndex={selectedEpisodioIndex}
+          loadingEpisodes={loadingEpisodes}
+          loadingSeries={loadingSeries}
+          loadingEmbed={loadingEmbed}
+          onSerieChange={handleSerieChange}
+          onTemporadaChange={handleTemporadaChange}
+          onEpisodioChange={handleEpisodioChange}
+          onPlay={() => { void handlePlay(); setSeriesSelectorOpen(false); }}
+          onNext={handleNext}
+          hasNext={hasNext}
+          watchProgress={watchProgress}
+        />
+      </Modal>
 
       <VideoSearchModal
         open={searchOpen}
@@ -1003,6 +1234,7 @@ export function RoomPage() {
         onClose={() => setJellyfinOpen(false)}
         roomId={roomId!}
       />
+
     </div>
   );
 }
@@ -1012,12 +1244,12 @@ function PanelTabBtn({ active, onClick, icon, label, badge }: {
 }) {
   return (
     <button onClick={onClick}
-      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative border-b-2 ${active ? 'text-violet-300 border-violet-500' : 'text-white/35 hover:text-white/60 border-transparent'
+      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative border-b-2 ${active ? 'text-accent-lighter border-accent' : 'text-white/35 hover:text-white/60 border-transparent'
         }`}
     >
       {icon}{label}
       {badge !== undefined && (
-        <span className="absolute top-1.5 right-2.5 h-4 min-w-[1rem] px-1 bg-violet-600 text-white text-[10px] rounded-full flex items-center justify-center">
+        <span className="absolute top-1.5 right-2.5 h-4 min-w-[1rem] px-1 bg-accent text-white text-[10px] rounded-full flex items-center justify-center">
           {badge > 9 ? '9+' : badge}
         </span>
       )}
@@ -1031,7 +1263,7 @@ function ChatBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
     <div className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
       <Avatar username={msg.username} avatar={msg.avatar} size="xs" className="flex-shrink-0 mt-0.5" />
       <div className={`max-w-[80%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-        <div className={`px-3 py-1.5 rounded-xl text-sm leading-snug break-words ${isOwn ? 'bg-violet-600 text-white rounded-tr-sm' : 'bg-white/8 text-white/90 rounded-tl-sm'}`}>
+        <div className={`px-3 py-1.5 rounded-xl text-sm leading-snug break-words ${isOwn ? 'bg-accent text-white rounded-tr-sm' : 'bg-white/8 text-white/90 rounded-tl-sm'}`}>
           {msg.text}
         </div>
         <span className="text-[10px] text-white/25 mt-0.5 px-1">{time}</span>

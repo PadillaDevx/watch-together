@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Shield, Play, LogOut, Settings } from 'lucide-react';
+import { Home, Shield, Play, LogOut, Settings, Clapperboard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Avatar } from './ui/Avatar';
 import { ProfileModal } from './ProfileModal';
 import { useStore } from '../store';
 
-export function Sidebar() {
+interface SidebarProps {
+  /** Called whenever a nav link is clicked. Useful for closing a mobile drawer. */
+  onNavigate?: () => void;
+  /** When true, omits the desktop responsive wrapper classes (used inside drawers). */
+  embedded?: boolean;
+}
+
+export function Sidebar({ onNavigate, embedded = false }: SidebarProps = {}) {
   const { user, logout } = useStore();
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -15,12 +22,19 @@ export function Sidebar() {
     toast.success('Sesión cerrada');
   }
 
+  // When rendered as the desktop sidebar we hide it on mobile so pages can show
+  // a hamburger + drawer instead. When `embedded` is true (inside a drawer)
+  // we always render and let the parent control visibility.
+  const wrapperClass = embedded
+    ? 'flex flex-col w-full h-full bg-base'
+    : 'hidden md:flex w-56 flex-shrink-0 border-r border-white/[0.06] flex-col bg-base';
+
   return (
-    <aside className="w-56 flex-shrink-0 border-r border-white/[0.06] flex flex-col bg-surface">
+    <aside className={wrapperClass}>
       {/* Logo */}
       <div className="px-5 py-5">
         <div className="flex items-center gap-2.5 mb-0.5">
-          <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-900/40">
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shadow-lg shadow-accent">
             <Play className="h-4 w-4 text-white fill-white" />
           </div>
           <span className="font-bold text-white text-base tracking-tight">WatchJunto</span>
@@ -30,8 +44,9 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 space-y-0.5">
-        <NavItem to="/" icon={Home} label="Inicio" end />
-        {user?.isAdmin && <NavItem to="/admin" icon={Shield} label="Panel Admin" />}
+        <NavItem to="/" icon={Home} label="Inicio" end onClick={onNavigate} />
+        <NavItem to="/salas" icon={Clapperboard} label="Salas" onClick={onNavigate} />
+        {user?.isAdmin && <NavItem to="/admin" icon={Shield} label="Panel Admin" onClick={onNavigate} />}
       </nav>
 
       {/* User */}
@@ -63,16 +78,28 @@ export function Sidebar() {
   );
 }
 
-function NavItem({ to, icon: Icon, label, end }: { to: string; icon: typeof Home; label: string; end?: boolean }) {
+function NavItem({
+  to,
+  icon: Icon,
+  label,
+  end,
+  onClick,
+}: {
+  to: string;
+  icon: typeof Home;
+  label: string;
+  end?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <NavLink
       to={to}
       end={end}
+      onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-          isActive
-            ? 'bg-violet-600/20 text-violet-300'
-            : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
+        `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+          ? 'bg-accent-muted text-accent-lighter'
+          : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
         }`
       }
     >

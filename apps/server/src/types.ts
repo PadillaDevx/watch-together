@@ -55,6 +55,8 @@ export interface Room {
   isOpen: boolean;
   pin?: string;
   createdAt: number;
+  /** Username of the user who created this room (undefined for pre-existing rooms) */
+  createdByUsername?: string;
   sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
@@ -71,6 +73,8 @@ export interface RoomListItem {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
+  /** Username of the user who created this room */
+  createdByUsername?: string;
   sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
@@ -128,12 +132,15 @@ export interface ServerToClientEvents {
   'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; queue: QueueItem[]; title: string | null; thumbnail: string | null }) => void;
   'queue-update': (queue: QueueItem[]) => void;
   'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;
-  'player-play': (data: { currentTime: number }) => void;
-  'player-pause': (data: { currentTime: number }) => void;
+  'player-play': (data: { currentTime: number; sentAt?: number }) => void;
+  'player-pause': (data: { currentTime: number; sentAt?: number }) => void;
   'player-seek': (data: { currentTime: number }) => void;
   'player-load': (data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string } | { type: 'series'; embedUrl: string; title?: string; thumbnail?: string }) => void;
+  'player-sync': (data: { action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; serverTime: number }) => void;
+  'player-heartbeat': (data: { currentTime: number; isPlaying: boolean }) => void;
   'series-episode-change': (data: { serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => void;
   'chat-message': (msg: ChatMessage) => void;
+  'typing-update': (data: { roomId: string; typingUsers: string[] }) => void;
   'user-joined': (data: { username: string }) => void;
   'user-left': (data: { username: string }) => void;
   'error': (data: { code: string }) => void;
@@ -142,12 +149,15 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   'join-room': (data: { roomId: string; pin?: string }) => void;
   'leave-room': (data: { roomId: string }) => void;
-  'player-play': (data: { roomId: string; currentTime: number }) => void;
-  'player-pause': (data: { roomId: string; currentTime: number }) => void;
+  'player-play': (data: { roomId: string; currentTime: number; sentAt?: number }) => void;
+  'player-pause': (data: { roomId: string; currentTime: number; sentAt?: number }) => void;
   'player-seek': (data: { roomId: string; currentTime: number }) => void;
   'player-load': (data: { roomId: string } & ({ type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string } | { type: 'series'; embedUrl: string; title?: string; thumbnail?: string })) => void;
+  'player-action': (data: { roomId: string; action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; timestamp: number }) => void;
   'series-episode-change': (data: { roomId: string; serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => void;
   'chat-message': (data: { roomId: string; text: string }) => void;
+  'typing-start': (data: { roomId: string; username: string }) => void;
+  'typing-stop': (data: { roomId: string; username: string }) => void;
   'request-sync': (data: { roomId: string }) => void;
   'resync-all': (data: { roomId: string; currentTime: number; isPlaying: boolean }) => void;
   'queue-add': (data: { roomId: string; item: Omit<QueueItem, 'id' | 'addedBy'> }) => void;

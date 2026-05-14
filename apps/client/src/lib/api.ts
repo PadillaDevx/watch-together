@@ -19,6 +19,9 @@ export const authApi = {
 
 export const roomsApi = {
   list: () => api.get<{ rooms: Room[] }>('/api/rooms'),
+  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' = 'youtube', iptvListId?: string) =>
+    api.post('/api/admin/rooms', { name, maxUsers, isOpen, sourceType, ...(iptvListId ? { iptvListId } : {}) }),
+  deleteRoom: (id: string) => api.delete(`/api/admin/rooms/${id}`),
 };
 
 export const searchApi = {

@@ -1,23 +1,37 @@
 [
-  {
-    "id": "coraje",
-    "name": "Coraje el Perro Cobarde",
-    "lacartoons_serie_id": 23,
-    "thumbnail": null,
-    "active": true
-  },
-  {
-    "id": "tom-y-jerry",
-    "name": "Tom y Jerry",
-    "lacartoons_serie_id": 1,
-    "thumbnail": null,
-    "active": true
-  },
-  {
-    "id": "scooby-doo",
-    "name": "Scooby-Doo",
-    "lacartoons_serie_id": 5,
-    "thumbnail": null,
-    "active": true
-  }
+    {
+        "id": "coraje",
+        "name": "Coraje El Perro Cobarde",
+        "lacartoons_serie_id": 5,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "tom-y-jerry",
+        "name": "Tom y Jerry",
+        "lacartoons_serie_id": 35,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "dragon-ball",
+        "name": "Dragon Ball",
+        "lacartoons_serie_id": 40,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "dragon-ball-z",
+        "name": "Dragon Ball Z",
+        "lacartoons_serie_id": 41,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "pokemon",
+        "name": "Pokemon",
+        "lacartoons_serie_id": 39,
+        "thumbnail": null,
+        "active": true
+    }
 ]

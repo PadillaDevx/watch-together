@@ -34,6 +34,11 @@ const io = new socket_io_1.Server(httpServer, {
 });
 app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json({ limit: '2mb' }));
+// CSP: restrict frame-src to known embed domains
+app.use((_req, res, next) => {
+    res.setHeader('Content-Security-Policy', "frame-src 'self' cubeembed.rpmvid.com *.cubeembed.rpmvid.com");
+    next();
+});
 // Routes
 app.use('/api/auth', auth_1.authRouter);
 app.use('/api/admin', (0, admin_1.createAdminRouter)(io));

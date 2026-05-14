@@ -13,7 +13,14 @@ export function useHlsPlayer({ videoRef, onPlay, onPause, onEnded }: UseHlsPlaye
     const lastUrlRef = useRef<string | null>(null);
     const [isLive, setIsLive] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const onPlayRef = useRef(onPlay);
+    const onPauseRef = useRef(onPause);
     const onEndedRef = useRef(onEnded);
+    // Suppress local play/pause events for a short window after a remote command
+    // to prevent infinite feedback loops between connected clients
+    const suppressUntilRef = useRef(0);
+    useEffect(() => { onPlayRef.current = onPlay; }, [onPlay]);
+    useEffect(() => { onPauseRef.current = onPause; }, [onPause]);
     useEffect(() => { onEndedRef.current = onEnded; }, [onEnded]);
 
     // Attach native video event listeners once (stable ref, never re-attach)
@@ -22,10 +29,12 @@ export function useHlsPlayer({ videoRef, onPlay, onPause, onEnded }: UseHlsPlaye
         if (!video) return;
 
         function handlePlay() {
-            onPlay?.(video!.currentTime);
+            if (Date.now() < suppressUntilRef.current) return;
+            onPlayRef.current?.(video!.currentTime);
         }
         function handlePause() {
-            onPause?.(video!.currentTime);
+            if (Date.now() < suppressUntilRef.current) return;
+            onPauseRef.current?.(video!.currentTime);
         }
 
         const handleEnded = () => onEndedRef.current?.();
@@ -96,23 +105,29 @@ export function useHlsPlayer({ videoRef, onPlay, onPause, onEnded }: UseHlsPlaye
         }
     }, [videoRef]);
 
+    // Generous threshold avoids HLS re-buffering / black flash on small drifts.
+    const SEEK_THRESHOLD = 2;
+
     const remotePlay = useCallback((time: number) => {
         const video = videoRef.current;
         if (!video) return;
-        if (!isLive) video.currentTime = time;
+        suppressUntilRef.current = Date.now() + 700;
+        if (!isLive && Math.abs(video.currentTime - time) > SEEK_THRESHOLD) video.currentTime = time;
         video.play().catch(() => { /* ignore autoplay policy errors */ });
     }, [videoRef, isLive]);
 
     const remotePause = useCallback((time: number) => {
         const video = videoRef.current;
         if (!video) return;
+        suppressUntilRef.current = Date.now() + 700;
         video.pause();
-        if (!isLive) video.currentTime = time;
+        if (!isLive && Math.abs(video.currentTime - time) > SEEK_THRESHOLD) video.currentTime = time;
     }, [videoRef, isLive]);
 
     const remoteSeek = useCallback((time: number) => {
         const video = videoRef.current;
         if (!video) return;
+        suppressUntilRef.current = Date.now() + 800;
         video.currentTime = time;
     }, [videoRef]);
 

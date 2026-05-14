@@ -122,7 +122,7 @@ export function JellyfinBrowserModal({ open, onClose, roomId }: JellyfinBrowserM
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search movies, episodes…"
                                 autoFocus
-                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-accent"
                             />
                         </div>
 
@@ -157,7 +157,7 @@ export function JellyfinBrowserModal({ open, onClose, roomId }: JellyfinBrowserM
                                 {results.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="flex flex-col rounded-xl bg-white/5 border border-white/[0.06] overflow-hidden hover:border-violet-500/30 transition-colors"
+                                        className="flex flex-col rounded-xl bg-white/5 border border-white/[0.06] overflow-hidden hover:border-accent-muted transition-colors"
                                     >
                                         {/* Poster */}
                                         <div className="aspect-[2/3] bg-white/5 relative overflow-hidden">
@@ -188,15 +188,15 @@ export function JellyfinBrowserModal({ open, onClose, roomId }: JellyfinBrowserM
                                             <div className="flex gap-1.5 mt-auto pt-1">
                                                 <button
                                                     onClick={() => handlePlay(item)}
-                                                    className="flex-1 px-2 py-1 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-lg transition-colors whitespace-nowrap flex items-center justify-center gap-1"
+                                                    className="flex-1 px-2 py-1 bg-accent hover:bg-accent-light text-white text-xs rounded-lg transition-colors whitespace-nowrap flex items-center justify-center gap-1"
                                                 >
-                                                    <Play className="h-3 w-3 fill-current" /> Play
+                                                    <Play className="h-3 w-3 fill-current" /> Reproducir
                                                 </button>
                                                 <button
                                                     onClick={() => handleQueue(item)}
                                                     className="flex-1 px-2 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-xs rounded-lg transition-colors whitespace-nowrap"
                                                 >
-                                                    + Queue
+                                                    + Cola
                                                 </button>
                                             </div>
                                         </div>

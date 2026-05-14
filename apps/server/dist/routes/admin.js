@@ -4,6 +4,7 @@ exports.createAdminRouter = createAdminRouter;
 const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const users_1 = require("../services/users");
+const users_2 = require("../services/users");
 const rooms_1 = require("../services/rooms");
 const tokens_1 = require("../services/tokens");
 const iptv_1 = require("../services/iptv");
@@ -12,7 +13,7 @@ function createAdminRouter(io) {
     const router = (0, express_1.Router)();
     router.get('/users', auth_1.adminAuth, async (_req, res) => {
         try {
-            res.json({ users: await (0, users_1.listUsers)() });
+            res.json({ users: await (0, users_2.listUsers)() });
         }
         catch {
             res.status(500).json({ error: 'Error interno' });
@@ -27,14 +28,14 @@ function createAdminRouter(io) {
         res.cookie('wj_admin', (0, tokens_1.signAdminCookie)(password ?? ''), { httpOnly: true, sameSite: 'strict' });
         res.json({ ok: true });
     });
-    router.post('/rooms', auth_1.adminAuth, async (req, res) => {
+    router.post('/rooms', auth_1.sessionAuth, async (req, res) => {
         const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body;
         if (!name) {
             res.status(400).json({ error: 'Falta nombre de sala' });
             return;
         }
         try {
-            const room = await (0, rooms_1.createRoom)(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId);
+            const room = await (0, rooms_1.createRoom)(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId, req.sessionUsername);
             io.emit('room-list', (0, rooms_1.getRoomList)());
             res.json(room);
         }
@@ -42,9 +43,18 @@ function createAdminRouter(io) {
             res.status(500).json({ error: 'Error interno' });
         }
     });
-    router.delete('/rooms/:id', auth_1.adminAuth, async (req, res) => {
+    router.delete('/rooms/:id', auth_1.sessionAuth, async (req, res) => {
+        const roomId = req.params['id'] ?? '';
+        const room = rooms_1._rooms.get(roomId);
+        const cookies = (0, auth_1.parseCookies)(req.headers.cookie);
+        const isAdmin = (0, users_1.isAdminSession)(cookies['wj_session']);
+        const isCreator = room?.createdByUsername === req.sessionUsername;
+        if (!isAdmin && !isCreator) {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
         try {
-            await (0, rooms_1.deleteRoom)(req.params['id'] ?? '');
+            await (0, rooms_1.deleteRoom)(roomId);
             io.emit('room-list', (0, rooms_1.getRoomList)());
             res.json({ ok: true });
         }

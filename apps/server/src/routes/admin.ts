@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Server } from 'socket.io';
-import { adminAuth } from '../middleware/auth';
+import { adminAuth, sessionAuth, parseCookies } from '../middleware/auth';
+import { isAdminSession } from '../services/users';
 import { listUsers } from '../services/users';
 import { createRoom, deleteRoom, deleteAllRooms, getRoomList, _rooms } from '../services/rooms';
 import { generateToken, listTokens, revokeAllTokens, signAdminCookie } from '../services/tokens';
@@ -28,19 +29,28 @@ export function createAdminRouter(io: IO) {
     res.json({ ok: true });
   });
 
-  router.post('/rooms', adminAuth, async (req, res) => {
+  router.post('/rooms', sessionAuth, async (req, res) => {
     const { name, maxUsers, isOpen, sourceType, iptvListId } = req.body as { name?: string; maxUsers?: number; isOpen?: boolean; sourceType?: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string };
     if (!name) { res.status(400).json({ error: 'Falta nombre de sala' }); return; }
     try {
-      const room = await createRoom(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId);
+      const room = await createRoom(name, Number(maxUsers) || 10, isOpen !== false, sourceType ?? 'youtube', iptvListId, req.sessionUsername);
       io.emit('room-list', getRoomList());
       res.json(room);
     } catch { res.status(500).json({ error: 'Error interno' }); }
   });
 
-  router.delete('/rooms/:id', adminAuth, async (req, res) => {
+  router.delete('/rooms/:id', sessionAuth, async (req, res) => {
+    const roomId = req.params['id'] ?? '';
+    const room = _rooms.get(roomId);
+    const cookies = parseCookies(req.headers.cookie);
+    const isAdmin = isAdminSession(cookies['wj_session']);
+    const isCreator = room?.createdByUsername === req.sessionUsername;
+    if (!isAdmin && !isCreator) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
     try {
-      await deleteRoom(req.params['id'] ?? '');
+      await deleteRoom(roomId);
       io.emit('room-list', getRoomList());
       res.json({ ok: true });
     } catch { res.status(500).json({ error: 'Error interno' }); }

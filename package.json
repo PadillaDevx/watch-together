@@ -1,9 +1,11 @@
 {
   "name": "watchjunto",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "concurrently -n server,client -c yellow,cyan \"npm run dev -w apps/server\" \"npm run dev -w apps/client\"",
+    "dev": "concurrently -n server,client -c yellow,cyan \"PORT=3002 npm run dev -w apps/server\" \"npm run dev -w apps/client\"",
     "build": "npm run build -w apps/server && npm run build -w apps/client",
     "start": "npm run start -w apps/server",
     "docker:up": "docker compose up -d --build",

@@ -77,13 +77,14 @@ function setupSocket(io) {
             }
             io.emit('room-list', (0, rooms_1.getRoomList)());
         });
-        socket.on('player-play', ({ roomId, currentTime }) => {
+        socket.on('player-play', ({ roomId, currentTime, sentAt }) => {
             (0, rooms_1.updatePlayerState)(roomId, { isPlaying: true, currentTime });
-            socket.to(roomId).emit('player-play', { currentTime });
+            // Forward sentAt so receiver can compensate for network latency
+            socket.to(roomId).emit('player-play', { currentTime, sentAt: sentAt ?? Date.now() });
         });
-        socket.on('player-pause', ({ roomId, currentTime }) => {
+        socket.on('player-pause', ({ roomId, currentTime, sentAt }) => {
             (0, rooms_1.updatePlayerState)(roomId, { isPlaying: false, currentTime });
-            socket.to(roomId).emit('player-pause', { currentTime });
+            socket.to(roomId).emit('player-pause', { currentTime, sentAt: sentAt ?? Date.now() });
         });
         socket.on('player-seek', ({ roomId, currentTime }) => {
             (0, rooms_1.updatePlayerState)(roomId, { currentTime });
@@ -150,6 +151,27 @@ function setupSocket(io) {
                 title: room?.playerState.title ?? null,
                 thumbnail: room?.playerState.thumbnail ?? null,
             });
+        });
+        // Feature 4: unified player-action with latency compensation
+        socket.on('player-action', ({ roomId, action, currentTime, timestamp, videoId, streamUrl, embedUrl, title, thumbnail }) => {
+            if (!socket.data.authenticated)
+                return;
+            const room = (0, rooms_1.getRoom)(roomId);
+            if (!room)
+                return;
+            const latencyMs = Date.now() - (timestamp ?? Date.now());
+            const latencyS = latencyMs / 1000;
+            const adjustedTime = (currentTime ?? 0) + latencyS / 2;
+            if (action === 'play') {
+                (0, rooms_1.updatePlayerState)(roomId, { currentTime: adjustedTime, isPlaying: true });
+            }
+            else if (action === 'pause') {
+                (0, rooms_1.updatePlayerState)(roomId, { currentTime: currentTime ?? 0, isPlaying: false });
+            }
+            else if (action === 'seek') {
+                (0, rooms_1.updatePlayerState)(roomId, { currentTime: adjustedTime });
+            }
+            socket.to(roomId).emit('player-sync', { action: action, currentTime: adjustedTime, serverTime: Date.now() });
         });
         socket.on('queue-add', async ({ roomId, item }) => {
             if (!socket.data.authenticated)
@@ -235,7 +257,22 @@ function setupSocket(io) {
             io.to(roomId).emit('series-episode-change', { serieId, serieName, temporada, episodioIndex, embedUrl, titulo });
             io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo });
         });
+        socket.on('typing-start', ({ roomId, username }) => {
+            if (!socket.data.authenticated)
+                return;
+            const typingUsers = (0, rooms_1.addTypingUser)(roomId, username);
+            socket.to(roomId).emit('typing-update', { roomId, typingUsers });
+        });
+        socket.on('typing-stop', ({ roomId, username }) => {
+            if (!socket.data.authenticated)
+                return;
+            const typingUsers = (0, rooms_1.removeTypingUser)(roomId, username);
+            socket.to(roomId).emit('typing-update', { roomId, typingUsers });
+        });
         socket.on('disconnect', () => {
+            if (socket.data.username) {
+                (0, rooms_1.removeTypingUserFromAll)(socket.data.username);
+            }
             for (const room of rooms_1._rooms.values()) {
                 if (room.users.has(socket.id)) {
                     (0, rooms_1.removeUserFromRoom)(room.id, socket.id);
@@ -246,4 +283,15 @@ function setupSocket(io) {
             }
         });
     });
+    // Feature 4: heartbeat for active rooms — large interval to avoid disrupting
+    // playback. Clients only correct drifts >5s (see onPlayerHeartbeat in RoomPage)
+    setInterval(() => {
+        for (const room of rooms_1._rooms.values()) {
+            if (room.playerState.isPlaying && room.users.size > 1) {
+                const elapsed = (Date.now() - (room.playerState.updatedAt ?? Date.now())) / 1000;
+                const estimatedTime = (room.playerState.currentTime ?? 0) + elapsed;
+                io.to(room.id).emit('player-heartbeat', { currentTime: estimatedTime, isPlaying: true });
+            }
+        }
+    }, 120000);
 }
