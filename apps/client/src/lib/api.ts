@@ -66,6 +66,10 @@ export const jellyfinApi = {
 export const libraryApi = {
   listSeries: () =>
     api.get<LibrarySerie[]>('/api/library/series'),
+  listCatalog: () =>
+    api.get<LibrarySerie[]>('/api/library/series/catalog'),
+  updateSerie: (serieId: string, active: boolean) =>
+    api.patch<LibrarySerie>(`/api/library/series/${serieId}`, { active }),
   getSerieDetail: (serieId: string) =>
     api.get<LibrarySerieDetail>(`/api/library/series/${serieId}/episodes`),
   resolveEmbed: (path: string) =>

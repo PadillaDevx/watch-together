@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
-  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server, Library, Loader2, Menu,
+  Trash2, RefreshCw, Copy, Check, Plus, Users, Radio, Key, Tv, List, Server, Library, Loader2, Menu, Search, BookOpen,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Sidebar } from '../components/Sidebar';
@@ -17,7 +17,7 @@ import { copyToClipboard } from '../lib/utils';
 import { useStore } from '../store';
 import type { AdminUser, Connection, Token, Room, LibrarySerie } from '../types';
 
-type Tab = 'rooms' | 'users' | 'connections' | 'tokens' | 'iptv' | 'jellyfin';
+type Tab = 'rooms' | 'users' | 'connections' | 'tokens' | 'iptv' | 'jellyfin' | 'biblioteca';
 
 export function AdminPage() {
   const { user, rooms } = useStore();
@@ -79,6 +79,7 @@ export function AdminPage() {
               { id: 'tokens', label: 'Tokens', icon: Key },
               { id: 'iptv', label: 'Listas IPTV', icon: List },
               { id: 'jellyfin', label: 'Jellyfin', icon: Server },
+              { id: 'biblioteca', label: 'Biblioteca', icon: BookOpen },
             ] as const).map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -100,8 +101,10 @@ export function AdminPage() {
           {tab === 'tokens' && <TokensTab />}
           {tab === 'iptv' && <IPTVListManager />}
           {tab === 'jellyfin' && <JellyfinTab />}
+          {tab === 'biblioteca' && <BibliotecaTab />}
 
           {/* Series Clásicas — Mi Progreso */}
+          {tab !== 'biblioteca' && (
           <section className="border-t border-white/[0.06] pt-8">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
               <Library className="w-5 h-5" />
@@ -131,6 +134,7 @@ export function AdminPage() {
               </div>
             )}
           </section>
+          )}
         </div>
       </main>
 
@@ -478,6 +482,143 @@ function JellyfinTab() {
           <Server className="h-4 w-4" /> Guardar &amp; Verificar
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ─── Biblioteca Tab ──────────────────────────────────────────────────────────
+
+function BibliotecaTab() {
+  const { user, rooms } = useStore();
+  const [catalog, setCatalog] = useState<LibrarySerie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+
+  const load = useCallback(() => {
+    setLoading(true);
+    libraryApi.listCatalog()
+      .then(({ data }) => setCatalog(data))
+      .catch(() => toast.error('Error al cargar el catálogo'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleToggle(serie: LibrarySerie) {
+    const newActive = !serie.active;
+    setToggling((prev) => new Set(prev).add(serie.id));
+    // Optimistic update
+    setCatalog((prev) => prev.map((s) => s.id === serie.id ? { ...s, active: newActive } : s));
+    try {
+      await libraryApi.updateSerie(serie.id, newActive);
+      toast.success(`${serie.name} ${newActive ? 'activada' : 'desactivada'}`);
+    } catch {
+      // Revert on error
+      setCatalog((prev) => prev.map((s) => s.id === serie.id ? { ...s, active: serie.active } : s));
+      toast.error('Error al actualizar la serie');
+    } finally {
+      setToggling((prev) => { const next = new Set(prev); next.delete(serie.id); return next; });
+    }
+  }
+
+  const filtered = catalog.filter((s) => {
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
+    const matchFilter =
+      filterActive === 'all' ? true :
+      filterActive === 'active' ? s.active :
+      !s.active;
+    return matchSearch && matchFilter;
+  });
+
+  const activeCount = catalog.filter((s) => s.active).length;
+
+  return (
+    <div className="space-y-4">
+      {/* Header stats */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-white/60">
+            <span className="text-emerald-400 font-semibold">{activeCount}</span> activas
+            {' / '}
+            <span className="text-white/40">{catalog.length} totales</span>
+          </span>
+        </div>
+        <Button variant="ghost" size="sm" onClick={load}>
+          <RefreshCw className="h-3.5 w-3.5" /> Refrescar
+        </Button>
+      </div>
+
+      {/* Search + filter */}
+      <div className="flex gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar serie..."
+            className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs">
+          {(['all', 'active', 'inactive'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilterActive(f)}
+              className={`px-3 py-2 transition-colors ${filterActive === f ? 'bg-accent-muted text-accent-lighter' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+            >
+              {f === 'all' ? 'Todas' : f === 'active' ? 'Activas' : 'Inactivas'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <LoadingState />
+      ) : filtered.length === 0 ? (
+        <EmptyState message="No se encontraron series" />
+      ) : (
+        <div className="space-y-1.5">
+          {filtered.map((serie) => (
+            <div
+              key={serie.id}
+              className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${serie.active ? 'bg-emerald-400' : 'bg-white/15'}`} />
+                <span className="text-sm text-white truncate">{serie.name}</span>
+                <span className="text-xs text-white/20 flex-shrink-0">#{serie.lacartoons_serie_id}</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Progress reset — only visible for active series */}
+                {serie.active && user && (
+                  <button
+                    onClick={() => {
+                      resetProgressAllRooms(serie.id, user.username, rooms.map((r) => r.id));
+                      toast.success(`Progreso reseteado`);
+                    }}
+                    className="text-xs text-white/30 hover:text-red-400 transition-colors px-2 py-1 rounded"
+                  >
+                    Reset
+                  </button>
+                )}
+                {/* Toggle switch */}
+                <button
+                  onClick={() => handleToggle(serie)}
+                  disabled={toggling.has(serie.id)}
+                  className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent ${serie.active ? 'bg-accent' : 'bg-white/15'} ${toggling.has(serie.id) ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+                  aria-label={serie.active ? 'Desactivar serie' : 'Activar serie'}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${serie.active ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

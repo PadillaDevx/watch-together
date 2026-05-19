@@ -4,6 +4,11 @@ import type { LibrarySerie, LibrarySerieDetail, LibraryTemporada, LibraryEpisodi
 const LACARTOONS_BASE_URL = 'https://www.lacartoons.com';
 
 // ── Static config ────────────────────────────────────────────────────────────
+import * as fs from 'fs';
+import * as path from 'path';
+
+const LIBRARY_PATH = path.join(__dirname, '../db/library.json');
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const libraryData: LibrarySerie[] = require('../db/library.json') as LibrarySerie[];
 
@@ -39,6 +44,38 @@ export async function fetchSeriesList(): Promise<LibrarySerie[]> {
     seriesCache.set(CACHE_KEY, activeSeries);
     cacheTimestamps.set(CACHE_KEY, Date.now());
     return activeSeries;
+}
+
+/**
+ * Returns the full catalog (active + inactive) from `library.json`.
+ * Used by the admin panel to display and manage all series.
+ */
+export function fetchAllSeries(): LibrarySerie[] {
+    return libraryData;
+}
+
+/**
+ * Toggles the `active` flag of a serie and persists the change to `library.json`.
+ * Clears the series list cache so the next request picks up the change.
+ *
+ * @param serieId - Slug matching an `id` in `library.json`.
+ * @param active  - New active state.
+ * @throws `Error` if the serie is not found.
+ */
+export function toggleSerieActive(serieId: string, active: boolean): LibrarySerie {
+    const serie = libraryData.find((s) => s.id === serieId);
+    if (!serie) throw new Error(`Serie "${serieId}" no encontrada en library.json`);
+
+    serie.active = active;
+
+    // Persist to disk
+    fs.writeFileSync(LIBRARY_PATH, JSON.stringify(libraryData, null, 4), 'utf8');
+
+    // Invalidate series list cache
+    seriesCache.delete('all');
+    cacheTimestamps.delete('all');
+
+    return serie;
 }
 
 // ── fetchSerieDetail ─────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
-import { sessionAuth } from '../middleware/auth';
-import { fetchSeriesList, fetchSerieDetail, resolveEpisodeEmbed } from '../services/libraryService';
+import { sessionAuth, adminAuth } from '../middleware/auth';
+import { fetchSeriesList, fetchSerieDetail, resolveEpisodeEmbed, fetchAllSeries, toggleSerieActive } from '../services/libraryService';
 
 /**
  * Creates the Express router for the `/api/library` namespace.
@@ -24,6 +24,33 @@ export function createLibraryRouter(): Router {
             res.json(series);
         } catch {
             res.status(502).json({ error: 'No se pudo conectar a la biblioteca' });
+        }
+    });
+
+    // GET /api/library/series/catalog — full catalog (admin only)
+    router.get('/series/catalog', adminAuth, (_req: Request, res: Response) => {
+        res.json(fetchAllSeries());
+    });
+
+    // PATCH /api/library/series/:serieId — toggle active state (admin only)
+    router.patch('/series/:serieId', adminAuth, (req: Request, res: Response) => {
+        const { serieId } = req.params;
+        const { active } = req.body as { active?: boolean };
+
+        if (!serieId || !/^[a-z0-9-]{1,100}$/.test(serieId)) {
+            res.status(400).json({ error: 'ID de serie inválido' });
+            return;
+        }
+        if (typeof active !== 'boolean') {
+            res.status(400).json({ error: 'El campo "active" debe ser boolean' });
+            return;
+        }
+
+        try {
+            const updated = toggleSerieActive(serieId, active);
+            res.json(updated);
+        } catch {
+            res.status(404).json({ error: 'Serie no encontrada' });
         }
     });
 
