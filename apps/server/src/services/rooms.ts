@@ -59,6 +59,7 @@ function buildRoomFromDb(
     users: new Map(),
     chatHistory: [],
     queue,
+    readyUsers: new Set(),
   };
 }
 
@@ -152,19 +153,94 @@ export function getRoomList(): RoomListItem[] {
       username: data.username,
       joinedAt: data.joinedAt,
     })),
+    hostUsername: room.hostUsername,
   }));
 }
 
+/**
+ * Add a user to a room. If the room currently has no host, the joining user
+ * is automatically promoted to host (first-joiner-becomes-host policy).
+ *
+ * @param roomId - Target room identifier
+ * @param socketId - Socket id of the joining user (used as host identifier)
+ * @param username - Display username of the joining user
+ * @returns `{ ok: true, becameHost }` on success, or `{ ok: false, code }` on
+ *          failure (`ROOM_NOT_FOUND` or `ROOM_FULL`).
+ */
 export function addUserToRoom(roomId: string, socketId: string, username: string) {
   const room = _rooms.get(roomId);
   if (!room) return { ok: false as const, code: 'ROOM_NOT_FOUND' };
   if (room.users.size >= room.maxUsers) return { ok: false as const, code: 'ROOM_FULL' };
   room.users.set(socketId, { username, joinedAt: new Date() });
-  return { ok: true as const };
+
+  let becameHost = false;
+  if (!room.hostUserId) {
+    room.hostUserId = socketId;
+    room.hostUsername = username;
+    becameHost = true;
+  }
+  return { ok: true as const, becameHost };
 }
 
 export function removeUserFromRoom(roomId: string, socketId: string): void {
   _rooms.get(roomId)?.users.delete(socketId);
+}
+
+/**
+ * Promote the next user in `room.users` to host, selecting the user with the
+ * earliest `joinedAt` timestamp. Used when the current host disconnects or
+ * leaves the room.
+ *
+ * Caller is expected to have already removed the previous host from
+ * `room.users` (or to do so afterwards) — this function only inspects the
+ * current membership and updates `hostUserId` / `hostUsername`.
+ *
+ * @param roomId - Room to promote a new host in
+ * @returns Information about the new host, or `null` when the room is empty
+ *          or does not exist (host fields are cleared in that case).
+ */
+export function promoteNextHost(
+  roomId: string,
+): { newHostSocketId: string; newHostUsername: string; previousHostUsername?: string } | null {
+  const room = _rooms.get(roomId);
+  if (!room) return null;
+
+  const previousHostUsername = room.hostUsername;
+
+  if (room.users.size === 0) {
+    room.hostUserId = undefined;
+    room.hostUsername = undefined;
+    return null;
+  }
+
+  // Select user with the earliest joinedAt; ties broken deterministically by socket id
+  let nextSocketId: string | undefined;
+  let nextUser: { username: string; joinedAt: Date } | undefined;
+  for (const [socketId, user] of room.users.entries()) {
+    if (
+      !nextUser ||
+      user.joinedAt.getTime() < nextUser.joinedAt.getTime() ||
+      (user.joinedAt.getTime() === nextUser.joinedAt.getTime() && socketId < (nextSocketId ?? ''))
+    ) {
+      nextSocketId = socketId;
+      nextUser = user;
+    }
+  }
+
+  if (!nextSocketId || !nextUser) {
+    room.hostUserId = undefined;
+    room.hostUsername = undefined;
+    return null;
+  }
+
+  room.hostUserId = nextSocketId;
+  room.hostUsername = nextUser.username;
+
+  return {
+    newHostSocketId: nextSocketId,
+    newHostUsername: nextUser.username,
+    previousHostUsername,
+  };
 }
 
 export function updatePlayerState(roomId: string, patch: Partial<PlayerState>): void {

@@ -64,6 +64,14 @@ export interface Room {
   chatHistory: ChatMessage[];
   /** Ordered list of items waiting to be played */
   queue: QueueItem[];
+  /** Socket IDs that have signalled 'client-ready' for passive sync */
+  readyUsers: Set<string>;
+  /** Timeout handle for passive-sync ready fallback */
+  readyTimeoutHandle?: ReturnType<typeof setTimeout>;
+  /** Socket ID of the current host (first joiner, auto-promoted on disconnect) */
+  hostUserId?: string;
+  /** Username of the current host, mirrored from `hostUserId` for convenience */
+  hostUsername?: string;
 }
 
 export interface RoomListItem {
@@ -79,6 +87,8 @@ export interface RoomListItem {
   iptvListId?: string;
   playerState: PlayerState;
   users: Array<{ socketId: string; username: string; joinedAt: Date }>;
+  /** Username of the current host (if any users are in the room) */
+  hostUsername?: string;
 }
 
 export interface TokenRecord {
@@ -139,10 +149,13 @@ export interface ServerToClientEvents {
   'player-sync': (data: { action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; serverTime: number }) => void;
   'player-heartbeat': (data: { currentTime: number; isPlaying: boolean }) => void;
   'series-episode-change': (data: { serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => void;
+  'start-playback': (data: { playAt: number; serverNow: number }) => void;
+  'resync-state': (data: { currentTime: number; isPlaying: boolean; serverNow: number; syncMode: string }) => void;
   'chat-message': (msg: ChatMessage) => void;
   'typing-update': (data: { roomId: string; typingUsers: string[] }) => void;
   'user-joined': (data: { username: string }) => void;
   'user-left': (data: { username: string }) => void;
+  'host-changed': (data: { newHostUsername: string; newHostSocketId: string; previousHostUsername?: string }) => void;
   'error': (data: { code: string }) => void;
 }
 
@@ -165,6 +178,8 @@ export interface ClientToServerEvents {
   'queue-next': (data: { roomId: string }) => void;
   'queue-reorder': (data: { roomId: string; fromIndex: number; toIndex: number }) => void;
   'switch-source': (data: { roomId: string; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;
+  'client-ready': (data: { roomId: string; userId: string }) => void;
+  'request-resync': (data: { roomId: string }) => void;
 }
 
 export interface SocketData {

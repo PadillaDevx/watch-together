@@ -7,6 +7,7 @@ import {
   updatePlayerState, appendChatMessage, getLiveCurrentTime, _rooms,
   addToQueue, removeFromQueue, shiftQueue, reorderQueue, switchRoomSource,
   addTypingUser, removeTypingUser, removeTypingUserFromAll,
+  promoteNextHost,
 } from '../services/rooms';
 import { trustHostname } from '../routes/iptv';
 import type { QueueItem, ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
@@ -61,15 +62,47 @@ export function setupSocket(io: IO): void {
       socket.to(roomId).emit('user-joined', { username: socket.data.username });
       io.to(roomId).emit('room-users', getRoomUsers(room));
       io.emit('room-list', getRoomList());
+      // If the joining user became the first host, notify the whole room so
+      // clients can render the host badge immediately.
+      if (result.becameHost && room.hostUserId && room.hostUsername) {
+        io.to(roomId).emit('host-changed', {
+          newHostUsername: room.hostUsername,
+          newHostSocketId: room.hostUserId,
+        });
+      } else if (!result.becameHost && room.hostUserId && room.hostUsername) {
+        // The joining user did not become host, but the room already has one.
+        // Emit `host-changed` directly to the joining socket so the client can
+        // initialize its host state (the `room-users` payload does not include
+        // the host identity).
+        socket.emit('host-changed', {
+          newHostUsername: room.hostUsername,
+          newHostSocketId: room.hostUserId,
+        });
+      }
       console.log('[WJ]', socket.data.username, 'joined room', roomId);
     });
 
     socket.on('leave-room', ({ roomId }) => {
+      const room = getRoom(roomId);
+      const wasHost = room?.hostUserId === socket.id;
+      const previousHostUsername = room?.hostUsername;
+
       removeUserFromRoom(roomId, socket.id);
       socket.leave(roomId);
-      const room = getRoom(roomId);
       if (room) {
         socket.to(roomId).emit('user-left', { username: socket.data.username });
+
+        if (wasHost) {
+          const promotion = promoteNextHost(roomId);
+          if (promotion) {
+            io.to(roomId).emit('host-changed', {
+              newHostUsername: promotion.newHostUsername,
+              newHostSocketId: promotion.newHostSocketId,
+              previousHostUsername: promotion.previousHostUsername ?? previousHostUsername,
+            });
+          }
+        }
+
         io.to(roomId).emit('room-users', getRoomUsers(room));
       }
       io.emit('room-list', getRoomList());
@@ -247,6 +280,45 @@ export function setupSocket(io: IO): void {
       io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo });
     });
 
+    // Passive sync: client signals it has loaded the iframe
+    socket.on('client-ready', ({ roomId }) => {
+      if (!socket.data.authenticated) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+
+      room.readyUsers.add(socket.id);
+
+      const allReady = Array.from(room.users.keys()).every((sid) => room.readyUsers.has(sid));
+
+      if (allReady) {
+        clearTimeout(room.readyTimeoutHandle);
+        room.readyTimeoutHandle = undefined;
+        room.readyUsers.clear();
+        const playAt = Date.now() + 2000;
+        io.to(roomId).emit('start-playback', { playAt, serverNow: Date.now() });
+      } else if (!room.readyTimeoutHandle) {
+        // Fallback: start anyway after 8 seconds if not everyone is ready
+        room.readyTimeoutHandle = setTimeout(() => {
+          room.readyTimeoutHandle = undefined;
+          room.readyUsers.clear();
+          io.to(roomId).emit('start-playback', { playAt: Date.now() + 1000, serverNow: Date.now() });
+        }, 8000);
+      }
+    });
+
+    // Passive sync: viewer requests current position
+    socket.on('request-resync', ({ roomId }) => {
+      const room = getRoom(roomId);
+      if (!room) return;
+      const currentTime = getLiveCurrentTime(room);
+      socket.emit('resync-state', {
+        currentTime,
+        isPlaying: room.playerState.isPlaying,
+        serverNow: Date.now(),
+        syncMode: 'passive',
+      });
+    });
+
     socket.on('typing-start', ({ roomId, username }) => {
       if (!socket.data.authenticated) return;
       const typingUsers = addTypingUser(roomId, username);
@@ -265,8 +337,24 @@ export function setupSocket(io: IO): void {
       }
       for (const room of _rooms.values()) {
         if (room.users.has(socket.id)) {
+          const wasHost = room.hostUserId === socket.id;
+          const previousHostUsername = room.hostUsername;
+
+          room.readyUsers.delete(socket.id);
           removeUserFromRoom(room.id, socket.id);
           socket.to(room.id).emit('user-left', { username: socket.data.username });
+
+          if (wasHost) {
+            const promotion = promoteNextHost(room.id);
+            if (promotion) {
+              io.to(room.id).emit('host-changed', {
+                newHostUsername: promotion.newHostUsername,
+                newHostSocketId: promotion.newHostSocketId,
+                previousHostUsername: promotion.previousHostUsername ?? previousHostUsername,
+              });
+            }
+          }
+
           io.to(room.id).emit('room-users', getRoomUsers(room));
           io.emit('room-list', getRoomList());
         }
