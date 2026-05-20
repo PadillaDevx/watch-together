@@ -191,25 +191,25 @@ Sequential implementation phases ensure minimal regression and allow incremental
 - No regression: passive sync LoadingOverlay still appears; drift correction still functions; resync button still works.
 
 **Tasks:**
-- [ ] In `apps/client/src/hooks/useSmartSync.ts`, locate `socket.emit('player-action', ...)` calls
-- [ ] Remove any `if (isHost) { ... }` guards wrapping these emits
-- [ ] Ensure emits execute regardless of host status (for authenticated users only — server validates)
-- [ ] Verify `useSmartSync` receives `hostUsername` only for UI badge purposes, not control logic
-- [ ] In `apps/client/src/hooks/usePassiveSync.ts`, verify `client-ready`, `start-playback`, `request-resync` flows don't depend on host status
-- [ ] Confirm LoadingOverlay and PlayInstruction display correctly regardless of user role
-- [ ] In `apps/client/src/pages/RoomPage.tsx`, add `socket.on('host-changed', ...)` listener
-- [ ] Dispatch store action to update `roomHostUsername` on host-changed event
-- [ ] Extract host username from initial `room-users` payload and initialize store
-- [ ] Pass `hostUsername` from store to SyncProvider component
-- [ ] In `apps/client/src/components/SyncProvider.tsx`, accept `hostUsername` prop
-- [ ] Render HostBadge component with `hostUsername`; verify badge updates on prop change
-- [ ] Integration test: simulate host change mid-playback; verify badge updates; verify non-host can continue emitting playback actions
-- [ ] Regression test: verify passive sync flow unchanged with host changes; verify drift correction still functions; verify resync button accessible
-- [ ] Create or update `docs/client-playback-flow.md` documenting free-for-all client-side flow, host badge integration, and no-regression checklist
-- [ ] Write JSDoc and update docs/
-- [ ] Build & prettier syntax check
-- [ ] Write and run tests
-- [ ] Pass code review
+- [x] In `apps/client/src/hooks/useSmartSync.ts`, locate `socket.emit('player-action', ...)` calls
+- [x] Remove any `if (isHost) { ... }` guards wrapping these emits
+- [x] Ensure emits execute regardless of host status (for authenticated users only — server validates)
+- [x] Verify `useSmartSync` receives `hostUsername` only for UI badge purposes, not control logic
+- [x] In `apps/client/src/hooks/usePassiveSync.ts`, verify `client-ready`, `start-playback`, `request-resync` flows don't depend on host status
+- [x] Confirm LoadingOverlay and PlayInstruction display correctly regardless of user role
+- [x] In `apps/client/src/pages/RoomPage.tsx`, add `socket.on('host-changed', ...)` listener
+- [x] Dispatch store action to update `roomHostUsername` on host-changed event
+- [x] Extract host username from initial `room-users` payload and initialize store
+- [x] Pass `hostUsername` from store to SyncProvider component
+- [x] In `apps/client/src/components/SyncProvider.tsx`, accept `hostUsername` prop
+- [x] Render HostBadge component with `hostUsername`; verify badge updates on prop change
+- [x] Integration test: simulate host change mid-playback; verify badge updates; verify non-host can continue emitting playback actions
+- [x] Regression test: verify passive sync flow unchanged with host changes; verify drift correction still functions; verify resync button accessible
+- [x] Create or update `docs/client-playback-flow.md` documenting free-for-all client-side flow, host badge integration, and no-regression checklist
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
 - [ ] Commit
 
 ---
