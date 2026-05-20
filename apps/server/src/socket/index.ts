@@ -23,7 +23,7 @@ type IO = Server<ClientToServerEvents, ServerToClientEvents, Record<string, neve
 
 function getRoomUsers(room: NonNullable<ReturnType<typeof getRoom>>) {
   return Array.from(room.users.entries()).map(([socketId, data]) => ({
-    socketId, username: data.username, joinedAt: data.joinedAt,
+    socketId, username: data.username, joinedAt: data.joinedAt.toISOString(),
   }));
 }
 

@@ -151,7 +151,7 @@ export function getRoomList(): RoomListItem[] {
     users: Array.from(room.users.entries()).map(([socketId, data]) => ({
       socketId,
       username: data.username,
-      joinedAt: data.joinedAt,
+      joinedAt: data.joinedAt.toISOString(),
     })),
     hostUsername: room.hostUsername,
   }));

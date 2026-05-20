@@ -18,7 +18,9 @@ export interface VideoSearchResult {
 /** Represents a single item in a room's playback queue */
 export interface QueueItem {
   id: string;
-  type: 'youtube' | 'movie' | 'series';
+  // TODO: 'series' is reserved for future use; the server currently only emits
+  // queue items of type 'youtube' | 'movie' | 'iptv'.
+  type: 'youtube' | 'movie' | 'series' | 'iptv';
   title: string;
   videoId?: string;
   streamUrl?: string;
@@ -56,8 +58,9 @@ export interface Room {
   iptvListId?: string;
   playerState: PlayerState;
   users: RoomUser[];
-  /** Ordered list of items waiting to be played */
-  queue: QueueItem[];
+  /** Ordered list of items waiting to be played. Optional because the
+   * lightweight `room-list` payload omits this field. */
+  queue?: QueueItem[];
 }
 
 export interface ChatMessage {
@@ -117,6 +120,7 @@ export interface JellyfinSearchResult {
 export interface LibrarySerie {
   id: string;
   name: string;
+  lacartoons_serie_id?: number;
   thumbnail?: string;
   active: boolean;
 }

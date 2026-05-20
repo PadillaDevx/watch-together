@@ -153,21 +153,21 @@ Sequential implementation phases ensure minimal regression and allow incremental
 - All received events (socket.on, socket.once) have corresponding type signatures.
 
 **Tasks:**
-- [ ] In `apps/server/src/types.ts`, verify existing `ClientToServerEvents` interface; document current events
-- [ ] Add `host-changed` to `ServerToClientEvents` if not present (from Feature 1)
-- [ ] Add/verify `series-episode-change`, `client-ready`, `request-resync`, `resync-state`, `start-playback`, `player-sync`, `player-heartbeat` to both event interfaces
-- [ ] In `apps/client/src/lib/socket.ts`, import event types from server `types.ts` or create mirror interfaces matching server
-- [ ] Search codebase for `@ts-ignore` comments in socket handlers; replace with proper type annotations
-- [ ] Search codebase for `as any` in socket context; replace with proper type casting or interface refinement
-- [ ] Run `npx tsc --noEmit` in `apps/server`; resolve any type errors
-- [ ] Run `npx tsc --noEmit` in `apps/client`; resolve any type errors
-- [ ] Add TypeScript strict mode validation test: verify no `noImplicitAny` errors in socket code
-- [ ] Document event signatures in code comments with payload examples for clarity
-- [ ] Create `docs/socket-types.md` documenting Socket.IO event interfaces, payload schemas, and type safety practices
-- [ ] Write JSDoc and update docs/
-- [ ] Build & prettier syntax check
-- [ ] Write and run tests
-- [ ] Pass code review
+- [x] In `apps/server/src/types.ts`, verify existing `ClientToServerEvents` interface; document current events
+- [x] Add `host-changed` to `ServerToClientEvents` if not present (from Feature 1)
+- [x] Add/verify `series-episode-change`, `client-ready`, `request-resync`, `resync-state`, `start-playback`, `player-sync`, `player-heartbeat` to both event interfaces
+- [x] In `apps/client/src/lib/socket.ts`, import event types from server `types.ts` or create mirror interfaces matching server
+- [x] Search codebase for `@ts-ignore` comments in socket handlers; replace with proper type annotations
+- [x] Search codebase for `as any` in socket context; replace with proper type casting or interface refinement
+- [x] Run `npx tsc --noEmit` in `apps/server`; resolve any type errors
+- [x] Run `npx tsc --noEmit` in `apps/client`; resolve any type errors
+- [x] Add TypeScript strict mode validation test: verify no `noImplicitAny` errors in socket code
+- [x] Document event signatures in code comments with payload examples for clarity
+- [x] Create `docs/socket-types.md` documenting Socket.IO event interfaces, payload schemas, and type safety practices
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
 - [ ] Commit
 
 ---

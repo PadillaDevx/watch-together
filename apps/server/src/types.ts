@@ -86,7 +86,7 @@ export interface RoomListItem {
   sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
-  users: Array<{ socketId: string; username: string; joinedAt: Date }>;
+  users: Array<{ socketId: string; username: string; joinedAt: string }>;
   /** Username of the current host (if any users are in the room) */
   hostUsername?: string;
 }
@@ -138,7 +138,7 @@ export interface LibrarySerieDetail extends LibrarySerie {
 
 export interface ServerToClientEvents {
   'room-list': (rooms: RoomListItem[]) => void;
-  'room-users': (users: Array<{ socketId: string; username: string; joinedAt: Date }>) => void;
+  'room-users': (users: Array<{ socketId: string; username: string; joinedAt: string }>) => void;
   'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; queue: QueueItem[]; title: string | null; thumbnail: string | null }) => void;
   'queue-update': (queue: QueueItem[]) => void;
   'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;

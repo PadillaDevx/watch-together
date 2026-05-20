@@ -360,7 +360,7 @@ export function RoomPage() {
     function onUserLeft({ username }: { username: string }) {
       toast(`${username} salió`, { duration: 3000 });
     }
-    function onError({ code }: { code: string }) {
+    function onError({ code }: { code?: string; message?: string }) {
       if (code === 'ROOM_NOT_FOUND') { toast.error('Sala no encontrada'); navigate('/'); }
       if (code === 'ROOM_FULL') { toast.error('La sala está llena'); navigate('/'); }
       if (code === 'ROOM_CLOSED') { toast.error('La sala está cerrada'); navigate('/'); }
