@@ -80,20 +80,20 @@ Sequential implementation phases ensure minimal regression and allow incremental
 - Host still visible in UI but has no special permission for playback control.
 
 **Tasks:**
-- [ ] Review `apps/server/src/middleware/auth.ts` and verify socket.data initialization with `authenticated`, `userId`, `username`, `roomId`
-- [ ] In `apps/server/src/socket/index.ts`, locate `player-action` handler
-- [ ] Replace any host-gating logic (if `socket.data.isHost` check exists) with authenticated + room participant check only
-- [ ] Implement validation: `if (!socket.data.authenticated || socket.data.roomId !== payload.roomId) { socket.emit('error', { message: 'Unauthorized' }); return; }`
-- [ ] Add latency compensation: calculate `const latencyMs = Date.now() - payload.timestamp; const adjustedTime = payload.currentTime + (latencyMs / 2000);`
-- [ ] Update `player-sync` broadcast to include `adjustedTime` in payload
-- [ ] Add integration tests in `apps/server/src/socket/__tests__/` covering: authenticated non-host emits play/pause/seek; unauthenticated emit rejected; room membership validated
-- [ ] Add latency compensation test: verify adjustedTime calculation with mock timestamps
-- [ ] Create `docs/playback-control-model.md` documenting free-for-all player-action model, validation rules, and latency compensation
-- [ ] Write JSDoc and update docs/
-- [ ] Build & prettier syntax check
-- [ ] Write and run tests
-- [ ] Pass code review
-- [ ] Commit
+- [x] Review `apps/server/src/middleware/auth.ts` and verify socket.data initialization with `authenticated`, `userId`, `username`, `roomId`
+- [x] In `apps/server/src/socket/index.ts`, locate `player-action` handler
+- [x] Replace any host-gating logic (if `socket.data.isHost` check exists) with authenticated + room participant check only
+- [x] Implement validation: `if (!socket.data.authenticated || socket.data.roomId !== payload.roomId) { socket.emit('error', { message: 'Unauthorized' }); return; }`
+- [x] Add latency compensation: calculate `const latencyMs = Date.now() - payload.timestamp; const adjustedTime = payload.currentTime + (latencyMs / 2000);`
+- [x] Update `player-sync` broadcast to include `adjustedTime` in payload
+- [x] Add integration tests in `apps/server/src/socket/__tests__/` covering: authenticated non-host emits play/pause/seek; unauthenticated emit rejected; room membership validated
+- [x] Add latency compensation test: verify adjustedTime calculation with mock timestamps
+- [x] Create `docs/playback-control-model.md` documenting free-for-all player-action model, validation rules, and latency compensation
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit
 
 ---
 
