@@ -69,22 +69,27 @@ export function setupSocket(io: IO): void {
       socket.to(roomId).emit('user-joined', { username: socket.data.username });
       io.to(roomId).emit('room-users', getRoomUsers(room));
       io.emit('room-list', getRoomList());
-      // If the joining user became the first host, notify the whole room so
-      // clients can render the host badge immediately.
-      if (result.becameHost && room.hostUserId && room.hostUsername) {
-        io.to(roomId).emit('host-changed', {
+      // Host badge initialization: guarantee that the joining socket ALWAYS
+      // receives `host-changed` whenever the room has a host, regardless of
+      // whether the joiner became the host (first joiner) or joined an
+      // existing host. This is the canonical mechanism for initializing the
+      // host badge on the client — the `room-users` payload intentionally
+      // does not carry host identity to keep its shape minimal.
+      if (room.hostUserId && room.hostUsername) {
+        const payload = {
           newHostUsername: room.hostUsername,
           newHostSocketId: room.hostUserId,
-        });
-      } else if (!result.becameHost && room.hostUserId && room.hostUsername) {
-        // The joining user did not become host, but the room already has one.
-        // Emit `host-changed` directly to the joining socket so the client can
-        // initialize its host state (the `room-users` payload does not include
-        // the host identity).
-        socket.emit('host-changed', {
-          newHostUsername: room.hostUsername,
-          newHostSocketId: room.hostUserId,
-        });
+        };
+        // Unicast to the joining socket so its local state is initialized
+        // immediately, even if it just became host.
+        socket.emit('host-changed', payload);
+        // If the joiner became the first host, also notify the rest of the
+        // room (other users that may already be there) so they render the
+        // badge. When the joiner did NOT become host, the host identity has
+        // not changed for existing users, so no broadcast is needed.
+        if (result.becameHost) {
+          socket.to(roomId).emit('host-changed', payload);
+        }
       }
       console.log('[WJ]', socket.data.username, 'joined room', roomId);
     });

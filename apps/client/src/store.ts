@@ -6,8 +6,19 @@ interface AppStore {
   user: User | null;
   isLoading: boolean;
   rooms: Room[];
+  /**
+   * Username of the current host for the active room, or null when the user
+   * is not in a room or no host is set. Updated reactively by `host-changed`
+   * socket events so all participants render the same host badge.
+   */
+  roomHostUsername: string | null;
   setUser: (user: User | null) => void;
   setRooms: (rooms: Room[]) => void;
+  /**
+   * Update the current room host username. Pass `null` when leaving the room
+   * or when the host identity is unknown.
+   */
+  setRoomHostUsername: (username: string | null) => void;
   fetchMe: () => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<{ recoveryCode: string }>;
@@ -18,9 +29,11 @@ export const useStore = create<AppStore>((set) => ({
   user: null,
   isLoading: true,
   rooms: [],
+  roomHostUsername: null,
 
   setUser: (user) => set({ user }),
   setRooms: (rooms) => set({ rooms }),
+  setRoomHostUsername: (username) => set({ roomHostUsername: username }),
 
   fetchMe: async () => {
     try {
@@ -44,6 +57,6 @@ export const useStore = create<AppStore>((set) => ({
 
   logout: async () => {
     await authApi.logout();
-    set({ user: null });
+    set({ user: null, roomHostUsername: null });
   },
 }));

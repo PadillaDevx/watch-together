@@ -118,21 +118,21 @@ Sequential implementation phases ensure minimal regression and allow incremental
 - Tooltip on hover shows full host username.
 
 **Tasks:**
-- [ ] In `apps/client/src/store.ts`, add `roomHostUsername: string | null = null` field to AppStore interface
-- [ ] Add `setRoomHostUsername: (username: string | null) => void` reducer to store
-- [ ] In `apps/client/src/components/SyncProvider.tsx`, create HostBadge sub-component receiving `hostUsername` prop
-- [ ] Implement HostBadge styling: pill with violet background, Crown icon (lucide-react), username text, tooltip
-- [ ] Render HostBadge in SyncProvider JSX at top-left with z-20, pointer-events-none
-- [ ] In `apps/client/src/pages/RoomPage.tsx`, add socket listener for `host-changed` event: `socket.on('host-changed', ({ newHostUsername }) => { setRoomHostUsername(newHostUsername); })`
-- [ ] Extract current host from `room-users` payload on join and dispatch `setRoomHostUsername`
-- [ ] In `apps/server/src/socket/index.ts`, update `room-users` event payload to include `hostUsername: room.hostUsername`
-- [ ] Test HostBadge rendering with mock `hostUsername`
-- [ ] Test real-time update: simulate `host-changed` event and verify badge updates
-- [ ] Create `docs/host-ui.md` documenting badge UI spec, styling rules, positioning, and real-time sync behavior
-- [ ] Write JSDoc and update docs/
-- [ ] Build & prettier syntax check
-- [ ] Write and run tests
-- [ ] Pass code review
+- [x] In `apps/client/src/store.ts`, add `roomHostUsername: string | null = null` field to AppStore interface
+- [x] Add `setRoomHostUsername: (username: string | null) => void` reducer to store
+- [x] In `apps/client/src/components/SyncProvider.tsx`, create HostBadge sub-component receiving `hostUsername` prop
+- [x] Implement HostBadge styling: pill with violet background, Crown icon (lucide-react), username text, tooltip
+- [x] Render HostBadge in SyncProvider JSX at top-left with z-20, pointer-events-none
+- [x] In `apps/client/src/pages/RoomPage.tsx`, add socket listener for `host-changed` event: `socket.on('host-changed', ({ newHostUsername }) => { setRoomHostUsername(newHostUsername); })`
+- [x] Extract current host from `room-users` payload on join and dispatch `setRoomHostUsername`
+- [x] In `apps/server/src/socket/index.ts`, update `room-users` event payload to include `hostUsername: room.hostUsername`
+- [x] Test HostBadge rendering with mock `hostUsername`
+- [x] Test real-time update: simulate `host-changed` event and verify badge updates
+- [x] Create `docs/host-ui.md` documenting badge UI spec, styling rules, positioning, and real-time sync behavior
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
 - [ ] Commit
 
 ---

@@ -23,6 +23,7 @@ import { Modal } from '../components/ui/Modal';
 import { useWatchProgress } from '../hooks/useWatchProgress';
 import { useSeriesNavigation } from '../hooks/useSeriesNavigation';
 import { libraryApi } from '../lib/api';
+import { SyncProvider } from '../components/SyncProvider';
 import type { ChatMessage, RoomUser, IPTVEntry, QueueItem, LibrarySerie, LibrarySerieDetail } from '../types';
 
 function extractVideoId(input: string): string | null {
@@ -53,6 +54,8 @@ export function RoomPage() {
   const location = useLocation();
   const pin = (location.state as { pin?: string } | null)?.pin;
   const { user, rooms } = useStore();
+  const roomHostUsername = useStore((s) => s.roomHostUsername);
+  const setRoomHostUsername = useStore((s) => s.setRoomHostUsername);
 
   const room = rooms.find((r) => r.id === roomId);
 
@@ -217,6 +220,8 @@ export function RoomPage() {
 
     return () => {
       socket.emit('leave-room', { roomId });
+      // Reset host badge so it does not leak across rooms.
+      setRoomHostUsername(null);
     };
   }, [roomId]);
 
@@ -440,6 +445,21 @@ export function RoomPage() {
     }
     socket.on('player-heartbeat', onPlayerHeartbeat);
 
+    /**
+     * Handle host changes (Feature 3 — Discrete Host Badge).
+     * Server emits this event in three cases:
+     *   1. First joiner becomes host (broadcast to room).
+     *   2. Late joiner who is NOT host receives a direct unicast so it can
+     *      initialise its local host state without waiting for a transition.
+     *   3. Previous host disconnects / leaves and a new host is promoted.
+     * The username is pushed to the global Zustand store so the
+     * <HostBadge /> rendered inside <SyncProvider /> updates reactively.
+     */
+    function onHostChanged(data: { newHostUsername: string; newHostSocketId: string; previousHostUsername?: string }) {
+      setRoomHostUsername(data.newHostUsername);
+    }
+    socket.on('host-changed', onHostChanged);
+
     return () => {
       socket.off('room-users', onRoomUsers);
       socket.off('sync-state', onSyncState);
@@ -457,6 +477,7 @@ export function RoomPage() {
       socket.off('typing-update', onTypingUpdate);
       socket.off('player-sync', onPlayerSync);
       socket.off('player-heartbeat', onPlayerHeartbeat);
+      socket.off('host-changed', onHostChanged);
     };
   }, [loadVideo, remotePlay, remotePause, remoteSeek, loadStream, hlsPlay, hlsPause, hlsSeek, navigate]);
 
@@ -857,13 +878,12 @@ export function RoomPage() {
                 />
                 {urlActivePlayer === 'iframe' && currentStreamUrl && (
                   <div className="absolute inset-0">
-                    <iframe
-                      key={currentStreamUrl}
-                      ref={iframeRef}
-                      src={currentStreamUrl}
-                      className="w-full h-full border-0"
-                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                      allowFullScreen
+                    <SyncProvider
+                      embedUrl={currentStreamUrl}
+                      roomId={roomId!}
+                      userId={user?.username ?? ''}
+                      isHost={roomHostUsername === user?.username}
+                      hostUsername={roomHostUsername}
                     />
                   </div>
                 )}
