@@ -11,6 +11,13 @@ import {
 } from '../services/rooms';
 import { trustHostname } from '../routes/iptv';
 import type { QueueItem, ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
+import {
+  validatePlayerAction,
+  computeAdjustedTime,
+  isValidAction,
+  isValidTimestamp,
+  type PlayerAction,
+} from './playerActionValidation';
 
 type IO = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
@@ -182,25 +189,67 @@ export function setupSocket(io: IO): void {
       });
     });
 
-    // Feature 4: unified player-action with latency compensation
+    /**
+     * Feature 2 — Strict server-side validation for the free-for-all playback
+     * model.
+     *
+     * Any authenticated socket that is a member of `roomId` may emit
+     * `player-action`; host status is intentionally NOT required. Unauthorised
+     * or cross-room emits are rejected with `socket.emit('error', { message:
+     * 'Unauthorized' })` and no broadcast occurs.
+     *
+     * Latency compensation: the server estimates network latency as
+     * `Date.now() - payload.timestamp` and adds half of it (in seconds) to the
+     * reported `currentTime`, producing `adjustedTime`. Both values are
+     * forwarded in the `player-sync` broadcast for backwards compatibility.
+     */
     socket.on('player-action', ({ roomId, action, currentTime, timestamp, videoId, streamUrl, embedUrl, title, thumbnail }: {
       roomId: string; action: string; currentTime?: number; timestamp: number;
       videoId?: string; streamUrl?: string; embedUrl?: string; title?: string; thumbnail?: string;
     }) => {
-      if (!socket.data.authenticated) return;
+      void videoId; void streamUrl; void embedUrl; void title; void thumbnail;
+      const validation = validatePlayerAction(
+        { authenticated: socket.data.authenticated, roomId: socket.data.roomId },
+        roomId,
+      );
+      if (!validation.ok) {
+        socket.emit('error', { message: 'Unauthorized', code: validation.reason });
+        return;
+      }
+      // Strict payload validation: reject unknown actions and malformed
+      // timestamps instead of silently coercing them. Well-behaved clients
+      // already send a valid `action` from PLAYER_ACTIONS and a positive
+      // `Date.now()` timestamp, so this only rejects malformed traffic.
+      if (!isValidAction(action)) {
+        socket.emit('error', { message: 'Invalid action', code: 'INVALID_ACTION' });
+        return;
+      }
+      if (!isValidTimestamp(timestamp)) {
+        socket.emit('error', { message: 'Invalid timestamp', code: 'INVALID_TIMESTAMP' });
+        return;
+      }
       const room = getRoom(roomId);
-      if (!room) return;
-      const latencyMs = Date.now() - (timestamp ?? Date.now());
-      const latencyS = latencyMs / 1000;
-      const adjustedTime = (currentTime ?? 0) + latencyS / 2;
-      if (action === 'play') {
+      if (!room) {
+        socket.emit('error', { message: 'Unauthorized', code: 'ROOM_NOT_FOUND' });
+        return;
+      }
+      const rawCurrentTime = currentTime ?? 0;
+      const { adjustedTime } = computeAdjustedTime(rawCurrentTime, timestamp);
+      const validatedAction: PlayerAction = action;
+
+      if (validatedAction === 'play') {
         updatePlayerState(roomId, { currentTime: adjustedTime, isPlaying: true });
-      } else if (action === 'pause') {
-        updatePlayerState(roomId, { currentTime: currentTime ?? 0, isPlaying: false });
-      } else if (action === 'seek') {
+      } else if (validatedAction === 'pause') {
+        updatePlayerState(roomId, { currentTime: rawCurrentTime, isPlaying: false });
+      } else if (validatedAction === 'seek') {
         updatePlayerState(roomId, { currentTime: adjustedTime });
       }
-      socket.to(roomId).emit('player-sync', { action: action as 'pause' | 'play' | 'seek' | 'load' | 'episode-change', currentTime: adjustedTime, serverTime: Date.now() });
+      socket.to(roomId).emit('player-sync', {
+        action: validatedAction,
+        currentTime: rawCurrentTime,
+        adjustedTime,
+        serverTime: Date.now(),
+      });
     });
 
     socket.on('queue-add', async ({ roomId, item }) => {

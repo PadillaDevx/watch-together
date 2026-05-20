@@ -146,7 +146,17 @@ export interface ServerToClientEvents {
   'player-pause': (data: { currentTime: number; sentAt?: number }) => void;
   'player-seek': (data: { currentTime: number }) => void;
   'player-load': (data: { type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string } | { type: 'series'; embedUrl: string; title?: string; thumbnail?: string }) => void;
-  'player-sync': (data: { action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; serverTime: number }) => void;
+  /**
+   * Broadcast of a `player-action` to every other room participant.
+   *
+   * `currentTime` is the raw, client-reported playback position (kept for
+   * backward compatibility). `adjustedTime` is the latency-compensated value
+   * computed by the server — clients implementing latency compensation should
+   * prefer it when present. `serverTime` is the server clock at broadcast.
+   */
+  'player-sync': (data: { action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; adjustedTime?: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; serverTime: number }) => void;
+  /** Generic error event. `message` is set for user-facing reasons (e.g. 'Unauthorized'). */
+  'error': (data: { code?: string; message?: string }) => void;
   'player-heartbeat': (data: { currentTime: number; isPlaying: boolean }) => void;
   'series-episode-change': (data: { serieId: string; serieName: string; temporada: number; episodioIndex: number; embedUrl: string; titulo: string }) => void;
   'start-playback': (data: { playAt: number; serverNow: number }) => void;
@@ -156,7 +166,6 @@ export interface ServerToClientEvents {
   'user-joined': (data: { username: string }) => void;
   'user-left': (data: { username: string }) => void;
   'host-changed': (data: { newHostUsername: string; newHostSocketId: string; previousHostUsername?: string }) => void;
-  'error': (data: { code: string }) => void;
 }
 
 export interface ClientToServerEvents {
