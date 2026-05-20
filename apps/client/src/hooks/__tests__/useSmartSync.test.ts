@@ -167,3 +167,208 @@ describe('useSmartSync — free-for-all playback control', () => {
     expect(socket.emit).toHaveBeenCalledWith('request-sync', { roomId: 'room-6' });
   });
 });
+
+describe('useSmartSync — drift correction on non-host (M2)', () => {
+  beforeEach(() => {
+    vi.mocked(socket.emit).mockClear();
+  });
+
+  it('silently seeks the iframe towards the host reference when drift >= 2s', () => {
+    const iframeRef = makeIframeRef();
+    const { result } = renderHook(() =>
+      useSmartSync({ iframeRef, roomId: 'room-d1', isHost: false, enabled: true }),
+    );
+
+    // Prime the host reference via onPlayerSync
+    result.current.onPlayerSync({ action: 'seek', currentTime: 100 });
+    // Clear postMessage calls triggered by onPlayerSync's sendToPlayer('seek', 100)
+    const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
+    postMessage.mockClear();
+
+    // Drift of 3s (>= DRIFT_IGNORE=2) → silent seek towards 100
+    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+      type: 'timeupdate',
+      currentTime: 103,
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'seek', value: 100, source: 'watchjunto' },
+      '*',
+    );
+    // Non-host must never emit a player-action from timeupdate
+    expect(socket.emit).not.toHaveBeenCalled();
+  });
+
+  it('ignores drifts strictly below DRIFT_IGNORE (no seek)', () => {
+    const iframeRef = makeIframeRef();
+    const { result } = renderHook(() =>
+      useSmartSync({ iframeRef, roomId: 'room-d2', isHost: false, enabled: true }),
+    );
+
+    result.current.onPlayerSync({ action: 'seek', currentTime: 50 });
+    const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
+    postMessage.mockClear();
+
+    // Drift of 1s → ignore
+    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+      type: 'timeupdate',
+      currentTime: 51,
+    });
+
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('shows the spinner when drift > DRIFT_SILENT (5s) and hides it after 1s', () => {
+    vi.useFakeTimers();
+    try {
+      const iframeRef = makeIframeRef();
+      const { result } = renderHook(() =>
+        useSmartSync({ iframeRef, roomId: 'room-d3', isHost: false, enabled: true }),
+      );
+
+      const spinner = vi.fn();
+      result.current.registerSpinnerCallback(spinner);
+      result.current.onPlayerSync({ action: 'seek', currentTime: 30 });
+
+      // Drift of 7s → silent seek + spinner ON
+      dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+        type: 'timeupdate',
+        currentTime: 37,
+      });
+
+      expect(spinner).toHaveBeenCalledWith(true);
+      expect(spinner).not.toHaveBeenCalledWith(false);
+
+      // After 1s the spinner should auto-hide
+      vi.advanceTimersByTime(1000);
+      expect(spinner).toHaveBeenCalledWith(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('useSmartSync — onPlayerSync bridge (M3)', () => {
+  beforeEach(() => {
+    vi.mocked(socket.emit).mockClear();
+  });
+
+  it.each([
+    ['play' as const, 'play' as const],
+    ['pause' as const, 'pause' as const],
+    ['seek' as const, 'seek' as const],
+  ])('forwards server "%s" actions into the iframe via postMessage (non-host)', (action, expected) => {
+    const iframeRef = makeIframeRef();
+    const { result } = renderHook(() =>
+      useSmartSync({ iframeRef, roomId: 'room-s1', isHost: false, enabled: true }),
+    );
+
+    result.current.onPlayerSync({ action, currentTime: 42 });
+
+    expect(iframeRef.current!.contentWindow!.postMessage).toHaveBeenCalledWith(
+      { type: expected, value: 42, source: 'watchjunto' },
+      '*',
+    );
+  });
+
+  it('does NOT forward player-sync into the iframe when this client is the host (avoid echo)', () => {
+    const iframeRef = makeIframeRef();
+    const { result } = renderHook(() =>
+      useSmartSync({ iframeRef, roomId: 'room-s2', isHost: true, enabled: true }),
+    );
+
+    result.current.onPlayerSync({ action: 'play', currentTime: 12 });
+
+    expect(iframeRef.current!.contentWindow!.postMessage).not.toHaveBeenCalled();
+  });
+
+  it('does NOT forward player-sync when the hook is disabled', () => {
+    const iframeRef = makeIframeRef();
+    const { result } = renderHook(() =>
+      useSmartSync({ iframeRef, roomId: 'room-s3', isHost: false, enabled: false }),
+    );
+
+    result.current.onPlayerSync({ action: 'play', currentTime: 12 });
+
+    expect(iframeRef.current!.contentWindow!.postMessage).not.toHaveBeenCalled();
+  });
+});
+
+describe('useSmartSync — heartbeat (M4)', () => {
+  it('host emits a getTime postMessage every HEARTBEAT_INTERVAL (15s)', () => {
+    vi.useFakeTimers();
+    try {
+      const iframeRef = makeIframeRef();
+      renderHook(() =>
+        useSmartSync({ iframeRef, roomId: 'room-h1', isHost: true, enabled: true }),
+      );
+
+      vi.advanceTimersByTime(15_000);
+
+      expect(iframeRef.current!.contentWindow!.postMessage).toHaveBeenCalledWith(
+        { type: 'getTime', source: 'watchjunto' },
+        '*',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('non-host never runs the heartbeat', () => {
+    vi.useFakeTimers();
+    try {
+      const iframeRef = makeIframeRef();
+      renderHook(() =>
+        useSmartSync({ iframeRef, roomId: 'room-h2', isHost: false, enabled: true }),
+      );
+
+      vi.advanceTimersByTime(60_000);
+
+      expect(iframeRef.current!.contentWindow!.postMessage).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('useSmartSync — host migration mid-playback (M5)', () => {
+  beforeEach(() => {
+    vi.mocked(socket.emit).mockClear();
+  });
+
+  it('promotes the drift-reference role when isHost flips false → true → false', () => {
+    const iframeRef = makeIframeRef();
+    const { rerender } = renderHook(
+      ({ isHost }) =>
+        useSmartSync({ iframeRef, roomId: 'room-m1', isHost, enabled: true }),
+      { initialProps: { isHost: false } },
+    );
+
+    // Phase 1: non-host → no emit on timeupdate
+    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+      type: 'timeupdate',
+      currentTime: 5,
+    });
+    expect(socket.emit).not.toHaveBeenCalled();
+
+    // Phase 2: promoted to host → timeupdate broadcasts as seek
+    rerender({ isHost: true });
+    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+      type: 'timeupdate',
+      currentTime: 10,
+    });
+    expect(socket.emit).toHaveBeenCalledWith(
+      'player-action',
+      expect.objectContaining({ action: 'seek', currentTime: 10 }),
+    );
+
+    // Phase 3: demoted back to non-host → silent again
+    vi.mocked(socket.emit).mockClear();
+    rerender({ isHost: false });
+    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+      type: 'timeupdate',
+      currentTime: 15,
+    });
+    expect(socket.emit).not.toHaveBeenCalled();
+  });
+});

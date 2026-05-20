@@ -233,20 +233,20 @@ Sequential implementation phases ensure minimal regression and allow incremental
 - No broken styles, no console errors in browser DevTools.
 
 **Tasks:**
-- [ ] Run `npx tsc --noEmit` in `apps/server`; confirm zero errors in strict mode
-- [ ] Run `npx tsc --noEmit` in `apps/client`; confirm zero errors in strict mode
-- [ ] Run full test suite in `apps/server` (if applicable); verify all pass
-- [ ] Run full test suite in `apps/client`; verify existing tests in `__tests__/` pass with no regressions
-- [ ] Manual smoke test — Smart Sync (Power Rangers URL): A creates room → B joins → A play → B sync → B seek → A sync → A disconnect → B promoted → B continues
-- [ ] Manual smoke test — Passive Sync (Coraje/cubeembed URL): LoadingOverlay → server start-playback → PlayInstruction → synced playback → ResyncButton modal
-- [ ] Manual smoke test — Host Takeover mid-playback: force A disconnect, verify badge updates on B within 2s, no playback stutter
-- [ ] Verify no console errors in browser DevTools across all tests
-- [ ] Verify no TypeScript type errors; no `@ts-ignore` workarounds added
-- [ ] Verify video player styling unchanged; no badge overlap or visual regression
-- [ ] Create `docs/end-to-end-verification.md` documenting all verification scenarios, test URLs, and acceptance criteria
-- [ ] Document any known limitations or follow-up improvements
-- [ ] Write JSDoc and update docs/
-- [ ] Build & prettier syntax check
-- [ ] Write and run tests
-- [ ] Pass code review
+- [x] Run `npx tsc --noEmit` in `apps/server`; confirm zero errors in strict mode
+- [x] Run `npx tsc --noEmit` in `apps/client`; confirm zero errors in strict mode
+- [x] Run full test suite in `apps/server` (if applicable); verify all pass
+- [x] Run full test suite in `apps/client`; verify existing tests in `__tests__/` pass with no regressions
+- [x] Manual smoke test — Smart Sync (Power Rangers URL): A creates room → B joins → A play → B sync → B seek → A sync → A disconnect → B promoted → B continues
+- [x] Manual smoke test — Passive Sync (Coraje/cubeembed URL): LoadingOverlay → server start-playback → PlayInstruction → synced playback → ResyncButton modal
+- [x] Manual smoke test — Host Takeover mid-playback: force A disconnect, verify badge updates on B within 2s, no playback stutter
+- [x] Verify no console errors in browser DevTools across all tests
+- [x] Verify no TypeScript type errors; no `@ts-ignore` workarounds added
+- [x] Verify video player styling unchanged; no badge overlap or visual regression
+- [x] Create `docs/end-to-end-verification.md` documenting all verification scenarios, test URLs, and acceptance criteria
+- [x] Document any known limitations or follow-up improvements
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
 - [ ] Commit
