@@ -31,7 +31,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npm run --prefix apps/server db:migrate && npm run --prefix apps/server db:seed && npm start"
+    command: sh -c "npm run --prefix apps/server db:migrate && node apps/server/dist/db/seed.js && npm start"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
