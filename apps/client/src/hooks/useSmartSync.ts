@@ -45,9 +45,11 @@ interface UseSmartSyncOptions {
   enabled: boolean;
 }
 
-const DRIFT_IGNORE = 2;   // seconds — ignore drifts smaller than this
+const DRIFT_IGNORE = 0.5; // seconds — ignore drifts smaller than this
 const DRIFT_SILENT = 5;   // seconds — seek silently below this threshold
 const HEARTBEAT_INTERVAL = 15_000; // ms
+const PLAY_SCHEDULE_MS = 1500; // ms — must match server constant
+const SEEK_BROADCAST_INTERVAL = 4_000; // ms — throttle host seek emits
 
 export function useSmartSync({
   iframeRef,
@@ -56,6 +58,11 @@ export function useSmartSync({
   enabled,
 }: UseSmartSyncOptions) {
   const hostTimeRef = useRef<number>(0);
+  const hostTimeUpdatedAtRef = useRef<number>(0);
+  const hostIsPlayingRef = useRef<boolean>(false);
+  const syncReceivedRef = useRef<boolean>(false);
+  const lastSeekBroadcastRef = useRef<number>(0);
+  const playScheduleTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const showSpinnerRef = useRef<((show: boolean) => void)>(() => {});
   const spinnerTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -94,20 +101,29 @@ export function useSmartSync({
         // not a permission gate. Non-hosts converge silently towards the
         // host's broadcast position.
         if (isHost) {
-          socket.emit('player-action', {
-            roomId,
-            action: 'seek',
-            currentTime,
-            timestamp: Date.now(),
-          });
+          const now = Date.now();
+          if (now - lastSeekBroadcastRef.current >= SEEK_BROADCAST_INTERVAL) {
+            lastSeekBroadcastRef.current = now;
+            socket.emit('player-action', {
+              roomId,
+              action: 'seek',
+              currentTime,
+              timestamp: now,
+            });
+          }
         } else {
-          // Drift correction for non-hosts
-          const diff = Math.abs(currentTime - hostTimeRef.current);
+          // Drift correction for non-hosts — skip until first sync event received
+          if (!syncReceivedRef.current) return;
+          const elapsed = hostIsPlayingRef.current ? (Date.now() - hostTimeUpdatedAtRef.current) / 1000 : 0;
+          const estimatedHostTime = hostTimeRef.current + elapsed;
+          const diff = Math.abs(currentTime - estimatedHostTime);
           if (diff >= DRIFT_IGNORE) {
-            silentSeek(hostTimeRef.current, diff);
+            silentSeek(estimatedHostTime, diff);
           }
         }
       } else if (type === 'play' && typeof currentTime === 'number') {
+        // Force seek first so providers don't resume from a cached position
+        sendToPlayer('seek', currentTime);
         // Free-for-all: any authenticated participant can play.
         socket.emit('player-action', { roomId, action: 'play', currentTime, timestamp: Date.now() });
       } else if (type === 'pause' && typeof currentTime === 'number') {
@@ -118,7 +134,7 @@ export function useSmartSync({
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [enabled, iframeRef, roomId, isHost, silentSeek]);
+  }, [enabled, iframeRef, roomId, isHost, silentSeek, sendToPlayer]);
 
   // Heartbeat: host broadcasts every 15s so viewers stay in sync
   useEffect(() => {
@@ -134,13 +150,40 @@ export function useSmartSync({
     return () => clearInterval(id);
   }, [enabled, isHost, iframeRef]);
 
+  // Cleanup scheduled play timers on unmount
+  useEffect(() => {
+    return () => { clearTimeout(playScheduleTimerRef.current); };
+  }, []);
+
+  // Reset syncReceivedRef when hook is disabled (e.g. navigating away)
+  useEffect(() => {
+    if (!enabled) { syncReceivedRef.current = false; }
+  }, [enabled]);
+
   // Receive sync from host
-  const onPlayerSync = useCallback((data: { action: string; currentTime: number }) => {
+  const onPlayerSync = useCallback((data: { action: string; currentTime: number; playAt?: number }) => {
     if (!enabled || isHost) return;
     hostTimeRef.current = data.currentTime;
-    if (data.action === 'play') sendToPlayer('play', data.currentTime);
-    else if (data.action === 'pause') sendToPlayer('pause', data.currentTime);
-    else if (data.action === 'seek') sendToPlayer('seek', data.currentTime);
+    hostTimeUpdatedAtRef.current = Date.now();
+    syncReceivedRef.current = true;
+
+    if (data.action === 'play') {
+      hostIsPlayingRef.current = true;
+      // Force seek to target before scheduled play — prevents providers from
+      // resuming from a cached/localStorage position
+      sendToPlayer('seek', data.currentTime);
+      const msUntilPlay = data.playAt ? data.playAt - Date.now() : 0;
+      clearTimeout(playScheduleTimerRef.current);
+      playScheduleTimerRef.current = setTimeout(() => {
+        sendToPlayer('play', data.currentTime);
+      }, Math.max(0, msUntilPlay));
+    } else if (data.action === 'pause') {
+      hostIsPlayingRef.current = false;
+      sendToPlayer('pause', data.currentTime);
+    } else if (data.action === 'seek') {
+      hostIsPlayingRef.current = true;
+      // Only update reference — drift correction in postMessage handler handles actual seek
+    }
   }, [enabled, isHost, sendToPlayer]);
 
   const requestResync = useCallback(() => {

@@ -185,3 +185,73 @@ textarea {
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
+@keyframes typing-bubble-dot {
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: translateY(0) scale(0.82);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1);
+  }
+}
+
+.typing-bubble-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-lighter);
+  display: inline-block;
+  animation: typing-bubble-dot 1s ease-in-out infinite;
+}
+
+.typing-bubble-dot:nth-child(2) { animation-delay: 0.14s; }
+.typing-bubble-dot:nth-child(3) { animation-delay: 0.28s; }
+
+/* ── Room fullscreen / social polish ─────────────────────────────────────── */
+
+.room-shell:fullscreen,
+.room-shell:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg-base);
+}
+
+.room-shell.room-fullscreen .room-body {
+  background:
+    radial-gradient(circle at 28% 0%, rgba(var(--accent-rgb), 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), transparent 38%);
+}
+
+.room-shell.room-fullscreen .social-panel {
+  width: min(340px, 34vw);
+}
+
+@media (max-width: 767px) {
+  .room-shell.room-fullscreen .social-panel {
+    width: 100%;
+    max-height: 42vh;
+  }
+}
+
+@keyframes chat-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chat-message {
+  animation: chat-message-in 160ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message {
+    animation: none;
+  }
+}

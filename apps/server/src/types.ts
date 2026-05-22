@@ -30,10 +30,23 @@ export interface PlayerState {
   currentTime: number;
   isPlaying: boolean;
   updatedAt: number;
+  playbackRate: number;
+  revision: number;
   /** Human-readable title of the currently playing media */
   title: string | null;
   /** Thumbnail URL for the currently playing media */
   thumbnail: string | null;
+}
+
+export interface YouTubeTimelineState {
+  videoId: string | null;
+  playing: boolean;
+  currentTime: number;
+  updatedAt: number;
+  serverNow: number;
+  playbackRate: number;
+  revision: number;
+  reason: 'join' | 'intent' | 'resync' | 'heartbeat';
 }
 
 export interface RoomUser {
@@ -139,7 +152,7 @@ export interface LibrarySerieDetail extends LibrarySerie {
 export interface ServerToClientEvents {
   'room-list': (rooms: RoomListItem[]) => void;
   'room-users': (users: Array<{ socketId: string; username: string; joinedAt: string }>) => void;
-  'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; queue: QueueItem[]; title: string | null; thumbnail: string | null }) => void;
+  'sync-state': (state: { videoId: string | null; streamUrl: string | null; currentTime: number; isPlaying: boolean; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; queue: QueueItem[]; title: string | null; thumbnail: string | null; playbackRate?: number; revision?: number }) => void;
   'queue-update': (queue: QueueItem[]) => void;
   'source-switched': (data: { sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;
   'player-play': (data: { currentTime: number; sentAt?: number }) => void;
@@ -154,7 +167,7 @@ export interface ServerToClientEvents {
    * computed by the server — clients implementing latency compensation should
    * prefer it when present. `serverTime` is the server clock at broadcast.
    */
-  'player-sync': (data: { action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; adjustedTime?: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; serverTime: number }) => void;
+  'player-sync': (data: { action: 'play' | 'pause' | 'seek' | 'load' | 'episode-change'; currentTime: number; adjustedTime?: number; videoId?: string; embedUrl?: string; streamUrl?: string; sourceType?: string; serieId?: string; serieName?: string; temporada?: number; episodioIndex?: number; titulo?: string; serverTime: number; playAt?: number; targetTime?: number }) => void;
   /** Generic error event. `message` is set for user-facing reasons (e.g. 'Unauthorized'). */
   'error': (data: { code?: string; message?: string }) => void;
   'player-heartbeat': (data: { currentTime: number; isPlaying: boolean }) => void;
@@ -166,6 +179,7 @@ export interface ServerToClientEvents {
   'user-joined': (data: { username: string }) => void;
   'user-left': (data: { username: string }) => void;
   'host-changed': (data: { newHostUsername: string; newHostSocketId: string; previousHostUsername?: string }) => void;
+  'youtube-timeline': (state: YouTubeTimelineState) => void;
 }
 
 export interface ClientToServerEvents {
@@ -189,6 +203,8 @@ export interface ClientToServerEvents {
   'switch-source': (data: { roomId: string; sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series'; iptvListId?: string }) => void;
   'client-ready': (data: { roomId: string; userId: string }) => void;
   'request-resync': (data: { roomId: string }) => void;
+  'youtube-intent': (data: { roomId: string; type: 'play' | 'pause' | 'seek'; currentTime: number; clientSentAt: number; playbackRate?: number }) => void;
+  'youtube-request-timeline': (data: { roomId: string }) => void;
 }
 
 export interface SocketData {

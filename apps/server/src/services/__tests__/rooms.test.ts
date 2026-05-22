@@ -26,6 +26,8 @@ function makeRoom(id: string, maxUsers = 10): Room {
       currentTime: 0,
       isPlaying: false,
       updatedAt: Date.now(),
+      playbackRate: 1,
+      revision: 0,
       title: null,
       thumbnail: null,
     },

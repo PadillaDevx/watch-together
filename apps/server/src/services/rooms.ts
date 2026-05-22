@@ -53,6 +53,8 @@ function buildRoomFromDb(
       currentTime: 0,
       isPlaying: false,
       updatedAt: Date.now(),
+      playbackRate: 1,
+      revision: 0,
       title: null,
       thumbnail: null,
     },
@@ -246,8 +248,17 @@ export function promoteNextHost(
 export function updatePlayerState(roomId: string, patch: Partial<PlayerState>): void {
   const room = _rooms.get(roomId);
   if (room) {
+    const shouldBumpRevision =
+      'videoId' in patch ||
+      'streamUrl' in patch ||
+      'currentTime' in patch ||
+      'isPlaying' in patch ||
+      'playbackRate' in patch;
     Object.assign(room.playerState, patch);
     room.playerState.updatedAt = Date.now();
+    if (shouldBumpRevision) {
+      room.playerState.revision = (room.playerState.revision ?? 0) + 1;
+    }
   }
 }
 
@@ -316,6 +327,13 @@ export async function shiftQueue(roomId: string): Promise<QueueItem | undefined>
   return item;
 }
 
+export async function clearQueue(roomId: string): Promise<void> {
+  const room = _rooms.get(roomId);
+  if (!room) return;
+  room.queue = [];
+  await db.delete(roomQueue).where(eq(roomQueue.roomId, roomId));
+}
+
 export async function reorderQueue(roomId: string, fromIndex: number, toIndex: number): Promise<void> {
   const room = _rooms.get(roomId);
   if (!room) return;
@@ -351,6 +369,8 @@ export async function switchRoomSource(
     currentTime: 0,
     isPlaying: false,
     updatedAt: Date.now(),
+    playbackRate: 1,
+    revision: 0,
     title: null,
     thumbnail: null,
   };

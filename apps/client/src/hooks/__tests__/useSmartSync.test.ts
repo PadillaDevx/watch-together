@@ -173,49 +173,60 @@ describe('useSmartSync — drift correction on non-host (M2)', () => {
     vi.mocked(socket.emit).mockClear();
   });
 
-  it('silently seeks the iframe towards the host reference when drift >= 2s', () => {
-    const iframeRef = makeIframeRef();
-    const { result } = renderHook(() =>
-      useSmartSync({ iframeRef, roomId: 'room-d1', isHost: false, enabled: true }),
-    );
+  it('silently seeks the iframe towards the host reference when drift >= DRIFT_IGNORE (0.5s)', () => {
+    vi.useFakeTimers();
+    try {
+      const iframeRef = makeIframeRef();
+      const { result } = renderHook(() =>
+        useSmartSync({ iframeRef, roomId: 'room-d1', isHost: false, enabled: true }),
+      );
 
-    // Prime the host reference via onPlayerSync
-    result.current.onPlayerSync({ action: 'seek', currentTime: 100 });
-    // Clear postMessage calls triggered by onPlayerSync's sendToPlayer('seek', 100)
-    const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
-    postMessage.mockClear();
+      // Prime the host reference via onPlayerSync
+      result.current.onPlayerSync({ action: 'seek', currentTime: 100 });
+      // Clear postMessage calls triggered by onPlayerSync's sendToPlayer('seek', 100)
+      const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
+      postMessage.mockClear();
 
-    // Drift of 3s (>= DRIFT_IGNORE=2) → silent seek towards 100
-    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
-      type: 'timeupdate',
-      currentTime: 103,
-    });
+      // Drift of 3s (>= DRIFT_IGNORE=0.5) → silent seek towards 100
+      // Fake timers freeze Date.now() so elapsed=0 and estimatedHostTime=100 exactly
+      dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+        type: 'timeupdate',
+        currentTime: 103,
+      });
 
-    expect(postMessage).toHaveBeenCalledWith(
-      { type: 'seek', value: 100, source: 'watchjunto' },
-      '*',
-    );
-    // Non-host must never emit a player-action from timeupdate
-    expect(socket.emit).not.toHaveBeenCalled();
+      expect(postMessage).toHaveBeenCalledWith(
+        { type: 'seek', value: 100, source: 'watchjunto' },
+        '*',
+      );
+      // Non-host must never emit a player-action from timeupdate
+      expect(socket.emit).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('ignores drifts strictly below DRIFT_IGNORE (no seek)', () => {
-    const iframeRef = makeIframeRef();
-    const { result } = renderHook(() =>
-      useSmartSync({ iframeRef, roomId: 'room-d2', isHost: false, enabled: true }),
-    );
+    vi.useFakeTimers();
+    try {
+      const iframeRef = makeIframeRef();
+      const { result } = renderHook(() =>
+        useSmartSync({ iframeRef, roomId: 'room-d2', isHost: false, enabled: true }),
+      );
 
-    result.current.onPlayerSync({ action: 'seek', currentTime: 50 });
-    const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
-    postMessage.mockClear();
+      result.current.onPlayerSync({ action: 'seek', currentTime: 50 });
+      const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
+      postMessage.mockClear();
 
-    // Drift of 1s → ignore
-    dispatchProviderMessage(iframeRef.current!.contentWindow!, {
-      type: 'timeupdate',
-      currentTime: 51,
-    });
+      // Drift of 0.3s (< DRIFT_IGNORE=0.5) → ignore
+      dispatchProviderMessage(iframeRef.current!.contentWindow!, {
+        type: 'timeupdate',
+        currentTime: 50.3,
+      });
 
-    expect(postMessage).not.toHaveBeenCalled();
+      expect(postMessage).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows the spinner when drift > DRIFT_SILENT (5s) and hides it after 1s', () => {
@@ -253,22 +264,67 @@ describe('useSmartSync — onPlayerSync bridge (M3)', () => {
     vi.mocked(socket.emit).mockClear();
   });
 
-  it.each([
-    ['play' as const, 'play' as const],
-    ['pause' as const, 'pause' as const],
-    ['seek' as const, 'seek' as const],
-  ])('forwards server "%s" actions into the iframe via postMessage (non-host)', (action, expected) => {
+  it('forwards server "pause" action into the iframe via postMessage immediately (non-host)', () => {
     const iframeRef = makeIframeRef();
     const { result } = renderHook(() =>
       useSmartSync({ iframeRef, roomId: 'room-s1', isHost: false, enabled: true }),
     );
 
-    result.current.onPlayerSync({ action, currentTime: 42 });
+    result.current.onPlayerSync({ action: 'pause', currentTime: 42 });
 
     expect(iframeRef.current!.contentWindow!.postMessage).toHaveBeenCalledWith(
-      { type: expected, value: 42, source: 'watchjunto' },
+      { type: 'pause', value: 42, source: 'watchjunto' },
       '*',
     );
+  });
+
+  it('on server "play": immediately seeks to target, then schedules play at playAt (non-host)', () => {
+    vi.useFakeTimers();
+    try {
+      const iframeRef = makeIframeRef();
+      const { result } = renderHook(() =>
+        useSmartSync({ iframeRef, roomId: 'room-s2', isHost: false, enabled: true }),
+      );
+      const postMessage = iframeRef.current!.contentWindow!.postMessage as ReturnType<typeof vi.fn>;
+      const playAt = Date.now() + 1500;
+
+      result.current.onPlayerSync({ action: 'play', currentTime: 42, playAt });
+
+      // seek fires immediately
+      expect(postMessage).toHaveBeenCalledWith(
+        { type: 'seek', value: 42, source: 'watchjunto' },
+        '*',
+      );
+      // play not yet — still within the schedule window
+      expect(postMessage).not.toHaveBeenCalledWith(
+        { type: 'play', value: 42, source: 'watchjunto' },
+        '*',
+      );
+
+      // advance past playAt
+      vi.advanceTimersByTime(1500);
+
+      expect(postMessage).toHaveBeenCalledWith(
+        { type: 'play', value: 42, source: 'watchjunto' },
+        '*',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does NOT directly postMessage seek on "seek" heartbeat — drift correction handles it', () => {
+    // Sending seek postMessages on every host timeupdate (~4×/s) would interrupt buffering.
+    // Instead, onPlayerSync for 'seek' only updates hostTimeRef; the drift check in the
+    // postMessage handler triggers silentSeek when the guest drifts by >= DRIFT_IGNORE seconds.
+    const iframeRef = makeIframeRef();
+    const { result } = renderHook(() =>
+      useSmartSync({ iframeRef, roomId: 'room-s1b', isHost: false, enabled: true }),
+    );
+
+    result.current.onPlayerSync({ action: 'seek', currentTime: 42 });
+
+    expect(iframeRef.current!.contentWindow!.postMessage).not.toHaveBeenCalled();
   });
 
   it('does NOT forward player-sync into the iframe when this client is the host (avoid echo)', () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { X, GripVertical, Play } from 'lucide-react';
+import { X, GripVertical, Play, Trash2 } from 'lucide-react';
 import { socket } from '../lib/socket';
 import type { QueueItem } from '../types';
 
@@ -40,11 +40,23 @@ export default function QueuePanel({ queue, roomId, currentUsername, isAdmin }: 
     return (
         <div className="flex flex-col h-full bg-raised border border-white/[0.08] rounded-xl overflow-hidden">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-white/[0.07] flex-shrink-0">
-                <h3 className="text-sm font-semibold text-white">Cola</h3>
-                <p className="text-xs text-white/40 mt-0.5">
-                    {queue.length} {queue.length !== 1 ? 'videos' : 'video'}
-                </p>
+            <div className="px-4 py-3 border-b border-white/[0.07] flex-shrink-0 flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-white">Cola</h3>
+                    <p className="text-xs text-white/40 mt-0.5">
+                        {queue.length} {queue.length !== 1 ? 'videos' : 'video'}
+                    </p>
+                </div>
+                {isAdmin && queue.length > 0 && (
+                    <button
+                        onClick={() => socket.emit('queue-clear', { roomId })}
+                        title="Limpiar cola"
+                        className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded text-xs text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Limpiar
+                    </button>
+                )}
             </div>
 
             {/* Body */}

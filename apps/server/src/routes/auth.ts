@@ -78,14 +78,28 @@ authRouter.put('/password', sessionAuth, async (req, res) => {
 
 authRouter.put('/avatar', sessionAuth, async (req, res) => {
   const { avatar } = req.body as { avatar?: string | null };
+  console.log('[WJ Avatar] PUT /auth/avatar', {
+    username: req.sessionUsername,
+    hasAvatar: avatar != null && avatar !== '',
+    length: typeof avatar === 'string' ? avatar.length : 0,
+    prefix: typeof avatar === 'string' ? avatar.slice(0, 32) : null,
+  });
   try {
     const result = await updateAvatar(req.sessionUsername, avatar ?? null);
     if (!result.ok) {
+      console.warn('[WJ Avatar] Avatar update rejected', {
+        username: req.sessionUsername,
+        code: result.code,
+      });
       res.status(result.code === 'AVATAR_TOO_LARGE' ? 413 : 400).json({ error: result.code });
       return;
     }
+    console.log('[WJ Avatar] Avatar update saved', { username: req.sessionUsername });
     res.json({ ok: true });
-  } catch { res.status(500).json({ error: 'Error interno' }); }
+  } catch (err) {
+    console.error('[WJ Avatar] Avatar update failed', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
 });
 
 authRouter.post('/recover', async (req, res) => {

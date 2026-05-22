@@ -18,6 +18,7 @@ import { connectWithRetry } from './db/index';
 import { initRooms } from './services/rooms';
 import { initIptv } from './services/iptv';
 import { initJellyfin } from './services/jellyfin';
+import { initSessions } from './services/users';
 import type { ServerToClientEvents, ClientToServerEvents, SocketData } from './types';
 
 const PORT = Number(process.env['PORT'] ?? 3001);
@@ -38,7 +39,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use((_req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
-    "frame-src 'self' cubeembed.rpmvid.com *.cubeembed.rpmvid.com"
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com cubeembed.rpmvid.com *.cubeembed.rpmvid.com"
   );
   next();
 });
@@ -72,6 +73,7 @@ async function main() {
     initRooms(),
     initIptv(),
     initJellyfin(),
+    initSessions(),
   ]);
 
   httpServer.listen(PORT, () => {

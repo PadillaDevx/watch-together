@@ -8,6 +8,13 @@ import { ResyncButton } from './ResyncButton';
 import { HostBadge } from './HostBadge';
 import { socket } from '../lib/socket';
 
+function isMobileDevice(): boolean {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+function isIOSDevice(): boolean {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 interface SyncProviderProps {
   embedUrl: string;
   roomId: string;
@@ -56,9 +63,16 @@ export function SyncProvider({ embedUrl, roomId, userId, isHost, hostUsername = 
   // Listen to player-sync for smart mode
   useEffect(() => {
     if (syncMode !== 'smart' || !detected) return;
-    const handler = (data: { action: string; currentTime: number; serverTime: number }) => {
+    const handler = (data: { action: string; currentTime: number; adjustedTime?: number; serverTime: number; playAt?: number; targetTime?: number }) => {
       const latency = (Date.now() - data.serverTime) / 2;
-      smartSync.onPlayerSync({ action: data.action, currentTime: data.currentTime + latency / 1000 });
+      const mobilePadding = isIOSDevice() ? 800 : isMobileDevice() ? 400 : 0;
+      const effectiveTargetTime = data.targetTime ?? (data.currentTime + latency / 1000);
+      const effectivePlayAt = data.playAt ? data.playAt + mobilePadding : undefined;
+      smartSync.onPlayerSync({
+        action: data.action,
+        currentTime: effectiveTargetTime,
+        playAt: effectivePlayAt,
+      });
     };
     socket.on('player-sync', handler);
     return () => { socket.off('player-sync', handler); };

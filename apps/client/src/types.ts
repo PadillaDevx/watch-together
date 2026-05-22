@@ -15,6 +15,16 @@ export interface VideoSearchResult {
   embeddable?: boolean;
 }
 
+export interface PlaylistSearchResult {
+  playlistId: string;
+  title: string;
+  channelTitle: string;
+  thumbnail: string;
+  videoCount: string;
+  /** Seed videoId for Mix/Radio playlists — used as hint for the /next API endpoint */
+  seedVideoId?: string;
+}
+
 /** Represents a single item in a room's playback queue */
 export interface QueueItem {
   id: string;
@@ -33,6 +43,8 @@ export interface PlayerState {
   currentTime: number;
   isPlaying: boolean;
   updatedAt: number;
+  playbackRate?: number;
+  revision?: number;
   /** Human-readable title of the currently playing media */
   title: string | null;
   /** Thumbnail URL for the currently playing media */

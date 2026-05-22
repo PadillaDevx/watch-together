@@ -28,6 +28,8 @@ export interface SocketPlayerState {
   currentTime: number;
   isPlaying: boolean;
   updatedAt: number;
+  playbackRate?: number;
+  revision?: number;
   title: string | null;
   thumbnail: string | null;
 }
@@ -60,6 +62,17 @@ export type SocketSourceType = 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
 
 export type SocketPlayerAction = 'play' | 'pause' | 'seek' | 'load' | 'episode-change';
 
+export interface YouTubeTimelineState {
+  videoId: string | null;
+  playing: boolean;
+  currentTime: number;
+  updatedAt: number;
+  serverNow: number;
+  playbackRate: number;
+  revision: number;
+  reason: 'join' | 'intent' | 'resync' | 'heartbeat';
+}
+
 export interface ServerToClientEvents {
   'room-list': (rooms: SocketRoomListItem[]) => void;
   'room-users': (
@@ -74,6 +87,8 @@ export interface ServerToClientEvents {
     queue: SocketQueueItem[];
     title: string | null;
     thumbnail: string | null;
+    playbackRate?: number;
+    revision?: number;
   }) => void;
   'queue-update': (queue: SocketQueueItem[]) => void;
   'source-switched': (data: { sourceType: SocketSourceType; iptvListId?: string }) => void;
@@ -104,6 +119,8 @@ export interface ServerToClientEvents {
     episodioIndex?: number;
     titulo?: string;
     serverTime: number;
+    playAt?: number;
+    targetTime?: number;
   }) => void;
   /** Generic error event. `message` is set for user-facing reasons. */
   error: (data: { code?: string; message?: string }) => void;
@@ -132,6 +149,7 @@ export interface ServerToClientEvents {
     newHostSocketId: string;
     previousHostUsername?: string;
   }) => void;
+  'youtube-timeline': (state: YouTubeTimelineState) => void;
 }
 
 export interface ClientToServerEvents {
@@ -187,4 +205,12 @@ export interface ClientToServerEvents {
   }) => void;
   'client-ready': (data: { roomId: string; userId: string }) => void;
   'request-resync': (data: { roomId: string }) => void;
+  'youtube-intent': (data: {
+    roomId: string;
+    type: 'play' | 'pause' | 'seek';
+    currentTime: number;
+    clientSentAt: number;
+    playbackRate?: number;
+  }) => void;
+  'youtube-request-timeline': (data: { roomId: string }) => void;
 }

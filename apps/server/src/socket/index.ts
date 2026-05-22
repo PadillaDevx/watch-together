@@ -5,12 +5,19 @@ import { validateSession, getUser, isAdminSession } from '../services/users';
 import {
   getRoom, getRoomList, addUserToRoom, removeUserFromRoom,
   updatePlayerState, appendChatMessage, getLiveCurrentTime, _rooms,
-  addToQueue, removeFromQueue, shiftQueue, reorderQueue, switchRoomSource,
+  addToQueue, removeFromQueue, shiftQueue, reorderQueue, clearQueue, switchRoomSource,
   addTypingUser, removeTypingUser, removeTypingUserFromAll,
   promoteNextHost,
 } from '../services/rooms';
 import { trustHostname } from '../routes/iptv';
-import type { QueueItem, ServerToClientEvents, ClientToServerEvents, SocketData } from '../types';
+import type {
+  QueueItem,
+  Room,
+  ServerToClientEvents,
+  ClientToServerEvents,
+  SocketData,
+  YouTubeTimelineState,
+} from '../types';
 import {
   validatePlayerAction,
   computeAdjustedTime,
@@ -25,6 +32,36 @@ function getRoomUsers(room: NonNullable<ReturnType<typeof getRoom>>) {
   return Array.from(room.users.entries()).map(([socketId, data]) => ({
     socketId, username: data.username, joinedAt: data.joinedAt.toISOString(),
   }));
+}
+
+/** ms added to 'play' broadcasts so all viewers have time to seek + buffer before playAt. */
+const PLAY_SCHEDULE_MS = 1500;
+
+function isYouTubeTimelineRoom(room: Room): boolean {
+  return room.sourceType === 'youtube' || (room.sourceType === 'url' && !!room.playerState.videoId);
+}
+
+function buildYouTubeTimeline(room: Room, reason: YouTubeTimelineState['reason']): YouTubeTimelineState {
+  return {
+    videoId: room.playerState.videoId,
+    playing: room.playerState.isPlaying,
+    currentTime: room.playerState.currentTime,
+    updatedAt: room.playerState.updatedAt,
+    serverNow: Date.now(),
+    playbackRate: room.playerState.playbackRate ?? 1,
+    revision: room.playerState.revision ?? 0,
+    reason,
+  };
+}
+
+function emitYouTubeTimeline(
+  io: IO,
+  roomId: string,
+  room: Room | undefined,
+  reason: YouTubeTimelineState['reason'],
+): void {
+  if (!room || !isYouTubeTimelineRoom(room)) return;
+  io.to(roomId).emit('youtube-timeline', buildYouTubeTimeline(room, reason));
 }
 
 export function setupSocket(io: IO): void {
@@ -65,7 +102,12 @@ export function setupSocket(io: IO): void {
         queue: room.queue,
         title: room.playerState.title,
         thumbnail: room.playerState.thumbnail,
+        playbackRate: room.playerState.playbackRate,
+        revision: room.playerState.revision,
       });
+      if (isYouTubeTimelineRoom(room)) {
+        socket.emit('youtube-timeline', buildYouTubeTimeline(room, 'join'));
+      }
       socket.to(roomId).emit('user-joined', { username: socket.data.username });
       io.to(roomId).emit('room-users', getRoomUsers(room));
       io.emit('room-list', getRoomList());
@@ -144,15 +186,52 @@ export function setupSocket(io: IO): void {
         if (room?.sourceType === 'url') {
           try { trustHostname(new URL(data.streamUrl).hostname); } catch { /* ignore invalid URLs */ }
         }
-        updatePlayerState(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false });
+        updatePlayerState(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false, playbackRate: 1 });
         io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: data.streamUrl });
       } else if (data.type === 'series') {
-        updatePlayerState(roomId, { videoId: null, streamUrl: data.embedUrl, currentTime: 0, isPlaying: false, title: data.title ?? null, thumbnail: data.thumbnail ?? null });
+        updatePlayerState(roomId, { videoId: null, streamUrl: data.embedUrl, currentTime: 0, isPlaying: false, playbackRate: 1, title: data.title ?? null, thumbnail: data.thumbnail ?? null });
         io.to(roomId).emit('player-load', { type: 'series', embedUrl: data.embedUrl, title: data.title, thumbnail: data.thumbnail });
       } else {
-        updatePlayerState(roomId, { videoId: data.videoId, streamUrl: null, currentTime: 0, isPlaying: false });
+        updatePlayerState(roomId, { videoId: data.videoId, streamUrl: null, currentTime: 0, isPlaying: false, playbackRate: 1 });
         io.to(roomId).emit('player-load', { type: 'youtube', videoId: data.videoId });
+        emitYouTubeTimeline(io, roomId, getRoom(roomId), 'resync');
       }
+    });
+
+    socket.on('youtube-intent', ({ roomId, type, currentTime, clientSentAt, playbackRate }) => {
+      const validation = validatePlayerAction(
+        { authenticated: socket.data.authenticated, roomId: socket.data.roomId },
+        roomId,
+      );
+      if (!validation.ok) {
+        socket.emit('error', { message: 'Unauthorized', code: validation.reason });
+        return;
+      }
+      if (!Number.isFinite(currentTime) || currentTime < 0 || !isValidTimestamp(clientSentAt)) {
+        socket.emit('error', { message: 'Invalid YouTube intent', code: 'INVALID_YOUTUBE_INTENT' });
+        return;
+      }
+      const room = getRoom(roomId);
+      if (!room || !isYouTubeTimelineRoom(room)) return;
+
+      const rate = Number.isFinite(playbackRate) && playbackRate! > 0 ? playbackRate! : 1;
+      const { adjustedTime } = computeAdjustedTime(currentTime, clientSentAt);
+
+      if (type === 'play') {
+        updatePlayerState(roomId, { currentTime: adjustedTime, isPlaying: true, playbackRate: rate });
+      } else if (type === 'pause') {
+        updatePlayerState(roomId, { currentTime, isPlaying: false, playbackRate: 1 });
+      } else if (type === 'seek') {
+        updatePlayerState(roomId, { currentTime: adjustedTime, playbackRate: rate });
+      }
+
+      emitYouTubeTimeline(io, roomId, getRoom(roomId), 'intent');
+    });
+
+    socket.on('youtube-request-timeline', ({ roomId }) => {
+      const room = getRoom(roomId);
+      if (!room || socket.data.roomId !== roomId) return;
+      socket.emit('youtube-timeline', buildYouTubeTimeline(room, 'resync'));
     });
 
     socket.on('chat-message', ({ roomId, text }) => {
@@ -175,6 +254,8 @@ export function setupSocket(io: IO): void {
         queue: room.queue,
         title: room.playerState.title,
         thumbnail: room.playerState.thumbnail,
+        playbackRate: room.playerState.playbackRate,
+        revision: room.playerState.revision,
       });
     });
 
@@ -191,6 +272,8 @@ export function setupSocket(io: IO): void {
         queue: room?.queue ?? [],
         title: room?.playerState.title ?? null,
         thumbnail: room?.playerState.thumbnail ?? null,
+        playbackRate: room?.playerState.playbackRate ?? 1,
+        revision: room?.playerState.revision ?? 0,
       });
     });
 
@@ -249,12 +332,26 @@ export function setupSocket(io: IO): void {
       } else if (validatedAction === 'seek') {
         updatePlayerState(roomId, { currentTime: adjustedTime });
       }
-      socket.to(roomId).emit('player-sync', {
-        action: validatedAction,
-        currentTime: rawCurrentTime,
-        adjustedTime,
-        serverTime: Date.now(),
-      });
+      const serverNow = Date.now();
+      if (validatedAction === 'play') {
+        const playAt = serverNow + PLAY_SCHEDULE_MS;
+        const targetTime = adjustedTime + PLAY_SCHEDULE_MS / 1000;
+        socket.to(roomId).emit('player-sync', {
+          action: 'play',
+          currentTime: rawCurrentTime,
+          adjustedTime,
+          serverTime: serverNow,
+          playAt,
+          targetTime,
+        });
+      } else {
+        socket.to(roomId).emit('player-sync', {
+          action: validatedAction,
+          currentTime: rawCurrentTime,
+          adjustedTime,
+          serverTime: serverNow,
+        });
+      }
     });
 
     socket.on('queue-add', async ({ roomId, item }) => {
@@ -295,13 +392,28 @@ export function setupSocket(io: IO): void {
         return;
       }
       if (item.type === 'youtube') {
-        updatePlayerState(roomId, { videoId: item.videoId!, streamUrl: null, currentTime: 0, isPlaying: false });
+        // isPlaying: true — loadVideoById auto-plays; the timeline must reflect
+        // playing state so applyTimelineSnapshot calls remotePlay() instead of
+        // remotePause(), which would immediately freeze the newly-loaded video.
+        updatePlayerState(roomId, { videoId: item.videoId!, streamUrl: null, currentTime: 0, isPlaying: true, playbackRate: 1 });
         io.to(roomId).emit('player-load', { type: 'youtube', videoId: item.videoId! });
+        emitYouTubeTimeline(io, roomId, getRoom(roomId), 'resync');
       } else {
-        updatePlayerState(roomId, { streamUrl: item.streamUrl!, videoId: null, currentTime: 0, isPlaying: false });
+        updatePlayerState(roomId, { streamUrl: item.streamUrl!, videoId: null, currentTime: 0, isPlaying: false, playbackRate: 1 });
         io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: item.streamUrl! });
       }
       io.to(roomId).emit('queue-update', room.queue);
+    });
+
+    socket.on('queue-clear', async ({ roomId }) => {
+      if (socket.data.isAdmin !== true) {
+        socket.emit('error', { code: 'FORBIDDEN' });
+        return;
+      }
+      const room = getRoom(roomId);
+      if (!room) return;
+      await clearQueue(roomId);
+      io.to(roomId).emit('queue-update', []);
     });
 
     socket.on('queue-reorder', async ({ roomId, fromIndex, toIndex }) => {
@@ -329,7 +441,7 @@ export function setupSocket(io: IO): void {
       const { roomId, serieId, serieName, temporada, episodioIndex, embedUrl, titulo } = data;
       if (!socket.data.authenticated || !socket.data.username) return;
       if (socket.data.roomId !== roomId) return;
-      updatePlayerState(roomId, { streamUrl: embedUrl, videoId: null, currentTime: 0, isPlaying: false, title: titulo, thumbnail: null });
+      updatePlayerState(roomId, { streamUrl: embedUrl, videoId: null, currentTime: 0, isPlaying: false, playbackRate: 1, title: titulo, thumbnail: null });
       io.to(roomId).emit('series-episode-change', { serieId, serieName, temporada, episodioIndex, embedUrl, titulo });
       io.to(roomId).emit('player-load', { type: 'series', embedUrl, title: titulo });
     });
