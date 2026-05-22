@@ -172,11 +172,10 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '', r
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                filter === key
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${filter === key
                   ? 'bg-accent text-white'
                   : 'bg-white/[0.06] text-white/50 hover:text-white/80 hover:bg-white/10'
-              }`}
+                }`}
             >
               {icon}
               {label}

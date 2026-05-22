@@ -198,6 +198,7 @@ export interface ClientToServerEvents {
   'queue-remove': (data: { roomId: string; itemId: string }) => void;
   'queue-next': (data: { roomId: string }) => void;
   'queue-reorder': (data: { roomId: string; fromIndex: number; toIndex: number }) => void;
+  'queue-clear': (data: { roomId: string }) => void;
   'switch-source': (data: {
     roomId: string;
     sourceType: SocketSourceType;

@@ -1314,12 +1314,12 @@ export function RoomPage() {
           {/* Tab bar */}
           <div className="p-2 border-b border-white/[0.06] flex-shrink-0 bg-white/[0.025]">
             <div className="flex rounded-lg bg-black/20 p-1 border border-white/[0.05]">
-            <PanelTabBtn active={panelTab === 'users'} onClick={() => switchTab('users')}
-              icon={<Users className="h-3.5 w-3.5" />}
-              label={`Usuarios${users.length > 0 ? ` (${users.length})` : ''}`} />
-            <PanelTabBtn active={panelTab === 'chat'} onClick={() => switchTab('chat')}
-              icon={<MessageSquare className="h-3.5 w-3.5" />}
-              label="Chat" badge={unreadCount > 0 ? unreadCount : undefined} />
+              <PanelTabBtn active={panelTab === 'users'} onClick={() => switchTab('users')}
+                icon={<Users className="h-3.5 w-3.5" />}
+                label={`Usuarios${users.length > 0 ? ` (${users.length})` : ''}`} />
+              <PanelTabBtn active={panelTab === 'chat'} onClick={() => switchTab('chat')}
+                icon={<MessageSquare className="h-3.5 w-3.5" />}
+                label="Chat" badge={unreadCount > 0 ? unreadCount : undefined} />
             </div>
           </div>
 
