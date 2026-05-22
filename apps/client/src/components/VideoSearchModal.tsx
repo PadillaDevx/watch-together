@@ -164,7 +164,7 @@ export function VideoSearchModal({ open, onClose, onSelect, initialQuery = '', r
       {searched && !loading && (
         <div className="flex gap-1 mb-3">
           {([
-            { key: 'all', label: 'Todo' },
+            { key: 'all', label: 'Todo', icon: undefined },
             { key: 'videos', label: 'Videos', icon: <Video className="h-3 w-3" /> },
             { key: 'playlists', label: 'Playlists', icon: <ListVideo className="h-3 w-3" /> },
           ] as const).map(({ key, label, icon }) => (
