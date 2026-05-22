@@ -90,7 +90,7 @@ export function LobbyPage() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold text-white">WatchJunto</span>
+          <span className="text-sm font-semibold text-white">Watch Together</span>
           <span className="w-9" />
         </div>
 

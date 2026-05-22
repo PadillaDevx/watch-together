@@ -72,3 +72,11 @@ export const appSettings = pgTable('app_settings', {
   value: text('value').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const sessions = pgTable('sessions', {
+  token: varchar('token', { length: 64 }).primaryKey(),
+  username: varchar('username', { length: 50 }).notNull(),
+  isAdmin: boolean('is_admin').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+});

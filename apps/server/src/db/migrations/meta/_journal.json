@@ -8,6 +8,13 @@
       "when": 1778636114389,
       "tag": "0000_nifty_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779295975333,
+      "tag": "0001_exotic_stark_industries",
+      "breakpoints": true
     }
   ]
 }

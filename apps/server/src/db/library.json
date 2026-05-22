@@ -109,7 +109,7 @@
         "name": "Las Sombrias Aventuras de Billy Y Mandy",
         "lacartoons_serie_id": 16,
         "thumbnail": null,
-        "active": false
+        "active": true
     },
     {
         "id": "la-vaca-y-el-pollito",
@@ -270,21 +270,21 @@
         "name": "Pokemon",
         "lacartoons_serie_id": 39,
         "thumbnail": null,
-        "active": true
+        "active": false
     },
     {
         "id": "dragon-ball",
         "name": "Dragon Ball",
         "lacartoons_serie_id": 40,
         "thumbnail": null,
-        "active": true
+        "active": false
     },
     {
         "id": "dragon-ball-z",
         "name": "Dragon Ball Z",
         "lacartoons_serie_id": 41,
         "thumbnail": null,
-        "active": true
+        "active": false
     },
     {
         "id": "dragon-ball-gt",
@@ -3231,14 +3231,14 @@
         "name": "Power Rangers Fueza Salvaje",
         "lacartoons_serie_id": 465,
         "thumbnail": null,
-        "active": false
+        "active": true
     },
     {
         "id": "power-rangers-tormenta-ninja",
         "name": "Power Rangers Tormenta Ninja",
         "lacartoons_serie_id": 466,
         "thumbnail": null,
-        "active": false
+        "active": true
     },
     {
         "id": "power-rangers-dino-trueno",

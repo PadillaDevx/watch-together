@@ -37,7 +37,7 @@ export function Sidebar({ onNavigate, embedded = false }: SidebarProps = {}) {
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shadow-lg shadow-accent">
             <Play className="h-4 w-4 text-white fill-white" />
           </div>
-          <span className="font-bold text-white text-base tracking-tight">WatchJunto</span>
+          <span className="font-bold text-white text-base tracking-tight">Watch Together</span>
         </div>
         <p className="text-xs text-white/30 pl-10">Cine Privado</p>
       </div>

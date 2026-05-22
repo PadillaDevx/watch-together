@@ -73,7 +73,7 @@ export function useYouTube({ containerId, onPlay, onPause, onEnded, onEmbedError
         height: '100%',
         width: '100%',
         // fs: 0 disables YT's own fullscreen button so our container-level fullscreen owns it
-        playerVars: { controls: 1, rel: 0, modestbranding: 1, playsinline: 1, enablejsapi: 1, fs: 0, origin: window.location.origin, host: 'https://www.youtube-nocookie.com' } as YT.PlayerVars,
+        playerVars: { controls: 1, rel: 0, modestbranding: 1, playsinline: 1, enablejsapi: 1, fs: 0, origin: window.location.origin } as YT.PlayerVars,
         events: {
           onStateChange: (e: YT.OnStateChangeEvent) => {
             if (Date.now() < suppressUntilRef.current) return;
@@ -88,7 +88,8 @@ export function useYouTube({ containerId, onPlay, onPause, onEnded, onEmbedError
             if (e.data === window.YT.PlayerState.ENDED) { onEndedRef.current?.(); }
           },
           onError: (e: { data: number }) => {
-            if (e.data === 101 || e.data === 150) {
+            // 101/150: owner disabled embedding; 153: sign-in / age restriction
+            if (e.data === 101 || e.data === 150 || e.data === 153) {
               const vid = (playerRef.current as YT.Player & { getVideoData?: () => { video_id?: string } })?.getVideoData?.()?.video_id ?? videoId;
               onEmbedErrorRef.current?.(vid);
             }
@@ -131,7 +132,21 @@ export function useYouTube({ containerId, onPlay, onPause, onEnded, onEmbedError
     player.seekTo(currentTime, true);
   }, []);
 
-  const getCurrentTime = useCallback(() => playerRef.current?.getCurrentTime() ?? 0, []);
+  const setPlaybackRate = useCallback((rate: number) => {
+    const player = playerRef.current;
+    if (!player) return;
+    try {
+      player.setPlaybackRate(rate);
+    } catch {
+      // Some embeds ignore or reject playbackRate changes. Sync still falls
+      // back to drift tolerance and cooldown-protected seeks.
+    }
+  }, []);
 
-  return { isReady, loadVideo, remotePlay, remotePause, remoteSeek, getCurrentTime };
+  const getCurrentTime = useCallback(() => {
+    const p = playerRef.current;
+    return typeof p?.getCurrentTime === 'function' ? p.getCurrentTime() : 0;
+  }, []);
+
+  return { isReady, loadVideo, remotePlay, remotePause, remoteSeek, setPlaybackRate, getCurrentTime };
 }

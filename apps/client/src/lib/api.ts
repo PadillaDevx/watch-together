@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Room, AdminUser, Connection, Token, VideoSearchResult, IPTVList, IPTVEntry, JellyfinSearchResult, LibrarySerie, LibrarySerieDetail } from '../types';
+import type { Room, AdminUser, Connection, Token, VideoSearchResult, PlaylistSearchResult, IPTVList, IPTVEntry, JellyfinSearchResult, LibrarySerie, LibrarySerieDetail } from '../types';
 
 const api = axios.create({ withCredentials: true });
 
@@ -25,7 +25,12 @@ export const roomsApi = {
 };
 
 export const searchApi = {
-  search: (q: string) => api.get<{ results: VideoSearchResult[] }>('/api/search', { params: { q } }),
+  search: (q: string) =>
+    api.get<{ results: VideoSearchResult[]; playlists: PlaylistSearchResult[] }>('/api/search', { params: { q } }),
+  searchPlaylists: (q: string) =>
+    api.get<{ results: VideoSearchResult[]; playlists: PlaylistSearchResult[] }>('/api/search', { params: { q, type: 'playlists' } }),
+  getPlaylistItems: (playlistId: string, videoId?: string) =>
+    api.get<{ items: VideoSearchResult[] }>('/api/search/playlist', { params: { playlistId, ...(videoId ? { videoId } : {}) } }),
 };
 
 export const adminApi = {

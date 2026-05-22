@@ -47,7 +47,7 @@ export function AuthModal({ open }: { open: boolean }) {
   ];
 
   return (
-    <Modal open={open} unclosable title="WatchJunto">
+    <Modal open={open} unclosable title="Watch Together">
       <div className="flex bg-white/5 rounded-lg p-1 mb-6 gap-0.5">
         {tabs.map(({ id, label }) => (
           <button
