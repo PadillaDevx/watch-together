@@ -15,11 +15,40 @@ export interface VideoSearchResult {
   embeddable?: boolean;
 }
 
+export interface PlaylistSearchResult {
+  playlistId: string;
+  title: string;
+  channelTitle: string;
+  thumbnail: string;
+  videoCount: string;
+  /** Seed videoId for Mix/Radio playlists — used as hint for the /next API endpoint */
+  seedVideoId?: string;
+}
+
+/** Represents a single item in a room's playback queue */
+export interface QueueItem {
+  id: string;
+  // TODO: 'series' is reserved for future use; the server currently only emits
+  // queue items of type 'youtube' | 'movie' | 'iptv'.
+  type: 'youtube' | 'movie' | 'series' | 'iptv';
+  title: string;
+  videoId?: string;
+  streamUrl?: string;
+  thumbnail?: string;
+  addedBy: string;
+}
+
 export interface PlayerState {
   videoId: string | null;
   currentTime: number;
   isPlaying: boolean;
   updatedAt: number;
+  playbackRate?: number;
+  revision?: number;
+  /** Human-readable title of the currently playing media */
+  title: string | null;
+  /** Thumbnail URL for the currently playing media */
+  thumbnail: string | null;
 }
 
 export interface RoomUser {
@@ -35,10 +64,15 @@ export interface Room {
   isOpen: boolean;
   pinProtected: boolean;
   createdAt: number;
-  sourceType: 'youtube' | 'iptv';
+  /** Username of the user who created this room */
+  createdByUsername?: string;
+  sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series';
   iptvListId?: string;
   playerState: PlayerState;
   users: RoomUser[];
+  /** Ordered list of items waiting to be played. Optional because the
+   * lightweight `room-list` payload omits this field. */
+  queue?: QueueItem[];
 }
 
 export interface ChatMessage {
@@ -83,4 +117,49 @@ export interface IPTVEntry {
   url: string;
   group: string;
   logo?: string;
+}
+
+/** Search result returned by the Jellyfin media server */
+export interface JellyfinSearchResult {
+  id: string;
+  name: string;
+  type: string;
+  runtimeTicks?: number;
+  imageUrl?: string;
+  streamUrl: string;
+}
+
+export interface LibrarySerie {
+  id: string;
+  name: string;
+  lacartoons_serie_id?: number;
+  thumbnail?: string;
+  active: boolean;
+}
+
+export interface LibraryEpisodio {
+  capitulo_numero: number;
+  titulo: string;
+  /** Raw path to the episode page (NOT the embed URL) */
+  url: string;
+}
+
+export interface LibraryTemporada {
+  temporada: number;
+  episodios: LibraryEpisodio[];
+}
+
+export interface LibrarySerieDetail extends LibrarySerie {
+  temporadas: LibraryTemporada[];
+}
+
+export interface LibraryEpisodeEmbed {
+  embedUrl: string;
+}
+
+export interface SeriesRoomState {
+  selectedSerieId: string | null;
+  selectedTemporada: number | null;
+  selectedEpisodioIndex: number | null;
+  embedUrl: string | null;
 }

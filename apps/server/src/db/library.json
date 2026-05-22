@@ -1,0 +1,3572 @@
+[
+    {
+        "id": "2-perros-tontos",
+        "name": "2 Perros Tontos",
+        "lacartoons_serie_id": 1,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "caballeros-del-zodiaco",
+        "name": "Caballeros del Zodiaco",
+        "lacartoons_serie_id": 2,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-capitan-planeta-y-los-planetarios",
+        "name": "El Capitán Planeta y los planetarios",
+        "lacartoons_serie_id": 3,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "code-lyoko",
+        "name": "Code Lyoko",
+        "lacartoons_serie_id": 4,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "coraje-el-perro-cobarde",
+        "name": "Coraje El Perro Cobarde",
+        "lacartoons_serie_id": 5,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "duck-dodgers",
+        "name": "Duck Dodgers",
+        "lacartoons_serie_id": 6,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "static-shock",
+        "name": "Static Shock",
+        "lacartoons_serie_id": 7,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "garfield",
+        "name": "Garfield",
+        "lacartoons_serie_id": 8,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "gasparin-y-sus-amigos",
+        "name": "Gasparin y sus amigos",
+        "lacartoons_serie_id": 9,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "generador-rex",
+        "name": "Generador Rex",
+        "lacartoons_serie_id": 10,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-mascara-serie-animada",
+        "name": "La Mascara Serie Animada",
+        "lacartoons_serie_id": 11,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-pequena-lulu",
+        "name": "La Pequeña Lulú",
+        "lacartoons_serie_id": 12,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-tintin",
+        "name": "Las Aventuras de TinTin",
+        "lacartoons_serie_id": 13,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-chicas-super-poderosas",
+        "name": "Las Chicas Super Poderosas",
+        "lacartoons_serie_id": 14,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-maravillosas-desventuras-de-flapjack",
+        "name": "Las Maravillosas Desventuras de FlapJack",
+        "lacartoons_serie_id": 15,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-sombrias-aventuras-de-billy-y-mandy",
+        "name": "Las Sombrias Aventuras de Billy Y Mandy",
+        "lacartoons_serie_id": 16,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "la-vaca-y-el-pollito",
+        "name": "La Vaca y El Pollito",
+        "lacartoons_serie_id": 17,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "looney-tunes",
+        "name": "Looney Tunes",
+        "lacartoons_serie_id": 18,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-cazafantasmas",
+        "name": "Los Cazafantasmas",
+        "lacartoons_serie_id": 19,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-pequenos-picapiedras",
+        "name": "Los Pequeños Picapiedras",
+        "lacartoons_serie_id": 20,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-picapiedras",
+        "name": "Los Picapiedras",
+        "lacartoons_serie_id": 21,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-supersonicos",
+        "name": "Los Supersónicos",
+        "lacartoons_serie_id": 22,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "godzilla-la-serie-animada",
+        "name": "Godzilla La Serie Animada",
+        "lacartoons_serie_id": 23,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "hombres-de-negro",
+        "name": "Hombres de Negro",
+        "lacartoons_serie_id": 24,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "meteoro",
+        "name": "Meteoro",
+        "lacartoons_serie_id": 25,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sakura-card-captors",
+        "name": "Sakura Card Captors",
+        "lacartoons_serie_id": 26,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "samurai-jack",
+        "name": "Samurai Jack",
+        "lacartoons_serie_id": 27,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "samurai-x",
+        "name": "Samurai X",
+        "lacartoons_serie_id": 28,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "samurai-champloo",
+        "name": "Samurai Champloo",
+        "lacartoons_serie_id": 29,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "scooby-doo-misterios-s-a",
+        "name": "Scooby Doo Misterios S.A",
+        "lacartoons_serie_id": 30,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ed-edd-y-eddy",
+        "name": "Ed, Edd y Eddy",
+        "lacartoons_serie_id": 31,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-jovenes-titanes",
+        "name": "Los Jovenes Titanes",
+        "lacartoons_serie_id": 32,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "spiderman-la-nueva-serie-animada",
+        "name": "Spiderman La nueva Serie Animada",
+        "lacartoons_serie_id": 33,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "titan-sim-bionico",
+        "name": "Titán Sim-Biónico",
+        "lacartoons_serie_id": 34,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "tom-y-jerry",
+        "name": "Tom y Jerry",
+        "lacartoons_serie_id": 35,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "wolverine-y-los-x-men",
+        "name": "Wolverine y los X-men",
+        "lacartoons_serie_id": 36,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "xiaolin-chronicles",
+        "name": "Xiaolin Chronicles",
+        "lacartoons_serie_id": 37,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "x-men-evolucion",
+        "name": "X-men Evolucion",
+        "lacartoons_serie_id": 38,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pokemon",
+        "name": "Pokemon",
+        "lacartoons_serie_id": 39,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dragon-ball",
+        "name": "Dragon Ball",
+        "lacartoons_serie_id": 40,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dragon-ball-z",
+        "name": "Dragon Ball Z",
+        "lacartoons_serie_id": 41,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dragon-ball-gt",
+        "name": "Dragon Ball GT",
+        "lacartoons_serie_id": 42,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "trigun",
+        "name": "Trigun",
+        "lacartoons_serie_id": 43,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "droopy",
+        "name": "Droopy",
+        "lacartoons_serie_id": 44,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "johnny-test",
+        "name": "Johnny Test",
+        "lacartoons_serie_id": 45,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "liga-de-la-justicia",
+        "name": "Liga de La Justicia",
+        "lacartoons_serie_id": 46,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "liga-de-la-justicia-ilimitada",
+        "name": "Liga de La Justicia Ilimitada",
+        "lacartoons_serie_id": 47,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "beyblade",
+        "name": "BeyBlade",
+        "lacartoons_serie_id": 51,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "capitan-n",
+        "name": "Capitán N",
+        "lacartoons_serie_id": 52,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "digimon-digital-monsters",
+        "name": "Digimon: Digital Monsters",
+        "lacartoons_serie_id": 53,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "digimon-adventure-02",
+        "name": "Digimon Adventure 02",
+        "lacartoons_serie_id": 54,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "digimon-3-tamers",
+        "name": "Digimon 3 Tamers",
+        "lacartoons_serie_id": 55,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "digimon-4-frontier",
+        "name": "Digimon 4 Frontier",
+        "lacartoons_serie_id": 56,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-inspector-gadget",
+        "name": "El Inspector Gadget",
+        "lacartoons_serie_id": 57,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-pajaro-loco-y-amigos",
+        "name": "El Pájaro Loco y Amigos",
+        "lacartoons_serie_id": 58,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "donde-en-el-mundo-esta-carmen-sandiego",
+        "name": "¿Dónde en el mundo está Carmen Sandiego?",
+        "lacartoons_serie_id": 59,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "gargolas-heroes-goticos",
+        "name": "Gargolas, Heroes Goticos",
+        "lacartoons_serie_id": 60,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "gundam-wing",
+        "name": "Gundam Wing",
+        "lacartoons_serie_id": 61,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "he-man-y-los-amos-del-universo",
+        "name": "He-Man y los Amos del Universo",
+        "lacartoons_serie_id": 62,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-tortugas-ninjas",
+        "name": "Las Tortugas Ninjas",
+        "lacartoons_serie_id": 63,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-padrinos-magicos",
+        "name": "Los padrinos mágicos",
+        "lacartoons_serie_id": 64,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "medabots",
+        "name": "Medabots",
+        "lacartoons_serie_id": 65,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "monster-rancher",
+        "name": "Monster Rancher",
+        "lacartoons_serie_id": 66,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "oggy-y-las-cucarachas",
+        "name": "Oggy Y Las Cucarachas",
+        "lacartoons_serie_id": 67,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers",
+        "name": "Power Rangers",
+        "lacartoons_serie_id": 68,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-zeo",
+        "name": "Power Rangers Zeo",
+        "lacartoons_serie_id": 69,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-turbo",
+        "name": "Power Rangers Turbo",
+        "lacartoons_serie_id": 70,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-en-el-espacio",
+        "name": "Power Rangers En El Espacio",
+        "lacartoons_serie_id": 71,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-en-la-galaxia-perdida",
+        "name": "Power Rangers En La Galaxia Perdida",
+        "lacartoons_serie_id": 72,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "robocop-la-serie-animada",
+        "name": "Robocop: La Serie Animada",
+        "lacartoons_serie_id": 73,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sailor-moon",
+        "name": "Sailor  Moon",
+        "lacartoons_serie_id": 74,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "shaman-king",
+        "name": "Shaman King",
+        "lacartoons_serie_id": 75,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "shuriken-school",
+        "name": "Shuriken School",
+        "lacartoons_serie_id": 76,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "spawn",
+        "name": "Spawn",
+        "lacartoons_serie_id": 77,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "spiderman-y-sus-sorprendentes-amigos",
+        "name": "Spiderman y Sus Sorprendentes Amigos",
+        "lacartoons_serie_id": 78,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "spider-man-la-serie-animada",
+        "name": "Spider-Man: La Serie Animada",
+        "lacartoons_serie_id": 79,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "spiderman-sin-limites",
+        "name": "Spiderman Sin Limites",
+        "lacartoons_serie_id": 80,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "silver-surfer",
+        "name": "Silver Surfer",
+        "lacartoons_serie_id": 81,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mujer-arana-spider-woman",
+        "name": "Mujer Araña (Spider Woman)",
+        "lacartoons_serie_id": 82,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "street-fighter-ii-v",
+        "name": "Street Fighter II-V",
+        "lacartoons_serie_id": 83,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-la-guerra-de-bestias",
+        "name": "Transformers La Guerra de Bestias",
+        "lacartoons_serie_id": 84,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-g1",
+        "name": "Transformers G1",
+        "lacartoons_serie_id": 85,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-3-chiflados",
+        "name": "Los 3 Chiflados",
+        "lacartoons_serie_id": 86,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "canuto-y-canito",
+        "name": "Canuto y Canito",
+        "lacartoons_serie_id": 87,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "clue-club-buscando-pistas",
+        "name": "Clue Club: Buscando Pistas",
+        "lacartoons_serie_id": 88,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dino-boy-en-el-valle-perdido",
+        "name": "Dino Boy: En El Valle Perdido",
+        "lacartoons_serie_id": 89,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-fantasma-del-espacio",
+        "name": "El Fantasma Del Espacio",
+        "lacartoons_serie_id": 90,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "drack-pack-el-grupo-increible",
+        "name": "Drack Pack: El Grupo Increible",
+        "lacartoons_serie_id": 91,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-inspector-ardilla",
+        "name": "El Inspector Ardilla",
+        "lacartoons_serie_id": 92,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-lagarto-juancho",
+        "name": "El Lagarto Juancho",
+        "lacartoons_serie_id": 93,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-nuevas-aventuras-del-oso-yogui",
+        "name": "Las Nuevas Aventuras Del Oso Yogui",
+        "lacartoons_serie_id": 94,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-oso-yogui",
+        "name": "El Oso Yogui",
+        "lacartoons_serie_id": 95,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-pulpo-manotas",
+        "name": "El Pulpo Manotas",
+        "lacartoons_serie_id": 96,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-trio-galaxia",
+        "name": "El Trío Galaxia",
+        "lacartoons_serie_id": 97,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dinamita-el-perro-maravilla",
+        "name": "Dinamita El Perro Maravilla",
+        "lacartoons_serie_id": 98,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "travesuras-de-los-picapiedras",
+        "name": "Travesuras De Los Picapiedras",
+        "lacartoons_serie_id": 99,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "hong-kong-phooey",
+        "name": "Hong Kong Phooey",
+        "lacartoons_serie_id": 100,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "huckleberry-hound",
+        "name": "Huckleberry Hound",
+        "lacartoons_serie_id": 101,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "josie-y-sus-gatimelodicas",
+        "name": "Josie y sus gatimelódicas",
+        "lacartoons_serie_id": 102,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-bruja-tonta",
+        "name": "La bruja Tonta",
+        "lacartoons_serie_id": 103,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-hormiga-atomica",
+        "name": "La Hormiga Atomica",
+        "lacartoons_serie_id": 104,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-pantera-rosa",
+        "name": "La Pantera Rosa",
+        "lacartoons_serie_id": 105,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-clan-chan",
+        "name": "El Clan Chan",
+        "lacartoons_serie_id": 106,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-13-fantasmas-de-sooby-doo",
+        "name": "Los 13 Fantasmas de Sooby Doo!",
+        "lacartoons_serie_id": 107,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-autos-locos",
+        "name": "Los Autos Locos",
+        "lacartoons_serie_id": 108,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-olimpiadas-de-la-risa",
+        "name": "Las Olimpiadas De La Risa",
+        "lacartoons_serie_id": 109,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-imposibles",
+        "name": "Los Imposibles",
+        "lacartoons_serie_id": 110,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-osos-montaneses",
+        "name": "Los Osos Montañeses",
+        "lacartoons_serie_id": 111,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-peligros-de-penelope-glamour",
+        "name": "Los peligros de Penélope Glamour",
+        "lacartoons_serie_id": 112,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "maguila-gorila",
+        "name": "Maguila Gorila",
+        "lacartoons_serie_id": 113,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mandibulin",
+        "name": "Mandibulín",
+        "lacartoons_serie_id": 114,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pepe-potamo-y-so-so",
+        "name": "Pepe Pótamo y So-So",
+        "lacartoons_serie_id": 115,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-escuadron-diabolico",
+        "name": "El Escuadrón Diabólico",
+        "lacartoons_serie_id": 116,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "punkin-puss-y-mush-mouse",
+        "name": "Punkin Puss y Mush Mouse",
+        "lacartoons_serie_id": 117,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ruedas-magicas",
+        "name": "Ruedas Mágicas",
+        "lacartoons_serie_id": 118,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "scooby-doo-donde-estas",
+        "name": "Scooby-Doo, ¿Dónde estás?",
+        "lacartoons_serie_id": 119,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-scooby-doo-y-scrappy-doo",
+        "name": "El show de Scooby-Doo y Scrappy-Doo",
+        "lacartoons_serie_id": 120,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "bravestarr",
+        "name": "BraveStarr",
+        "lacartoons_serie_id": 121,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "tiro-loco-mcgraw",
+        "name": "Tiro Loco Mcgraw",
+        "lacartoons_serie_id": 122,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "don-gato-y-su-pandilla",
+        "name": "Don Gato y Su Pandilla",
+        "lacartoons_serie_id": 123,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "batman-del-futuro",
+        "name": "Batman Del Futuro",
+        "lacartoons_serie_id": 124,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "batman-la-serie-animada",
+        "name": "Batman La Serie Animada",
+        "lacartoons_serie_id": 125,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-mundo-de-beakman",
+        "name": "El Mundo De Beakman",
+        "lacartoons_serie_id": 126,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jumanji-la-serie-animada",
+        "name": "Jumanji La Serie Animada",
+        "lacartoons_serie_id": 127,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pinky-elvira-y-cerebro",
+        "name": "Pinky, Elvira y Cerebro",
+        "lacartoons_serie_id": 128,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pinky-y-cerebro",
+        "name": "Pinky y Cerebro",
+        "lacartoons_serie_id": 129,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "superman-la-serie-animada",
+        "name": "Superman La Serie Animada",
+        "lacartoons_serie_id": 130,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "tiny-toons",
+        "name": "Tiny Toons",
+        "lacartoons_serie_id": 131,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "the-batman",
+        "name": "The Batman",
+        "lacartoons_serie_id": 132,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "animaniacs",
+        "name": "Animaniacs",
+        "lacartoons_serie_id": 133,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-silvestre-y-piolin",
+        "name": "Las Aventuras de Silvestre y Piolin",
+        "lacartoons_serie_id": 134,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "50-clasicos-de-disney",
+        "name": "50 Clasicos de Disney",
+        "lacartoons_serie_id": 135,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "aladdin-la-serie-animada",
+        "name": "Aladdin La serie Animada",
+        "lacartoons_serie_id": 136,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-sirenita-serie-animada",
+        "name": "La Sirenita Serie Animada",
+        "lacartoons_serie_id": 137,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "alf",
+        "name": "Alf",
+        "lacartoons_serie_id": 138,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "avatar-la-leyenda-de-aang",
+        "name": "Avatar La Leyenda de Aang",
+        "lacartoons_serie_id": 139,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "avatar-la-leyenda-de-korra",
+        "name": "Avatar La Leyenda de Korra",
+        "lacartoons_serie_id": 140,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "bob-esponja",
+        "name": "Bob Esponja",
+        "lacartoons_serie_id": 141,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "catdog",
+        "name": "CatDog",
+        "lacartoons_serie_id": 142,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dave-el-barbaro",
+        "name": "Dave El Barbaro",
+        "lacartoons_serie_id": 143,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "drake-josh",
+        "name": "Drake & Josh",
+        "lacartoons_serie_id": 144,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "danny-phantom",
+        "name": "Danny Phantom",
+        "lacartoons_serie_id": 145,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "doug",
+        "name": "Doug",
+        "lacartoons_serie_id": 146,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-halcones-galacticos",
+        "name": "Los Halcones Galácticos",
+        "lacartoons_serie_id": 147,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-club-winx",
+        "name": "El Club Winx",
+        "lacartoons_serie_id": 148,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "creepie",
+        "name": "Creepie",
+        "lacartoons_serie_id": 149,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "icarly",
+        "name": "ICarly",
+        "lacartoons_serie_id": 150,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-jimmy-neutron-el-nino-genio",
+        "name": "Las Aventuras de Jimmy Neutrón: El Niño Genio",
+        "lacartoons_serie_id": 151,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "kenan-kel",
+        "name": "Kenan & Kel",
+        "lacartoons_serie_id": 152,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-robot-adolescente",
+        "name": "La Robot Adolescente",
+        "lacartoons_serie_id": 153,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-misterios-de-moville",
+        "name": "Los Misterios de Moville",
+        "lacartoons_serie_id": 154,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "le-temes-a-la-oscuridad",
+        "name": "Le Temes A La Oscuridad?",
+        "lacartoons_serie_id": 155,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-vida-moderna-de-rocko",
+        "name": "La Vida Moderna de Rocko",
+        "lacartoons_serie_id": 156,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-thornberrys",
+        "name": "Los Thornberrys",
+        "lacartoons_serie_id": 157,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "manual-de-supervivencia-escolar-de-ned",
+        "name": "Manual De Supervivencia Escolar De Ned",
+        "lacartoons_serie_id": 158,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-archie",
+        "name": "El Show De Archie",
+        "lacartoons_serie_id": 159,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mighty-b-la-super-abeja",
+        "name": "Mighty B!, La Sùper Abeja",
+        "lacartoons_serie_id": 160,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "rocket-power",
+        "name": "Rocket Power",
+        "lacartoons_serie_id": 161,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "oye-arnold",
+        "name": "¡Oye, Arnold!",
+        "lacartoons_serie_id": 162,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sabrina-la-bruja-adolescente",
+        "name": "Sabrina La Bruja Adolescente",
+        "lacartoons_serie_id": 163,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sam-cat",
+        "name": "Sam & Cat",
+        "lacartoons_serie_id": 164,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "victorius",
+        "name": "Victorius",
+        "lacartoons_serie_id": 165,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zoey-101",
+        "name": "Zoey 101",
+        "lacartoons_serie_id": 166,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-familia-addams",
+        "name": "La Familia Addams",
+        "lacartoons_serie_id": 167,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-munsters",
+        "name": "Los Munsters",
+        "lacartoons_serie_id": 168,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "hechizada",
+        "name": "Hechizada",
+        "lacartoons_serie_id": 169,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-vengadores-los-heroes-mas-poderosos-del-planeta",
+        "name": "Los Vengadores: Los Héroes Más Poderosos Del Planeta",
+        "lacartoons_serie_id": 170,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "blade",
+        "name": "Blade",
+        "lacartoons_serie_id": 171,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "fenomenoide",
+        "name": "Fenomenoide",
+        "lacartoons_serie_id": 172,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "x-men-serie-animada",
+        "name": "X-Men Serie Animada",
+        "lacartoons_serie_id": 173,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "un-cachorro-llamado-scooby-doo",
+        "name": "Un Cachorro Llamado Scooby Doo",
+        "lacartoons_serie_id": 174,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-agente-86",
+        "name": "Super Agente 86",
+        "lacartoons_serie_id": 175,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jonny-quest",
+        "name": "Jonny Quest",
+        "lacartoons_serie_id": 176,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cartoon-cartoons",
+        "name": "Cartoon Cartoons",
+        "lacartoons_serie_id": 177,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-beast-machine",
+        "name": "Transformers Beast Machine",
+        "lacartoons_serie_id": 178,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-leon-melquiades",
+        "name": "El León Melquíades",
+        "lacartoons_serie_id": 179,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "thundercats",
+        "name": "Thundercats",
+        "lacartoons_serie_id": 180,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "aaahh-monstruos-de-verdad",
+        "name": "Aaahh!! Monstruos de Verdad",
+        "lacartoons_serie_id": 181,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "soy-la-comadreja",
+        "name": "Soy La Comadreja",
+        "lacartoons_serie_id": 182,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-jackie-chang",
+        "name": "Las Aventuras de Jackie Chang",
+        "lacartoons_serie_id": 183,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yu-gi-oh",
+        "name": "Yu-Gi-Oh!",
+        "lacartoons_serie_id": 184,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pato-aventuras",
+        "name": "Pato Aventuras",
+        "lacartoons_serie_id": 185,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "taz-mania",
+        "name": "Taz-Mania",
+        "lacartoons_serie_id": 186,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "x-men-anime",
+        "name": "X-Men Anime",
+        "lacartoons_serie_id": 187,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-prime",
+        "name": "Transformers: Prime",
+        "lacartoons_serie_id": 188,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-reto-de-los-super-amigos",
+        "name": "El Reto De Los Super Amigos",
+        "lacartoons_serie_id": 189,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mi-bella-genio",
+        "name": "Mi Bella Genio",
+        "lacartoons_serie_id": 190,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "martin-mystery",
+        "name": "Martin Mystery",
+        "lacartoons_serie_id": 191,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-armada",
+        "name": "Transformers Armada",
+        "lacartoons_serie_id": 192,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "kid-musculo",
+        "name": "Kid Músculo",
+        "lacartoons_serie_id": 193,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yu-yu-hakusho",
+        "name": "Yu yu Hakusho",
+        "lacartoons_serie_id": 194,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "megaman-nt-warriors",
+        "name": "Megaman NT Warriors",
+        "lacartoons_serie_id": 195,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-gatos-samurais",
+        "name": "Los Gatos Samurais",
+        "lacartoons_serie_id": 196,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sonic-x",
+        "name": "Sonic X",
+        "lacartoons_serie_id": 197,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "invasor-zim",
+        "name": "Invasor Zim",
+        "lacartoons_serie_id": 198,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-charlie-brown-y-snoopy",
+        "name": "El Show De Charlie Brown y Snoopy",
+        "lacartoons_serie_id": 199,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "31-minutos",
+        "name": "31 Minutos",
+        "lacartoons_serie_id": 200,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ricky-ricon",
+        "name": "Ricky Ricón",
+        "lacartoons_serie_id": 201,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ranma-1-2",
+        "name": "Ranma 1/2",
+        "lacartoons_serie_id": 202,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-super-amigos",
+        "name": "Los Super Amigos",
+        "lacartoons_serie_id": 203,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "iron-man-anime",
+        "name": "Iron Man: Anime",
+        "lacartoons_serie_id": 204,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-castores-cascarrabias",
+        "name": "Los Castores Cascarrabias",
+        "lacartoons_serie_id": 205,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "johnny-bravo",
+        "name": "Johnny Bravo",
+        "lacartoons_serie_id": 206,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-increible-hulk",
+        "name": "El Increible Hulk",
+        "lacartoons_serie_id": 207,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-4-fantasticos-la-serie-animada",
+        "name": "Los 4 Fantasticos La Serie Animada",
+        "lacartoons_serie_id": 208,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-4-fantasticos-los-heroes-mas-grandes-del-mundo",
+        "name": "Los 4 Fantásticos: Los Héroes más Grandes del Mundo",
+        "lacartoons_serie_id": 209,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "wolverine-anime",
+        "name": "Wolverine Anime",
+        "lacartoons_serie_id": 210,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "iron-man-aventuras-de-hierro",
+        "name": "Iron Man: Aventuras De Hierro",
+        "lacartoons_serie_id": 211,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-vengadores-united-they-stand",
+        "name": "Los Vengadores: United They Stand",
+        "lacartoons_serie_id": 212,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-vengadores-unidos",
+        "name": "Los Vengadores Unidos",
+        "lacartoons_serie_id": 213,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "droopy-detective-maestro",
+        "name": "Droopy Detective Maestro",
+        "lacartoons_serie_id": 214,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-valle-de-los-dinosaurios",
+        "name": "El Valle de Los Dinosaurios",
+        "lacartoons_serie_id": 215,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "lindo-pulgoso",
+        "name": "Lindo Pulgoso",
+        "lacartoons_serie_id": 216,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-nuevas-aventuras-de-jonny-quest",
+        "name": "Las Nuevas Aventuras De Jonny Quest",
+        "lacartoons_serie_id": 217,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cybersix",
+        "name": "Cybersix",
+        "lacartoons_serie_id": 218,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-mario-bros-3",
+        "name": "Super Mario Bros 3",
+        "lacartoons_serie_id": 219,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-mario-world",
+        "name": "Super Mario World",
+        "lacartoons_serie_id": 220,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "vr-troopers",
+        "name": "Vr Troopers",
+        "lacartoons_serie_id": 221,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "big-bad-beetleborgs",
+        "name": "Big Bad Beetleborgs",
+        "lacartoons_serie_id": 222,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "knd-los-chicos-del-barrio",
+        "name": "KND: Los Chicos Del Barrio",
+        "lacartoons_serie_id": 223,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-campeones",
+        "name": "Super Campeones",
+        "lacartoons_serie_id": 224,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-laboratorio-de-dexter",
+        "name": "El Laboratorio de Dexter",
+        "lacartoons_serie_id": 225,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "megas-xlr",
+        "name": "Megas XLR",
+        "lacartoons_serie_id": 226,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sonic-underground",
+        "name": "Sonic Underground",
+        "lacartoons_serie_id": 227,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-zorro-serie-animada",
+        "name": "El Zorro: Serie Animada",
+        "lacartoons_serie_id": 228,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-nuevas-aventuras-de-batman",
+        "name": "Las Nuevas Aventuras De Batman",
+        "lacartoons_serie_id": 229,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-coyote-y-el-corre-caminos",
+        "name": "El Coyote y El Corre Caminos",
+        "lacartoons_serie_id": 230,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "birdman",
+        "name": "Birdman",
+        "lacartoons_serie_id": 231,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-fantasma-2040",
+        "name": "El Fantasma 2040",
+        "lacartoons_serie_id": 232,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cyborg-009",
+        "name": "Cyborg 009",
+        "lacartoons_serie_id": 233,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "gi-joe",
+        "name": "Gi Joe",
+        "lacartoons_serie_id": 234,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "street-sharks",
+        "name": "Street Sharks",
+        "lacartoons_serie_id": 235,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "detective-conan",
+        "name": "Detective Conan",
+        "lacartoons_serie_id": 236,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "heidi",
+        "name": "Heidi",
+        "lacartoons_serie_id": 237,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "candy-candy",
+        "name": "Candy Candy",
+        "lacartoons_serie_id": 238,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "voltron-leones",
+        "name": "Voltron Leones",
+        "lacartoons_serie_id": 239,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "voltron-vehiculos",
+        "name": "Voltron Vehiculos",
+        "lacartoons_serie_id": 240,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-jinete-de-sable-y-los-comisarios-estrellas",
+        "name": "El Jinete De Sable Y Los Comisarios Estrellas",
+        "lacartoons_serie_id": 241,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mazinger-z",
+        "name": "Mazinger Z",
+        "lacartoons_serie_id": 242,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-gladiador",
+        "name": "El Gladiador",
+        "lacartoons_serie_id": 243,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-magnetron",
+        "name": "Super Magnetrón",
+        "lacartoons_serie_id": 244,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-vengador",
+        "name": "El Vengador",
+        "lacartoons_serie_id": 245,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-galactico",
+        "name": "El Galáctico",
+        "lacartoons_serie_id": 246,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "capitan-centella",
+        "name": "Capitán Centella",
+        "lacartoons_serie_id": 247,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "capitan-futuro",
+        "name": "Capitán Futuro",
+        "lacartoons_serie_id": 248,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "arbegas-el-rayo-custodio",
+        "name": "Arbegas: El Rayo Custodio",
+        "lacartoons_serie_id": 249,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "fuerza-g",
+        "name": "Fuerza G",
+        "lacartoons_serie_id": 250,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "doraemon",
+        "name": "Doraemon",
+        "lacartoons_serie_id": 251,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-proyecto-zeta",
+        "name": "El Proyecto Zeta",
+        "lacartoons_serie_id": 252,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "oban-star-racers",
+        "name": "Oban Star Racers",
+        "lacartoons_serie_id": 253,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-casa-de-los-dibujos",
+        "name": "La Casa De Los Dibujos",
+        "lacartoons_serie_id": 254,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-principe-del-rap-en-bel-air",
+        "name": "El Principe Del Rap En Bel-Air",
+        "lacartoons_serie_id": 255,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "full-house",
+        "name": "Full House",
+        "lacartoons_serie_id": 256,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-scooby-doo",
+        "name": "El Show De Scooby Doo",
+        "lacartoons_serie_id": 257,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-clan-de-yogui",
+        "name": "El Clan De Yogui",
+        "lacartoons_serie_id": 258,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yakky-doodle",
+        "name": "Yakky Doodle",
+        "lacartoons_serie_id": 259,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "aquaman",
+        "name": "Aquaman",
+        "lacartoons_serie_id": 260,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-centuriones",
+        "name": "Los Centuriones",
+        "lacartoons_serie_id": 261,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pixie-dixie-y-el-gato-jinks",
+        "name": "Pixie, Dixie y El Gato Jinks",
+        "lacartoons_serie_id": 262,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-herculoides",
+        "name": "Los Herculoides",
+        "lacartoons_serie_id": 263,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "frankenstein-jr",
+        "name": "Frankenstein Jr.",
+        "lacartoons_serie_id": 264,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "death-note",
+        "name": "Death Note",
+        "lacartoons_serie_id": 265,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-gallo-claudio",
+        "name": "El Gallo Claudio",
+        "lacartoons_serie_id": 266,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "101-dalmatas",
+        "name": "101 Dalmatas",
+        "lacartoons_serie_id": 267,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dragon-quest",
+        "name": "Dragon Quest",
+        "lacartoons_serie_id": 268,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "wild-c-a-t-s",
+        "name": "Wild C.A.T.S",
+        "lacartoons_serie_id": 269,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cowboy-bebop",
+        "name": "CowBoy Bebop",
+        "lacartoons_serie_id": 270,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "samurai-warriors",
+        "name": "Samurai Warriors",
+        "lacartoons_serie_id": 271,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-headmasters",
+        "name": "Transformers: Headmasters",
+        "lacartoons_serie_id": 272,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-super-good-masterforce",
+        "name": "Transformers: Super-Good Masterforce",
+        "lacartoons_serie_id": 273,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "transformers-victory",
+        "name": "Transformers: Victory",
+        "lacartoons_serie_id": 274,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-agente-cobra",
+        "name": "Super Agente Cobra",
+        "lacartoons_serie_id": 275,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zoids-chaotic-century",
+        "name": "Zoids: Chaotic Century",
+        "lacartoons_serie_id": 276,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zoids-guardian-force",
+        "name": "Zoids: Guardian Force",
+        "lacartoons_serie_id": 277,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-pinguinos-de-madagascar",
+        "name": "Los Pingüinos De Madagascar",
+        "lacartoons_serie_id": 278,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "harvey-birdman-el-abogado",
+        "name": "Harvey Birdman El Abogado",
+        "lacartoons_serie_id": 279,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ben-10",
+        "name": "Ben 10",
+        "lacartoons_serie_id": 280,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ben-10-fuerza-alienigena",
+        "name": "Ben 10: Fuerza Alienigena",
+        "lacartoons_serie_id": 281,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ben-10-supremacia-alienigena",
+        "name": "Ben 10: Supremacia Alienigena",
+        "lacartoons_serie_id": 282,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mucha-lucha",
+        "name": "Mucha Lucha",
+        "lacartoons_serie_id": 283,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "daniel-el-travieso",
+        "name": "Daniel El Travieso",
+        "lacartoons_serie_id": 284,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-autobus-magico",
+        "name": "El Autobús Mágico",
+        "lacartoons_serie_id": 285,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "she-ra-la-princesa-del-poder",
+        "name": "She-Ra La Princesa Del Poder",
+        "lacartoons_serie_id": 286,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "robotech",
+        "name": "Robotech",
+        "lacartoons_serie_id": 287,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-baron-rojo",
+        "name": "El Baron Rojo",
+        "lacartoons_serie_id": 288,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-conde-patula",
+        "name": "El Conde Pátula",
+        "lacartoons_serie_id": 289,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-nuevas-peliculas-de-scooby-doo",
+        "name": "Las Nuevas Peliculas De Scooby Doo",
+        "lacartoons_serie_id": 290,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "timon-y-pumba",
+        "name": "Timon y Pumba",
+        "lacartoons_serie_id": 291,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "iron-man-la-serie-animada",
+        "name": "Iron Man: La Serie Animada",
+        "lacartoons_serie_id": 292,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-nuevas-aventuras-de-winnie-the-pooh",
+        "name": "Las Nuevas Aventuras De Winnie The Pooh",
+        "lacartoons_serie_id": 293,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jake-long-el-dragon-occidental",
+        "name": "Jake Long: El Dragón Occidental",
+        "lacartoons_serie_id": 294,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "astro-boy-1980",
+        "name": "Astro Boy 1980",
+        "lacartoons_serie_id": 295,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "astro-boy-2003",
+        "name": "Astro Boy 2003",
+        "lacartoons_serie_id": 296,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mike-lu-y-og",
+        "name": "Mike, Lu y Og",
+        "lacartoons_serie_id": 297,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "reboot",
+        "name": "Reboot",
+        "lacartoons_serie_id": 298,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "btx",
+        "name": "BTX",
+        "lacartoons_serie_id": 299,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "btx-neo",
+        "name": "BTX Neo",
+        "lacartoons_serie_id": 300,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "d-artacan-y-los-tres-mosqueperros",
+        "name": "D'Artacán y Los Tres Mosqueperros",
+        "lacartoons_serie_id": 301,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sam-el-rey-del-judo",
+        "name": "Sam El Rey Del Judo",
+        "lacartoons_serie_id": 302,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yu-gi-oh-gx",
+        "name": "Yu Gi Oh! GX",
+        "lacartoons_serie_id": 303,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "thundarr-el-barbaro",
+        "name": "Thundarr El Bárbaro",
+        "lacartoons_serie_id": 304,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-pebbles-y-bambam",
+        "name": "El Show de Pebbles y BamBam",
+        "lacartoons_serie_id": 305,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-nuevo-show-de-los-picapiedras",
+        "name": "El Nuevo Show De Los Picapiedras",
+        "lacartoons_serie_id": 306,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-caballeros-arabes",
+        "name": "Los Caballeros Arabes",
+        "lacartoons_serie_id": 307,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "escuadron-del-tiempo",
+        "name": "Escuadron Del Tiempo",
+        "lacartoons_serie_id": 308,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-defensores-de-la-tierra",
+        "name": "Los Defensores de La Tierra",
+        "lacartoons_serie_id": 309,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "inuyasha",
+        "name": "Inuyasha",
+        "lacartoons_serie_id": 310,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "inuyasha-the-final-act",
+        "name": "Inuyasha: The Final Act",
+        "lacartoons_serie_id": 311,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zatch-bell",
+        "name": "Zatch Bell",
+        "lacartoons_serie_id": 312,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "recreo-la-serie-animada",
+        "name": "Recreo: La Serie Animada",
+        "lacartoons_serie_id": 313,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-pato-darkwing",
+        "name": "El Pato Darkwing",
+        "lacartoons_serie_id": 314,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "lilo-stich",
+        "name": "Lilo & Stich",
+        "lacartoons_serie_id": 315,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "chip-dale-guardianes-rescatadores",
+        "name": "Chip & Dale: Guardianes Rescatadores",
+        "lacartoons_serie_id": 316,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "hercules-la-serie-animada",
+        "name": "Hercules: La Serie Animada",
+        "lacartoons_serie_id": 317,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "kim-possible",
+        "name": "Kim Possible",
+        "lacartoons_serie_id": 318,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-leyenda-de-tarzan",
+        "name": "La Leyenda De Tarzan",
+        "lacartoons_serie_id": 319,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dragon-ball-super",
+        "name": "Dragon Ball Super",
+        "lacartoons_serie_id": 320,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "orphen",
+        "name": "Orphen",
+        "lacartoons_serie_id": 321,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "orphen-revenge",
+        "name": "Orphen Revenge",
+        "lacartoons_serie_id": 322,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "corsario-negro",
+        "name": "Corsario Negro",
+        "lacartoons_serie_id": 323,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zenki",
+        "name": "Zenki",
+        "lacartoons_serie_id": 324,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "slam-dunk",
+        "name": "Slam Dunk",
+        "lacartoons_serie_id": 325,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-pippi-longstocking",
+        "name": "Las Aventuras de Pippi Longstocking",
+        "lacartoons_serie_id": 326,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "karate-kid",
+        "name": "Karate Kid",
+        "lacartoons_serie_id": 327,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-patrulla-galactica",
+        "name": "La Patrulla Galactica",
+        "lacartoons_serie_id": 328,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dino-riders",
+        "name": "Dino Riders",
+        "lacartoons_serie_id": 329,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "stargate-infinity",
+        "name": "Stargate Infinity",
+        "lacartoons_serie_id": 330,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "inhumanoides",
+        "name": "Inhumanoides",
+        "lacartoons_serie_id": 331,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "happy-tree-friends",
+        "name": "Happy Tree Friends",
+        "lacartoons_serie_id": 332,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "star-trek",
+        "name": "Star Trek",
+        "lacartoons_serie_id": 333,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "malcolm-en-el-medio",
+        "name": "Malcolm En El Medio",
+        "lacartoons_serie_id": 334,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "futurama",
+        "name": "Futurama",
+        "lacartoons_serie_id": 335,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "bonkers",
+        "name": "Bonkers",
+        "lacartoons_serie_id": 336,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "aventureros-del-aire",
+        "name": "Aventureros Del Aire",
+        "lacartoons_serie_id": 337,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sabrina-la-serie-animada",
+        "name": "Sabrina: La Serie Animada",
+        "lacartoons_serie_id": 338,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-campeones-de-disney",
+        "name": "Los Campeones de Disney",
+        "lacartoons_serie_id": 339,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-inspector-de-la-pantera-rosa",
+        "name": "El Inspector De La Pantera Rosa",
+        "lacartoons_serie_id": 340,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "swat-kats",
+        "name": "Swat Kats",
+        "lacartoons_serie_id": 341,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-super-globetrotters",
+        "name": "Los Super GlobeTrotters",
+        "lacartoons_serie_id": 342,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-osos-revoltosos",
+        "name": "Los Osos Revoltosos",
+        "lacartoons_serie_id": 343,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "shazzan-y-el-mago",
+        "name": "Shazzan y El Mago",
+        "lacartoons_serie_id": 344,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yo-yogi",
+        "name": "Yo Yogi!",
+        "lacartoons_serie_id": 345,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-pitufos",
+        "name": "Los Pitufos",
+        "lacartoons_serie_id": 346,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "capitan-cavernicola-y-los-angeles-adolescentes",
+        "name": "Capitan Cavernicola y los Angeles Adolescentes",
+        "lacartoons_serie_id": 347,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-familia-addams-serie-animada",
+        "name": "La Familia Addams: Serie Animada",
+        "lacartoons_serie_id": 348,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jayce-y-los-guerreros-rodantes",
+        "name": "Jayce y los Guerreros Rodantes",
+        "lacartoons_serie_id": 349,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yin-yang-yo",
+        "name": "Yin Yang Yo!",
+        "lacartoons_serie_id": 350,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-mundo-de-bobby",
+        "name": "El Mundo de Bobby",
+        "lacartoons_serie_id": 351,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cuentos-de-la-cripta-serie-animada",
+        "name": "Cuentos De La Cripta: Serie Animada",
+        "lacartoons_serie_id": 352,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pucca",
+        "name": "Pucca",
+        "lacartoons_serie_id": 353,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-colegio-del-agujero-negro",
+        "name": "El Colegio Del Agujero Negro",
+        "lacartoons_serie_id": 354,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "dientes-de-lata",
+        "name": "Dientes De Lata",
+        "lacartoons_serie_id": 355,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-super-mario-bros",
+        "name": "El Show de Super Mario Bros",
+        "lacartoons_serie_id": 356,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "felix-el-gato",
+        "name": "Felix El Gato",
+        "lacartoons_serie_id": 357,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mad",
+        "name": "Mad",
+        "lacartoons_serie_id": 358,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "que-hay-de-nuevo-scooby-doo",
+        "name": "¿Qué hay de nuevo, Scooby-Doo?",
+        "lacartoons_serie_id": 359,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "shaggy-y-scooby-doo-detectives",
+        "name": "Shaggy y Scooby-Doo detectives",
+        "lacartoons_serie_id": 360,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "historia-de-fantasmas",
+        "name": "Historia de Fantasmas",
+        "lacartoons_serie_id": 361,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-increibles-aventuras-de-jonny-quest",
+        "name": "Las Increibles Aventuras de Jonny Quest",
+        "lacartoons_serie_id": 362,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "popeye",
+        "name": "Popeye",
+        "lacartoons_serie_id": 363,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "poochini",
+        "name": "Poochini",
+        "lacartoons_serie_id": 364,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-misterio-de-anubis",
+        "name": "El Misterio de Anubis",
+        "lacartoons_serie_id": 365,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yu-gi-oh-5ds",
+        "name": "YU Gi Oh! 5DS",
+        "lacartoons_serie_id": 366,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zona-tiza",
+        "name": "Zona Tiza",
+        "lacartoons_serie_id": 367,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-rugrats-aventuras-en-panales",
+        "name": "Los Rugrats: Aventuras En Pañales",
+        "lacartoons_serie_id": 368,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "rugrats-crecidos",
+        "name": "Rugrats Crecidos",
+        "lacartoons_serie_id": 369,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ginger",
+        "name": "Ginger",
+        "lacartoons_serie_id": 370,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ren-y-stimpy",
+        "name": "Ren y Stimpy",
+        "lacartoons_serie_id": 371,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "blanco-y-negro",
+        "name": "Blanco y Negro",
+        "lacartoons_serie_id": 372,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "naruto",
+        "name": "Naruto",
+        "lacartoons_serie_id": 373,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "star-wars-la-guerra-de-los-clones",
+        "name": "Star Wars: La Guerra De Los Clones",
+        "lacartoons_serie_id": 374,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "hora-de-aventura",
+        "name": "Hora de Aventura",
+        "lacartoons_serie_id": 375,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "un-show-mas",
+        "name": "Un Show Mas",
+        "lacartoons_serie_id": 376,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-chicas-super-poderosas-z",
+        "name": "Las Chicas Super Poderosas Z",
+        "lacartoons_serie_id": 377,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "momias-aqui",
+        "name": "Momias  Aqui",
+        "lacartoons_serie_id": 378,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "kappa-mikey",
+        "name": "Kappa Mikey",
+        "lacartoons_serie_id": 379,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ciudad-de-perros",
+        "name": "Ciudad de Perros",
+        "lacartoons_serie_id": 380,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "eek-el-gato",
+        "name": "Eek! El Gato",
+        "lacartoons_serie_id": 381,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-garrapata",
+        "name": "La Garrapata",
+        "lacartoons_serie_id": 382,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "double-dragon",
+        "name": "Double Dragon",
+        "lacartoons_serie_id": 383,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pulgarcito-investigador-privado",
+        "name": "Pulgarcito Investigador Privado",
+        "lacartoons_serie_id": 384,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-los-osos-gummis",
+        "name": "Las Aventuras De Los Osos Gummis",
+        "lacartoons_serie_id": 385,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-familia-proud",
+        "name": "La Familia Proud",
+        "lacartoons_serie_id": 386,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "phineas-y-pherb",
+        "name": "Phineas y Pherb",
+        "lacartoons_serie_id": 387,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "quack-pack",
+        "name": "Quack Pack",
+        "lacartoons_serie_id": 388,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-nuevas-locuras-del-emperador",
+        "name": "Las Nuevas Locuras Del Emperador",
+        "lacartoons_serie_id": 389,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ultimate-spider-man",
+        "name": "Ultimate Spider-Man",
+        "lacartoons_serie_id": 390,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-espectacular-hombre-arana",
+        "name": "El Espectacular Hombre Araña",
+        "lacartoons_serie_id": 391,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-3-mellizas",
+        "name": "Las 3 Mellizas",
+        "lacartoons_serie_id": 392,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "eyeshield-21",
+        "name": "Eyeshield 21",
+        "lacartoons_serie_id": 393,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "rick-y-morty",
+        "name": "Rick y Morty",
+        "lacartoons_serie_id": 394,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-simpsons",
+        "name": "Los Simpsons",
+        "lacartoons_serie_id": 395,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cool-mccool",
+        "name": "Cool McCool",
+        "lacartoons_serie_id": 396,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sherlock-holmes-en-el-siglo-xxii",
+        "name": "Sherlock Holmes En El Siglo XXII",
+        "lacartoons_serie_id": 397,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "action-man-a-t-o-m",
+        "name": "Action Man: A.T.O.M.",
+        "lacartoons_serie_id": 398,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-duper-sumos",
+        "name": "Super Duper Sumos",
+        "lacartoons_serie_id": 399,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "t-u-f-f-puppy-agente-secreto",
+        "name": "T.U.F.F. Puppy, Agente Secreto",
+        "lacartoons_serie_id": 400,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "clarissa-lo-explica-todo",
+        "name": "Clarissa Lo Explica Todo",
+        "lacartoons_serie_id": 401,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-verdaderos-cazafantasmas",
+        "name": "Los Verdaderos Cazafantasmas",
+        "lacartoons_serie_id": 402,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-cazafantasmas-la-nueva-generacion",
+        "name": "Los Cazafantasmas La Nueva Generacion",
+        "lacartoons_serie_id": 403,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "popeye-el-marino",
+        "name": "Popeye El Marino",
+        "lacartoons_serie_id": 404,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "popeye-y-su-hijo",
+        "name": "Popeye y Su Hijo",
+        "lacartoons_serie_id": 405,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jones-el-robot",
+        "name": "Jones El Robot",
+        "lacartoons_serie_id": 406,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-lagartijo-de-ned",
+        "name": "El Lagartijo De Ned",
+        "lacartoons_serie_id": 407,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-sabados-secretos",
+        "name": "Los Sabados Secretos",
+        "lacartoons_serie_id": 408,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "batman-el-valiente",
+        "name": "Batman El Valiente",
+        "lacartoons_serie_id": 409,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "justicia-joven",
+        "name": "Justicia Joven",
+        "lacartoons_serie_id": 410,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "drama-total",
+        "name": "Drama Total",
+        "lacartoons_serie_id": 411,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mad-jack-el-pirata",
+        "name": "Mad Jack El Pirata",
+        "lacartoons_serie_id": 412,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cadillacs-y-dinosaurios",
+        "name": "Cadillacs y Dinosaurios",
+        "lacartoons_serie_id": 413,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "alienators-evolucion-continua",
+        "name": "Alienators: Evolucion Continua",
+        "lacartoons_serie_id": 414,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-momia-la-serie-animada",
+        "name": "La Momia: La Serie Animada",
+        "lacartoons_serie_id": 415,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "robocop-comando-alfa",
+        "name": "Robocop Comando Alfa",
+        "lacartoons_serie_id": 416,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "toonsylvania",
+        "name": "Toonsylvania",
+        "lacartoons_serie_id": 417,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jacobo-dos-dos",
+        "name": "Jacobo Dos Dos",
+        "lacartoons_serie_id": 418,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-hormiga-y-el-oso-hormiguero",
+        "name": "La Hormiga y El Oso Hormiguero",
+        "lacartoons_serie_id": 419,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "archie-y-sabrina",
+        "name": "Archie y Sabrina",
+        "lacartoons_serie_id": 420,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "cantinflas-y-sus-amigos",
+        "name": "Cantinflas y sus amigos",
+        "lacartoons_serie_id": 421,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-fantasma-revoltoso",
+        "name": "El Fantasma Revoltoso",
+        "lacartoons_serie_id": 422,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "goober-y-los-cazafantasmas",
+        "name": "Goober y Los Cazafantasmas",
+        "lacartoons_serie_id": 423,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-gordo-y-el-flaco",
+        "name": "El Gordo y El Flaco",
+        "lacartoons_serie_id": 424,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-vaqueros-de-moo-mesa",
+        "name": "Los Vaqueros de Moo Mesa",
+        "lacartoons_serie_id": 425,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "policia-de-cuentos-de-hadas",
+        "name": "Policia De Cuentos De Hadas",
+        "lacartoons_serie_id": 426,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "protagonistas-de-la-historia",
+        "name": "Protagonistas De La Historia",
+        "lacartoons_serie_id": 427,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-mago",
+        "name": "El Mago",
+        "lacartoons_serie_id": 428,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "guerreros-miticos-guardianes-de-la-leyenda",
+        "name": "Guerreros Miticos: Guardianes De La Leyenda",
+        "lacartoons_serie_id": 429,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-rey-arturo",
+        "name": "El Rey Arturo",
+        "lacartoons_serie_id": 430,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "esqueletos-guerreros",
+        "name": "Esqueletos Guerreros",
+        "lacartoons_serie_id": 431,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-dinoplativolos",
+        "name": "Los Dinoplativolos",
+        "lacartoons_serie_id": 432,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "virtua-fighter",
+        "name": "Virtua Fighter",
+        "lacartoons_serie_id": 433,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "ripley-aunque-usted-no-lo-crea",
+        "name": "Ripley: Aunque Usted No Lo Crea",
+        "lacartoons_serie_id": 434,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "daria",
+        "name": "Daria",
+        "lacartoons_serie_id": 435,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "escuela-de-heroes",
+        "name": "Escuela De Heroes",
+        "lacartoons_serie_id": 436,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-brandy-y-el-senor-bigotes",
+        "name": "Las Aventuras de Brandy y El Señor Bigotes",
+        "lacartoons_serie_id": 437,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-mundo-de-quest",
+        "name": "El Mundo De Quest",
+        "lacartoons_serie_id": 438,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-carrera-espacial-de-yogui",
+        "name": "La Carrera Espacial de Yogui",
+        "lacartoons_serie_id": 439,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-locos-de-la-galaxia",
+        "name": "Los Locos de La Galaxia",
+        "lacartoons_serie_id": 440,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pound-puppies",
+        "name": "Pound Puppies",
+        "lacartoons_serie_id": 441,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-fantastico-max",
+        "name": "El Fantastico Max",
+        "lacartoons_serie_id": 442,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "loopy-de-loop",
+        "name": "Loopy De Loop",
+        "lacartoons_serie_id": 443,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "yogui-y-la-busqueda-del-tesoro",
+        "name": "Yogui y La Busqueda Del Tesoro",
+        "lacartoons_serie_id": 444,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mi-padre-el-rockero",
+        "name": "Mi Padre El Rockero",
+        "lacartoons_serie_id": 445,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-show-de-amanda",
+        "name": "El Show de Amanda",
+        "lacartoons_serie_id": 446,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "isa-tkm",
+        "name": "Isa TKM",
+        "lacartoons_serie_id": 447,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "isa-tk",
+        "name": "Isa TK+",
+        "lacartoons_serie_id": 448,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-pequenos-looney-tunes",
+        "name": "Los Pequeños Looney Tunes",
+        "lacartoons_serie_id": 449,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-pais-de-donkey-kong",
+        "name": "El Pais De Donkey Kong",
+        "lacartoons_serie_id": 450,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "action-man-la-serie-animada",
+        "name": "Action Man La Serie Animada",
+        "lacartoons_serie_id": 451,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "stripperella",
+        "name": "Stripperella",
+        "lacartoons_serie_id": 452,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "max-steel",
+        "name": "Max Steel",
+        "lacartoons_serie_id": 453,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-tortuga-franklin",
+        "name": "La Tortuga Franklin",
+        "lacartoons_serie_id": 454,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-mundo-fantastico-de-richard-scarry",
+        "name": "El Mundo Fantastico de Richard Scarry",
+        "lacartoons_serie_id": 455,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-archivos-secretos-de-shelby-woo",
+        "name": "Los Archivos Secretos De Shelby Woo",
+        "lacartoons_serie_id": 456,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-fizgon-y-despistado",
+        "name": "Super Fizgon y Despistado",
+        "lacartoons_serie_id": 457,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "grotescologia",
+        "name": "Grotescologia",
+        "lacartoons_serie_id": 458,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mortal-kombat-defensores-del-reino",
+        "name": "Mortal Kombat: Defensores Del Reino",
+        "lacartoons_serie_id": 459,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sam-y-max-policias-independientes",
+        "name": "Sam y Max : Policias Independientes",
+        "lacartoons_serie_id": 460,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "shinzo",
+        "name": "Shinzo",
+        "lacartoons_serie_id": 461,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "angela-anaconda",
+        "name": "Angela Anaconda",
+        "lacartoons_serie_id": 462,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-a-la-velocidad-de-la-luz",
+        "name": "Power Rangers A La Velocidad De La Luz",
+        "lacartoons_serie_id": 463,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-fuerza-del-tiempo",
+        "name": "Power Rangers Fuerza Del Tiempo",
+        "lacartoons_serie_id": 464,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-fueza-salvaje",
+        "name": "Power Rangers Fueza Salvaje",
+        "lacartoons_serie_id": 465,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "power-rangers-tormenta-ninja",
+        "name": "Power Rangers Tormenta Ninja",
+        "lacartoons_serie_id": 466,
+        "thumbnail": null,
+        "active": true
+    },
+    {
+        "id": "power-rangers-dino-trueno",
+        "name": "Power Rangers Dino Trueno",
+        "lacartoons_serie_id": 467,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-super-patrulla-delta",
+        "name": "Power Rangers Super Patrulla Delta",
+        "lacartoons_serie_id": 468,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-fuerza-mistica",
+        "name": "Power Rangers Fuerza Mistica",
+        "lacartoons_serie_id": 469,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-operacion-sobrecarga",
+        "name": "Power Rangers Operacion Sobrecarga",
+        "lacartoons_serie_id": 470,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-furia-animal",
+        "name": "Power Rangers Furia Animal",
+        "lacartoons_serie_id": 471,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-rpm",
+        "name": "Power Rangers RPM",
+        "lacartoons_serie_id": 472,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-samurai",
+        "name": "Power Rangers Samurai",
+        "lacartoons_serie_id": 473,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-super-samurai",
+        "name": "Power Rangers Super Samurai",
+        "lacartoons_serie_id": 474,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-mega-force",
+        "name": "Power Rangers Mega Force",
+        "lacartoons_serie_id": 475,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-super-mega-force",
+        "name": "Power Rangers Super Mega Force",
+        "lacartoons_serie_id": 476,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-dino-charge",
+        "name": "Power Rangers Dino Charge",
+        "lacartoons_serie_id": 477,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-dino-super-charge",
+        "name": "Power Rangers Dino Super Charge",
+        "lacartoons_serie_id": 478,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-ninja-steel",
+        "name": "Power Rangers Ninja Steel",
+        "lacartoons_serie_id": 479,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-super-ninja-steel",
+        "name": "Power Rangers Super Ninja Steel",
+        "lacartoons_serie_id": 480,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "power-rangers-beast-morphers",
+        "name": "Power Rangers Beast Morphers",
+        "lacartoons_serie_id": 481,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-defensores-di-gata",
+        "name": "Los Defensores Di Gata",
+        "lacartoons_serie_id": 482,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "arthur",
+        "name": "Arthur",
+        "lacartoons_serie_id": 483,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "mona-la-vampira",
+        "name": "Mona La Vampira",
+        "lacartoons_serie_id": 484,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-misterios-de-archie",
+        "name": "Los Misterios De Archie",
+        "lacartoons_serie_id": 485,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "loonatics",
+        "name": "Loonatics",
+        "lacartoons_serie_id": 486,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "super-escuadron-ciber-monos-hiperfuerza-ya",
+        "name": "Super Escuadrón Ciber Monos Hiperfuerza ¡Ya!",
+        "lacartoons_serie_id": 487,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pepper-ann",
+        "name": "Pepper Ann",
+        "lacartoons_serie_id": 488,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "highlander-el-inmortal",
+        "name": "Highlander El Inmortal",
+        "lacartoons_serie_id": 489,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "las-aventuras-de-cristobal-colon",
+        "name": "Las Aventuras De Cristobal Colon",
+        "lacartoons_serie_id": 490,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "salvados-por-la-campana",
+        "name": "Salvados Por La Campana",
+        "lacartoons_serie_id": 491,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "salvados-por-la-campana-anos-de-universidad",
+        "name": "Salvados Por La Campana: Años De Universidad",
+        "lacartoons_serie_id": 492,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-intocables-de-elliot-mouse",
+        "name": "Los Intocables De Elliot Mouse",
+        "lacartoons_serie_id": 493,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "xena-la-princesa-guerrera",
+        "name": "Xena La Princesa guerrera",
+        "lacartoons_serie_id": 494,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "anatole",
+        "name": "Anatole",
+        "lacartoons_serie_id": 495,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "heroes-de-rescate",
+        "name": "Heroes De Rescate",
+        "lacartoons_serie_id": 496,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-conejitos-torpes",
+        "name": "Los Conejitos Torpes",
+        "lacartoons_serie_id": 497,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "zoboomafo",
+        "name": "Zoboomafo",
+        "lacartoons_serie_id": 498,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "clifford-el-gran-perro-rojo",
+        "name": "Clifford El Gran Perro Rojo",
+        "lacartoons_serie_id": 499,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "escuela-de-espanto",
+        "name": "Escuela De Espanto",
+        "lacartoons_serie_id": 504,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "fraggle-rock",
+        "name": "Fraggle Rock",
+        "lacartoons_serie_id": 505,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "animalitos-locos",
+        "name": "Animalitos Locos",
+        "lacartoons_serie_id": 506,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "los-fantasticos-viajes-de-simbads-el-marino",
+        "name": "Los Fantasticos Viajes De Simbads El Marino",
+        "lacartoons_serie_id": 507,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "bumpy-y-sus-amigos",
+        "name": "Bumpy y sus Amigos",
+        "lacartoons_serie_id": 508,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "elliot-el-alce",
+        "name": "Elliot El Alce",
+        "lacartoons_serie_id": 509,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "el-chavo-del-8",
+        "name": "El Chavo Del 8",
+        "lacartoons_serie_id": 510,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "angel-la-nina-de-las-flores",
+        "name": "Angel La Niña De Las Flores",
+        "lacartoons_serie_id": 511,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "la-familia-robinson",
+        "name": "La Familia Robinson",
+        "lacartoons_serie_id": 512,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "sabrina-secretos-de-la-brujita",
+        "name": "Sabrina Secretos De La Brujita",
+        "lacartoons_serie_id": 513,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "pelswick",
+        "name": "Pelswick",
+        "lacartoons_serie_id": 514,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "naruto-shippuden",
+        "name": "Naruto shippuden",
+        "lacartoons_serie_id": 515,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "jem-y-los-hologramas",
+        "name": "Jem y Los Hologramas",
+        "lacartoons_serie_id": 516,
+        "thumbnail": null,
+        "active": false
+    },
+    {
+        "id": "hi-hi-puffy-amiyumi",
+        "name": "Hi Hi Puffy AmiYumi",
+        "lacartoons_serie_id": 517,
+        "thumbnail": null,
+        "active": false
+    }
+]

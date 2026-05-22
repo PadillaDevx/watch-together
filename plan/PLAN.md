@@ -1,233 +1,442 @@
-<CUSTOM_PLAN>
+<CUSTOM_PLAN />
 
-# Watch Together — IPTV + YouTube Unified Streaming
+<DETAILED_PLAN>
 
-## Problem
+## Problem Statement
 
-The current implementation only supports synchronized YouTube playback via the YouTube IFrame API. Two problems arise:
+Implement a hybrid multimedia synchronization architecture in WatchJunto to support two categories of video providers:
+1. **Smart Sync providers**: Support postMessage API (e.g., Power Rangers) — full playback control (play/pause/seek) with real-time `currentTime` reporting.
+2. **Passive Sync providers**: No external API (e.g., Coraje/cubeembed) — synchronization possible only at episode start time.
 
-1. **YouTube embedding restrictions** — Some videos (official F1 replays, licensed sports) have `embeddable: false`, causing error codes `101`/`150` in the IFrame API. The app has no fallback.
-2. **Premium services are completely unsupported** — Netflix, F1 TV Pro, Disney+, etc. block iframes via `X-Frame-Options: DENY` and CSP `frame-ancestors`. Their streams are also Widevine DRM-encrypted, making any iframe bypass technically and legally impossible from a web app.
+Critical decisions confirmed by stakeholder:
+- **Host Takeover**: When the current host disconnects, automatically promote next user by earliest `joinedAt` order.
+- **Smart Sync Permissions**: Any authenticated room participant can emit `player-action` (free-for-all model). Server validates only that the sender is an authenticated participant of the room, NOT that the sender is host.
+- **Host Metadata**: Maintain the host concept for UI/metadata. Discrete host badge visible to ALL users (not just the host).
+- **Socket.IO Type Safety**: Add missing events (`host-changed`, `series-episode-change`, etc.) to `ClientToServerEvents` and `ServerToClientEvents` for full type coverage.
 
-### Why IPTV m3u8 Lists Solve This
+## Current State (verified in code)
 
-Community-maintained IPTV lists (`.m3u` / `.m3u8` playlists) aggregate thousands of live channels and VOD entries (movies, series) re-encoded without DRM. These include:
-- F1 broadcast channels (Sky Sports F1, Channel 4, DAZN feeds) as live HLS streams.
-- Movie/series VOD libraries in standard HLS or MP4 format.
-- No authentication required — the stream URL is enough.
+- `apps/client/src/hooks/useProviderDetection.ts`: capability detection with domain-based caching exists.
+- `apps/client/src/hooks/useSmartSync.ts`: handles iframe postMessage for compatible providers (heartbeat, drift correction: <2s ignore, 2–5s silent seek, >5s seek + brief spinner).
+- `apps/client/src/hooks/usePassiveSync.ts`: passive flow with `LoadingOverlay`, `PlayInstruction`, manual resync via `request-resync`.
+- `apps/client/src/components/SyncProvider.tsx`: orchestrates sync mode selection (smart vs passive).
+- `apps/server/src/socket/index.ts`: socket handlers for `client-ready`, `player-action`, `series-episode-change`, `start-playback`, `resync-state`, etc.
+- `apps/server/src/services/rooms.ts`: room state with `readyUsers` set and 8s fallback timeout.
+- `apps/server/src/types.ts`: defines `ClientToServerEvents`, `ServerToClientEvents`, `SocketData`.
+- `apps/client/src/pages/RoomPage.tsx`: integrates `SyncProvider` into player container.
 
-The browser cannot fetch these streams directly due to CORS restrictions on most IPTV sources. The solution is a **server-side CORS proxy** built into the existing Express server, which fetches the m3u8 manifest and TS segments on behalf of the client. `hls.js` on the client then handles playback entirely in-browser — no Electron, no extension needed.
+**Implementation gaps:**
+- Host takeover logic (next-by-joinedAt) not implemented.
+- Host badge currently only visible to the host; must be visible to all with subtle styling.
+- `player-action` lacks strict server validation enforcing "any authenticated participant of room".
+- Several emitted socket events are not in the typed interfaces (`host-changed` is missing; verify also `series-episode-change`).
+
+## Target Architecture
+
+**Four cooperating layers:**
+
+1. **Provider Detection Layer** — auto-detect smart vs passive on iframe load, with 2s silent fallback to passive and domain-based cache.
+2. **Smart Sync Layer (Free-for-All)** — any authenticated participant emits `player-action` (play/pause/seek); server broadcasts via `player-sync`. Host role used only for UI badge + metadata. Viewers apply silent drift correction.
+3. **Passive Sync Layer (Coordinated Start)** — all participants emit `client-ready`; server waits for all-ready OR 8s timeout; server emits `start-playback` with synchronized `playAt`. Manual resync via `request-resync` → `resync-state`.
+4. **Host Management Layer** — first joiner is host; on host disconnect server selects next user by earliest `joinedAt`; server broadcasts `host-changed`.
+
+## Sequential Phases
+
+### Phase 1 — Host Takeover Logic (Server)
+**Goal:** Track current host and transfer on disconnect.
+
+**Files:**
+- `apps/server/src/services/rooms.ts`: add `hostUserId` and `hostUsername` to Room; implement `promoteNextHost(roomId)` selecting the user with earliest `joinedAt`.
+- `apps/server/src/socket/index.ts`: in `disconnect`/`leave-room` handler, if departing user is host call `promoteNextHost` and broadcast `host-changed`.
+- `apps/server/src/types.ts`: extend `Room` and `RoomUser` interfaces accordingly.
+
+**New socket event (S→C):**
+```ts
+'host-changed': (data: {
+  newHostUsername: string;
+  newHostSocketId: string;
+  previousHostUsername?: string;
+}) => void;
+```
+
+**Acceptance criteria:**
+- First joiner becomes host automatically.
+- When host disconnects, next user (earliest `joinedAt`) is promoted.
+- `host-changed` broadcast to room with new host info.
+- `readyUsers` not affected by host change.
 
 ---
 
-## Chosen Solution: HLS Player + IPTV List Manager (Webapp Only)
+### Phase 2 — Strict Server-Side `player-action` Validation (Free-for-All)
+**Goal:** Validate `player-action` only checks authenticated participant; not host-only.
 
-### Technical Architecture
+**Files:**
+- `apps/server/src/socket/index.ts`: update `player-action` handler to verify `socket.data.authenticated === true` AND `socket.data.roomId === payload.roomId`. Reject otherwise (emit `error` event). Forward via `player-sync` with latency compensation `adjustedTime = currentTime + (latencyMs / 2000)`.
+- `apps/server/src/middleware/auth.ts`: ensure socket auth context populates `socket.data.userId`, `socket.data.username`, `socket.data.authenticated`.
 
-```
-Admin uploads/adds m3u8 list URL
-        ↓
-Server fetches & parses the .m3u8 playlist (m3u-parser)
-Entries stored in memory (or JSON file) keyed by list ID
-        ↓
-Client creates room → picks "IPTV" mode → browses categories/entries
-        ↓
-Client requests stream → server CORS proxy fetches manifest + segments
-        ↓
-hls.js renders stream in <video> tag inside RoomPage
-        ↓
-Existing socket events (player-play / player-pause / player-seek) sync playback
-```
-
-### Libraries
-
-| Role | Library |
-|------|---------|
-| HLS playback | `hls.js` |
-| MPEG-DASH playback | `dash.js` (optional, for `.mpd` sources) |
-| M3U playlist parsing | `iptv-playlist-parser` or custom regex parser |
-| CORS proxy | Express route `/api/proxy?url=` (server-side `node-fetch`) |
-
-### CORS Proxy Security Constraints
-
-The proxy endpoint `/api/proxy` must:
-- Only be accessible to authenticated users (reuse existing `auth` middleware).
-- Only relay URLs that match domains registered in the admin-managed IPTV list — no arbitrary URL proxying.
-- Strip sensitive request headers before forwarding.
-- Set a short response cache (`Cache-Control: max-age=5`) to avoid hammering upstream sources.
+**Acceptance criteria:**
+- Non-host authenticated participants can emit play/pause/seek and others receive `player-sync`.
+- Unauthenticated emits are rejected with `error` event.
+- Host check is NOT performed for `player-action`.
 
 ---
 
-## Feature 1 — Admin IPTV List Manager
+### Phase 3 — Discrete Host Badge Visible to All
+**Goal:** Show subtle "Host" indicator on player, visible to everyone.
 
-A new tab **"Listas IPTV"** is added to the existing `AdminPage.tsx` alongside the current tabs (Salas, Usuarios, Conexiones, Tokens).
+**Files:**
+- `apps/client/src/store.ts`: add `roomHostUsername` field; reducer/setter updated on `host-changed`.
+- `apps/client/src/components/SyncProvider.tsx`: render badge based on `roomHostUsername`.
+- `apps/client/src/pages/RoomPage.tsx`: register `host-changed` listener and dispatch store update; initialize host from `room-users` payload on join.
+- `apps/server/src/socket/index.ts`: include `hostUsername` in `room-users` payload so newcomers know current host.
 
-### Data Model
+**UI spec:**
+- Position: top-left of player, `z-20`, `pointer-events-none`.
+- Style: small pill `bg-violet-700/70 text-white text-[10px] font-medium px-2 py-0.5 rounded-full`, icon `Crown` from lucide-react (size 10), tooltip on host name.
+- Visible to all users in room (no host-only gating).
 
-Each list entry stored server-side:
+**Acceptance criteria:**
+- Badge always reflects current host.
+- Updates instantly on `host-changed`.
+- Style is discrete (does not overlap controls).
 
-```
-IPTVList {
-  id: string          // uuid
-  name: string        // display name, e.g. "F1 & Sports HD"
-  url: string         // URL to the .m3u / .m3u8 file
-  lastFetched: Date   // when the server last fetched+parsed it
-  entryCount: number  // total number of channels/VOD entries parsed
-  enabled: boolean    // toggleable without deleting
+---
+
+### Phase 4 — Socket.IO Type Safety Hardening
+**Goal:** Full type coverage for emitted/received socket events.
+
+**Files:**
+- `apps/server/src/types.ts`: add missing events to `ClientToServerEvents` and `ServerToClientEvents`.
+- `apps/client/src/lib/socket.ts`: mirror typed Socket.IO client using the same shared types.
+
+**Events to verify/add:**
+- S→C add: `host-changed`.
+- C→S/S→C verify (and add if missing): `series-episode-change`, `client-ready`, `request-resync`, `resync-state`, `start-playback`, `player-sync`, `player-heartbeat`.
+
+**Acceptance criteria:**
+- `npx tsc --noEmit` passes on both `apps/server` and `apps/client` in strict mode.
+- No `@ts-ignore` or `as any` in socket handlers.
+
+---
+
+### Phase 5 — Client Integration of Free-for-All + Host Badge
+**Goal:** Wire everything in the UI without regressions.
+
+**Files:**
+- `apps/client/src/hooks/useSmartSync.ts`: remove any `isHost`-gated emit guards so any participant can emit `player-action`. Keep host info only for UI/badge.
+- `apps/client/src/hooks/usePassiveSync.ts`: no functional change required; verify it works regardless of host status.
+- `apps/client/src/pages/RoomPage.tsx`: subscribe to `host-changed`; pass current host info to `SyncProvider`.
+- `apps/client/src/components/SyncProvider.tsx`: pass through `hostUsername` to badge.
+
+**Acceptance criteria:**
+- User A creates room → becomes host → badge "Host" visible to all.
+- User B joins → both see badge on A.
+- A disconnects → B promoted → badge moves to B for everyone.
+- B emits play/pause/seek → A and others sync without permission errors.
+
+---
+
+### Phase 6 — Verification & Regression Pass
+**Goal:** End-to-end manual + automated verification.
+
+**Tasks:**
+- Run `npx tsc --noEmit` in both apps.
+- Run existing client tests in `apps/client/src/hooks/__tests__/`.
+- Manual smoke: smart-sync provider (Power Rangers), passive provider (Coraje), forced disconnect of host.
+
+## Socket Event Type Reference
+
+```ts
+// apps/server/src/types.ts (additions)
+
+export interface ServerToClientEvents {
+  // ...existing...
+  'host-changed': (data: {
+    newHostUsername: string;
+    newHostSocketId: string;
+    previousHostUsername?: string;
+  }) => void;
+}
+
+export interface Room {
+  // ...existing...
+  hostUserId?: string;    // socket.id of current host
+  hostUsername?: string;  // cached username
+}
+
+export interface RoomUser {
+  username: string;
+  joinedAt: Date; // used for host takeover ordering
 }
 ```
 
-Parsed entries from the m3u file are cached in memory (or a JSON sidecar file) and re-fetched on demand or by admin action.
+## Global Acceptance Criteria
 
-### Admin UI Flows
+- Host takeover works end-to-end with no manual intervention.
+- Any authenticated participant can drive smart-sync playback.
+- Discrete host badge visible to all participants and updates live.
+- TypeScript strict passes; no `any` in socket handlers.
+- No regression in passive sync flow (LoadingOverlay, PlayInstruction, manual resync).
 
-**Add a new list:**
-1. Admin clicks "Nueva lista" button.
-2. Modal opens with fields: `name` (text) + `url` (text, must end in `.m3u` or `.m3u8` or return m3u content-type).
-3. On save, server fetches the URL, parses it, stores the list and entry count.
-4. Toast shows: `"Lista 'F1 & Sports HD' cargada — 312 entradas"`.
+</DETAILED_PLAN>
 
-**Edit a list:**
-- Inline edit of `name` and `url`.
-- "Actualizar" button triggers a re-fetch and re-parse.
+<ORIGINAL_PLAN>
 
-**Delete a list:**
-- Confirmation dialog before delete.
-- All rooms currently using entries from this list are not affected (they hold the stream URL directly).
+Implementar arquitectura híbrida de sincronización multimedia en WatchJunto.
 
-**Toggle enabled/disabled:**
-- Disabled lists do not appear in the room creation picker.
+## Contexto técnico confirmado
 
-**View entries (optional preview):**
-- Expandable row showing first 20 entries grouped by `group-title` M3U attribute.
+Dos tipos de providers detectados en producción:
 
-### New API Endpoints (server)
+SMART SYNC (postMessage funcional):
+- Power Rangers y algunas series responden a postMessage
+- Retornan currentTime, aceptan comandos play/pause/seek
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/admin/iptv` | List all IPTV lists |
-| `POST` | `/api/admin/iptv` | Add new list (body: `{ name, url }`) |
-| `PUT` | `/api/admin/iptv/:id` | Update list name/url + re-fetch |
-| `DELETE` | `/api/admin/iptv/:id` | Delete list |
-| `POST` | `/api/admin/iptv/:id/refresh` | Force re-fetch and re-parse |
-| `GET` | `/api/iptv/:id/entries` | Get parsed entries for a list (auth required) |
+PASSIVE SYNC (iframe cerrado):
+- Coraje El Perro Cobarde (cubeembed) NO responde postMessage
+- No tiene API de control externo
+- Solo podemos sincronizar el momento de inicio
 
----
+## 1. Detección automática de capacidades
 
-## Feature 2 — Room Creation: Source Type Selection
+Crear: hooks/useProviderDetection.ts
 
-The existing `CreateRoomModal.tsx` is extended with a **source type selector** shown before other fields.
-
-### Updated Room Creation Flow
-
-**Step 1 — Choose source type:**
-
+```typescript
+const detectProviderCapabilities = async (
+  iframeRef: RefObject<HTMLIFrameElement>
+): Promise<'smart' | 'passive'> => {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve('passive'), 2000);
+    
+    const handler = (e: MessageEvent) => {
+      if (e.source === iframeRef.current?.contentWindow) {
+        clearTimeout(timeout);
+        window.removeEventListener('message', handler);
+        resolve('smart');
+      }
+    };
+    
+    window.addEventListener('message', handler);
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: 'ping', source: 'watchjunto' }, '*'
+    );
+  });
+};
 ```
-┌─────────────────────────────────────────────┐
-│  ¿Qué quieres ver?                          │
-│                                             │
-│  [ 🎬 YouTube ]    [ 📺 Lista IPTV ]        │
-└─────────────────────────────────────────────┘
+
+- Detección ocurre automáticamente al cargar el iframe
+- Usuario nunca ve este proceso — solo ve spinner de carga
+- Cachear resultado por provider domain para no repetir detección:
+  const cache = new Map<string, 'smart' | 'passive'>();
+
+## 2. SMART SYNC — providers compatibles
+
+### Hook: hooks/useSmartSync.ts
+
+```typescript
+// Escuchar eventos del iframe
+window.addEventListener('message', (e) => {
+  const { type, currentTime } = e.data;
+  
+  switch(type) {
+    case 'timeupdate':
+      if (isHost) {
+        socket.emit('player-action', { action: 'timeupdate', currentTime, roomId });
+      }
+      break;
+    case 'play':
+      socket.emit('player-action', { action: 'play', currentTime, roomId });
+      break;
+    case 'pause':
+      socket.emit('player-action', { action: 'pause', currentTime, roomId });
+      break;
+  }
+});
+
+// Enviar comandos al iframe
+const sendToPlayer = (command: string, value?: number) => {
+  iframeRef.current?.contentWindow?.postMessage(
+    { type: command, value, source: 'watchjunto' }, '*'
+  );
+};
 ```
 
-**Step 2a — YouTube selected (current behavior, unchanged):**
-- Room is created normally, VideoSearchModal works as before.
+### Drift silencioso cada 15 segundos
+- Diferencia < 2s → ignorar completamente
+- Diferencia 2-5s → seek silencioso sin interrumpir
+- Diferencia > 5s → seek + micro spinner púrpura 1 segundo, 
+  desaparece solo, sin texto
 
-**Step 2b — IPTV selected:**
-- Dropdown to pick which IPTV list to use (only `enabled: true` lists shown).
-- Room is created with `sourceType: 'iptv'` and `iptvListId` stored on the room object.
+### Host mode
+- Creador de la sala = host por defecto
+- Host controla play/pause/seek, viewers siguen automáticamente
+- Si host sale → siguiente usuario en sala se vuelve host automáticamente
+- Badge discreto "Host" visible SOLO para el host mismo
 
-### Room Data Model Extension
+## 3. PASSIVE SYNC — providers cerrados
 
+### Hook: hooks/usePassiveSync.ts
+
+### Estado del hook
+```typescript
+const userAlreadyPlaying = useRef(false);
+const playInstructionTimer = useRef<NodeJS.Timeout>();
 ```
-Room {
-  ...existing fields...
-  sourceType: 'youtube' | 'iptv'
-  iptvListId?: string   // only when sourceType === 'iptv'
+
+### Flujo completo
+
+**Al seleccionar episodio:**
+1. Servidor registra episodio
+2. Todos los clientes cargan iframe simultáneamente
+3. Mostrar LoadingOverlay con textos rotativos cada 2s:
+   "Cargando..." → "Preparando episodio..." → "Casi listo..."
+   Sin mencionar usuarios ni estados técnicos
+
+**Ready state:**
+```typescript
+iframe.onload = () => {
+  socket.emit('client-ready', { roomId, userId });
+};
+```
+
+**Servidor — lógica de ready:**
+```typescript
+const allReady = room.users.every(u => room.readyUsers.has(u.id));
+
+if (allReady) {
+  const playAt = Date.now() + 2000;
+  io.to(roomId).emit('start-playback', { 
+    playAt, 
+    serverNow: Date.now() 
+  });
 }
+
+// Timeout: si alguien no está listo en 8s → iniciar igual
+setTimeout(() => {
+  if (!allReady) {
+    io.to(roomId).emit('start-playback', { 
+      playAt: Date.now() + 1000,
+      serverNow: Date.now()
+    });
+  }
+}, 8000);
 ```
 
-The `sourceType` is stored server-side in the room object (in `services/rooms.ts`) and sent to clients via the existing room state sync.
+**Cliente — al recibir start-playback:**
+```typescript
+socket.on('start-playback', ({ playAt, serverNow }) => {
+  const offset = Date.now() - serverNow;
+  const msUntilPlay = playAt - Date.now() + offset;
 
----
+  // Resetear estado — nuevo episodio, nueva sincronía
+  userAlreadyPlaying.current = false;
+  setShowSpinner(false);
 
-## Feature 3 — In-Room IPTV Content Browser & Player
-
-### Content Browser (replaces VideoSearchModal for IPTV rooms)
-
-When the room's `sourceType === 'iptv'`, clicking "Cambiar video" opens an **IPTVBrowserModal** instead of `VideoSearchModal`.
-
-**Browser layout:**
-
-```
-┌────────────────────────────────────────────────────────┐
-│  🔍 Buscar...                                          │
-│                                                        │
-│  Categorías          Contenido                         │
-│  ──────────          ──────────────────────────────    │
-│  📡 F1 & Motor  →   🏎  F1 Live Stream - Sky Sports   │
-│  🎬 Películas        🏎  F1 Channel 4 HD               │
-│  📺 Series           🏎  DAZN F1 ES                    │
-│  🌍 Noticias         🏎  Movistar F1                   │
-│                                                        │
-└────────────────────────────────────────────────────────┘
+  playInstructionTimer.current = setTimeout(() => {
+    // Verificar JUSTO ANTES de mostrar si ya está reproduciendo
+    if (!userAlreadyPlaying.current) {
+      showPlayInstruction();
+    }
+    // Si ya está reproduciendo → no mostrar nada, experiencia natural
+  }, msUntilPlay);
+});
 ```
 
-- Left panel: unique `group-title` values extracted from the M3U entries (categories like "Películas", "Series", "Deportes", "F1", etc.).
-- Right panel: entries filtered by selected category, with `tvg-name` and optional `tvg-logo` thumbnail.
-- Search bar filters across all entries by name.
-- Clicking an entry emits a `change-video` socket event with `{ type: 'iptv', streamUrl: entry.url }` and closes the modal.
+### Detección de reproducción manual (antes del overlay)
 
-### IPTV Player in RoomPage
+```typescript
+// Opción A — mensaje del iframe si lo emite
+window.addEventListener('message', (e) => {
+  if (e.source !== iframeRef.current?.contentWindow) return;
+  const { type } = e.data;
+  if (type === 'play' || type === 'timeupdate') {
+    userAlreadyPlaying.current = true;
+  }
+});
 
-`RoomPage.tsx` currently renders a `useYouTube` hook that mounts the YouTube IFrame. When `sourceType === 'iptv'`, a new `useHlsPlayer` hook is used instead.
+// Opción B — fallback: primer click del usuario sobre el iframe
+const handleUserInteraction = () => {
+  userAlreadyPlaying.current = true;
+};
+// Overlay invisible pointer-events-auto sobre iframe durante countdown
+// Se desmonta automáticamente al llegar el momento de play
+```
 
-**`useHlsPlayer` behavior:**
-- Receives a `streamUrl`.
-- Constructs the proxied URL: `/api/proxy?url=<encoded streamUrl>`.
-- Creates an `Hls` instance pointing to the proxied URL and attaches it to a `<video ref>`.
-- Exposes `play(time)`, `pause(time)`, `seek(time)`, `getCurrentTime()` — same interface as `useYouTube` so socket event handlers require minimal changes.
-- On `Hls.Events.ERROR` (fatal), shows an inline error state with a "Reintentar" button.
+Usar ambas opciones — la que dispare primero gana.
 
-**Player UI differences for IPTV:**
-- Live streams (`#EXT-X-ENDLIST` absent in manifest) show a "EN VIVO" badge and disable the seek bar.
-- VOD streams show the seek bar and duration normally.
-- A "Cambiar canal" button replaces "Cambiar video" in the room toolbar.
+### Reset de estado — evitar race conditions
 
-### Socket Events Extension
+```typescript
+const resetSyncState = () => {
+  userAlreadyPlaying.current = false;
+  clearTimeout(playInstructionTimer.current);
+  setShowPlayInstruction(false);
+  setShowSpinner(false);
+};
 
-No new socket event names are needed. The existing events are reused:
+// Llamar resetSyncState en:
+useEffect(() => {
+  return () => resetSyncState();
+}, [embedUrl]); // embedUrl cambia = nuevo episodio
 
-| Event | Extended payload |
-|-------|-----------------|
-| `change-video` | `{ type: 'youtube', videoId } \| { type: 'iptv', streamUrl }` |
-| `sync-state` | Adds `sourceType` and `streamUrl` fields alongside existing `videoId` |
+// También al recibir episode-change o request-resync del socket
+```
 
----
+### Passive resync manual
+- Botón ResyncButton siempre visible
+- Al presionar: modal con solo el timestamp estimado "⏱ 12:34"
+- Sin explicaciones — el usuario busca ese minuto manualmente
+- Cerrar con tap/click en cualquier lado del modal
 
-## Feature 4 — YouTube Embed Fallback
+## 4. Componentes a crear
 
-Some YouTube videos have `embeddable: false`, returning IFrame API error codes `101`/`150`.
+### SyncProvider.tsx
+```tsx
+<SyncProvider 
+  iframeSrc={embedUrl}
+  roomId={roomId}
+  isHost={isHost}
+>
+  {({ syncMode, controls }) => (
+    <PlayerWithOverlay 
+      syncMode={syncMode}
+      controls={controls}
+    />
+  )}
+</SyncProvider>
+```
 
-- Switch embed domain to `youtube-nocookie.com` (reduces false positives).
-- On error `101`/`150`, show an inline warning inside the player area: _"Este video no permite reproducción embebida. Abre YouTube directamente."_ with a link.
-- In `VideoSearchModal`, filter or visually flag results where `snippet.thumbnails` exists but `status.embeddable === false` (requires YouTube Data API v3 `part=status` in the search query at `apps/server/src/routes/search.ts`).
+### LoadingOverlay.tsx
+- Fondo negro con backdrop-blur suave
+- Spinner circular fino color púrpura (#7c3aed)
+- Texto rotativo centrado debajo
+- Fade out suave al desaparecer (transition opacity 400ms)
 
----
+### PlayInstruction.tsx
+- Solo ícono Play de lucide-react, 80px, blanco
+- Fondo rgba(0,0,0,0.6)
+- Aparece 300ms antes del momento de play
+- Animación: pulse suave 2 veces → fade out automático en 1.5s
+- pointer-events: none — no bloquea clicks del usuario
+- NO se muestra si userAlreadyPlaying.current === true
 
-## Summary: What Changes Per Layer
+### ResyncButton.tsx
+- Esquina inferior izquierda del player, siempre visible
+- Solo ícono RefreshCw 14px, color white/50
+- Hover: white/100, transición 150ms
+- Smart sync → seek silencioso al tiempo del host
+- Passive sync → modal con timestamp "⏱ MM:SS"
 
-| Layer | File(s) | Change |
-|-------|---------|--------|
-| Server — data | `services/rooms.ts` | Add `sourceType`, `iptvListId` to Room type |
-| Server — new service | `services/iptv.ts` (new) | Parse + cache m3u lists, refresh logic |
-| Server — routes | `routes/admin.ts` | New IPTV CRUD endpoints |
-| Server — routes | `routes/iptv.ts` (new) | `GET /api/iptv/:id/entries`, `GET /api/proxy` |
-| Server — types | `types.ts` | Extend `Room`, add `IPTVList`, `IPTVEntry` types |
-| Client — admin | `pages/AdminPage.tsx` | New "Listas IPTV" tab |
-| Client — admin | `components/IPTVListManager.tsx` (new) | Full CRUD UI for lists |
-| Client — room creation | `components/CreateRoomModal.tsx` | Source type selector + IPTV list picker |
-| Client — room | `hooks/useHlsPlayer.ts` (new) | hls.js hook, same interface as useYouTube |
-| Client — room | `components/IPTVBrowserModal.tsx` (new) | Category + entry browser |
-| Client — room | `pages/RoomPage.tsx` | Conditional player swap + updated socket handlers |
-| Client — types | `types.ts` | Extend `Room`, add `IPTVEntry` |
+## 5. Eventos Socket.IO
+
+C→S:
+- client-ready { roomId, userId }
+- player-action { roomId, action, currentTime, timestamp: Date.now() }
+- request-resync { roomId }
+
+S→C:
+- start-playback { playAt, serverNow }
+- player-sync { action, currentTime, serverNow }
+- resync-state { currentTime, isPlaying, serverNow, syncMode }
+
+</ORIGINAL_PLAN>

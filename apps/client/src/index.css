@@ -3,15 +3,255 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --accent: #7c3aed;
+    --accent-rgb: 124 58 237;
+    --accent-light: #8b5cf6;
+    --accent-dark: #6d28d9;
+    --accent-lighter: #c4b5fd;
+    --bg-base: #0d0d1f;
+    --bg-raised: #13132b;
+    --bg-card: #1a1a38;
+  }
+
   * {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   }
-  *::-webkit-scrollbar { width: 4px; height: 4px; }
-  *::-webkit-scrollbar-track { background: transparent; }
-  *::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 999px; }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+  }
+}
+
+@layer utilities {
+  .bg-accent {
+    background-color: var(--accent);
+  }
+
+  .bg-accent-light {
+    background-color: var(--accent-light);
+  }
+
+  .bg-accent-dark {
+    background-color: var(--accent-dark);
+  }
+
+  .bg-accent-muted {
+    background-color: rgba(var(--accent-rgb), 0.20);
+  }
+
+  .bg-accent-subtle {
+    background-color: rgba(var(--accent-rgb), 0.15);
+  }
+
+  .hover\:bg-accent:hover {
+    background-color: var(--accent);
+  }
+
+  .hover\:bg-accent-light:hover {
+    background-color: var(--accent-light);
+  }
+
+  .active\:bg-accent-dark:active {
+    background-color: var(--accent-dark);
+  }
+
+  .hover\:bg-accent-muted:hover {
+    background-color: rgba(var(--accent-rgb), 0.20);
+  }
+
+  .text-accent {
+    color: var(--accent);
+  }
+
+  .text-accent-light {
+    color: var(--accent-light);
+  }
+
+  .text-accent-lighter {
+    color: var(--accent-lighter);
+  }
+
+  .border-accent {
+    border-color: var(--accent);
+  }
+
+  .border-accent-muted {
+    border-color: rgba(var(--accent-rgb), 0.50);
+  }
+
+  .border-b-accent {
+    border-bottom-color: var(--accent);
+  }
+
+  .ring-accent {
+    --tw-ring-color: rgba(var(--accent-rgb), 0.60);
+  }
+
+  .focus-visible\:ring-accent:focus-visible {
+    --tw-ring-color: rgba(var(--accent-rgb), 0.60);
+  }
+
+  .focus\:ring-accent:focus {
+    --tw-ring-color: rgba(var(--accent-rgb), 0.50);
+  }
+
+  .shadow-accent {
+    --tw-shadow-color: rgba(var(--accent-rgb), 0.30);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+
+  .outline-accent {
+    outline-color: var(--accent);
+  }
+
+  /* background theming */
+  .bg-base {
+    background-color: var(--bg-base);
+  }
+
+  .bg-raised {
+    background-color: var(--bg-raised);
+  }
+
+  .bg-card {
+    background-color: var(--bg-card);
+  }
+
+  .hover\:bg-raised:hover {
+    background-color: var(--bg-raised);
+  }
+
+  .hover\:bg-card:hover {
+    background-color: var(--bg-card);
+  }
 }
 
 /* YouTube player fills its container */
 #yt-player iframe,
-#yt-player { width: 100% !important; height: 100% !important; }
+#yt-player {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── iOS keyboard / viewport fixes ──────────────────────────────────────── */
+
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overscroll-behavior: none;
+}
+
+#root {
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+input,
+textarea {
+  font-size: 16px !important;
+}
+
+/* ── Typing indicator animation ─────────────────────────────────────────── */
+
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30%            { opacity: 1;   transform: translateY(-3px); }
+}
+
+.typing-dot {
+  display: inline-block;
+  animation: typing-dot 1.2s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bubble-dot {
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: translateY(0) scale(0.82);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1);
+  }
+}
+
+.typing-bubble-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-lighter);
+  display: inline-block;
+  animation: typing-bubble-dot 1s ease-in-out infinite;
+}
+
+.typing-bubble-dot:nth-child(2) { animation-delay: 0.14s; }
+.typing-bubble-dot:nth-child(3) { animation-delay: 0.28s; }
+
+/* ── Room fullscreen / social polish ─────────────────────────────────────── */
+
+.room-shell:fullscreen,
+.room-shell:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg-base);
+}
+
+.room-shell.room-fullscreen .room-body {
+  background:
+    radial-gradient(circle at 28% 0%, rgba(var(--accent-rgb), 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), transparent 38%);
+}
+
+.room-shell.room-fullscreen .social-panel {
+  width: min(340px, 34vw);
+}
+
+@media (max-width: 767px) {
+  .room-shell.room-fullscreen .social-panel {
+    width: 100%;
+    max-height: 42vh;
+  }
+}
+
+@keyframes chat-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chat-message {
+  animation: chat-message-in 160ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message {
+    animation: none;
+  }
+}

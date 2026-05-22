@@ -9,30 +9,45 @@ exports.revokeAllTokens = revokeAllTokens;
 exports.listTokens = listTokens;
 exports.signAdminCookie = signAdminCookie;
 exports.verifyAdminCookie = verifyAdminCookie;
+exports.purgeExpiredTokens = purgeExpiredTokens;
 const crypto_1 = __importDefault(require("crypto"));
-const tokens = new Map();
-const TOKEN_TTL_MS = 86_400_000;
-function generateToken(baseUrl) {
+const drizzle_orm_1 = require("drizzle-orm");
+const index_1 = require("../db/index");
+const schema_1 = require("../db/schema");
+const TOKEN_TTL_MS = 86_400_000; // 24 hours
+async function generateToken(baseUrl) {
     const token = crypto_1.default.randomBytes(24).toString('hex');
-    tokens.set(token, { createdAt: Date.now(), usedBy: null });
+    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
+    await index_1.db.insert(schema_1.inviteTokens).values({ token, expiresAt });
     return { token, url: `${baseUrl}/join/${token}` };
 }
-function validateToken(token) {
-    const entry = tokens.get(token);
+async function validateToken(token) {
+    const [entry] = await index_1.db.select({ expiresAt: schema_1.inviteTokens.expiresAt })
+        .from(schema_1.inviteTokens)
+        .where((0, drizzle_orm_1.eq)(schema_1.inviteTokens.token, token))
+        .limit(1);
     if (!entry)
         return false;
-    return Date.now() - entry.createdAt <= TOKEN_TTL_MS;
+    return entry.expiresAt.getTime() > Date.now();
 }
-function revokeAllTokens() {
-    tokens.clear();
+async function revokeAllTokens() {
+    await index_1.db.delete(schema_1.inviteTokens);
 }
-function listTokens() {
-    return Array.from(tokens.entries()).map(([token, data]) => ({
-        token,
-        createdAt: data.createdAt,
-        usedBy: data.usedBy,
+async function listTokens() {
+    const rows = await index_1.db.select({
+        token: schema_1.inviteTokens.token,
+        createdAt: schema_1.inviteTokens.createdAt,
+        usedBy: schema_1.inviteTokens.usedBy,
+        expiresAt: schema_1.inviteTokens.expiresAt,
+    }).from(schema_1.inviteTokens);
+    return rows.map(r => ({
+        token: r.token,
+        createdAt: r.createdAt.getTime(),
+        usedBy: r.usedBy,
+        expiresAt: r.expiresAt.getTime(),
     }));
 }
+// ─── Admin cookie helpers (no DB needed) ─────────────────────────────────────
 function signAdminCookie(password) {
     return crypto_1.default.createHmac('sha256', password).update('wj_admin').digest('hex');
 }
@@ -44,4 +59,8 @@ function verifyAdminCookie(cookie, password) {
     catch {
         return false;
     }
+}
+// ─── Cleanup expired tokens ───────────────────────────────────────────────────
+async function purgeExpiredTokens() {
+    await index_1.db.delete(schema_1.inviteTokens).where((0, drizzle_orm_1.lt)(schema_1.inviteTokens.expiresAt, new Date()));
 }

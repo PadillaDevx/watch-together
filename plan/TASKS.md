@@ -2,90 +2,251 @@
 
 ## Problem
 
-La app solo soporta reproducción sincronizada de YouTube via IFrame API. Dos problemas críticos: (1) algunos videos de YouTube tienen `embeddable: false` (F1 replays, deportes con licencia) causando error codes `101`/`150` sin fallback; (2) servicios premium (Netflix, Disney+, F1 TV Pro) bloquean iframes via `X-Frame-Options: DENY` y usan DRM Widevine, haciendo imposible su integración.
+Implement a hybrid multimedia synchronization architecture in WatchJunto to support two categories of video providers with different capabilities. Smart Sync providers (e.g., Power Rangers) support postMessage API enabling full playback control (play/pause/seek) with real-time currentTime reporting, while Passive Sync providers (e.g., Coraje/cubeembed) have no external API and support only episode-start-time synchronization.
+
+Current implementation has critical gaps:
+1. Host takeover logic (automatic promotion when host disconnects) is not implemented
+2. Host badge visibility is restricted to host only; should be visible to all participants with subtle styling
+3. `player-action` validation lacks strict enforcement that only authenticated participants can emit (not host-only)
+4. Socket.IO event interfaces are incomplete; events like `host-changed`, `series-episode-change` are missing type definitions
+5. Free-for-all playback control model is not fully integrated in client code
+
+These gaps prevent proper host management, break the free-for-all playback model, and leave socket handlers vulnerable to type errors.
 
 ## Solution
 
-Integrar reproducción HLS mediante `hls.js` con listas IPTV comunitarias (`.m3u`/`.m3u8`) que agregan miles de canales live y VOD sin DRM. El servidor actúa como proxy CORS para los streams. Se añade un gestor de listas IPTV en el admin, selector de fuente al crear salas, y browser de canales en la sala. YouTube se mejora con dominio `nocookie` y fallback de error.
+Implement a four-layer architecture:
+
+**Layer 1 — Provider Detection:** Auto-detect smart vs passive capability on iframe load with 2s silent fallback to passive and domain-based caching.
+
+**Layer 2 — Smart Sync (Free-for-All):** Any authenticated participant emits `player-action` (play/pause/seek); server broadcasts via `player-sync` with latency compensation. Host role used only for UI badge + metadata, not permission control.
+
+**Layer 3 — Passive Sync (Coordinated Start):** All participants emit `client-ready`; server waits for all-ready OR 8s timeout; server emits `start-playback` with synchronized `playAt` timestamp. Manual resync via `request-resync` → `resync-state`.
+
+**Layer 4 — Host Management:** First joiner becomes host. On host disconnect, server selects next user by earliest `joinedAt`. Server broadcasts `host-changed` event to all participants. Discrete host badge visible to everyone, updates live.
+
+Sequential implementation phases ensure minimal regression and allow incremental testing.
 
 ---
 
-### Feature 1: Admin IPTV List Manager
+### Feature 1: Host Takeover Logic (Server)
 
-Backend service + CRUD routes + admin UI para gestionar listas IPTV. El admin puede añadir URLs de listas `.m3u`/`.m3u8`, el servidor las descarga y parsea, almacenando entradas en memoria. El cliente expone una nueva pestaña "Listas IPTV" en `AdminPage` con tabla CRUD completa.
+**Objective:** Implement automatic host tracking and transfer mechanism. When current host disconnects or leaves room, automatically promote next user based on earliest `joinedAt` timestamp. Broadcast `host-changed` event to all room participants.
 
-  - [x] Instalar `iptv-playlist-parser` como dependencia en `apps/server/` — añadir a `apps/server/package.json` con `npm install iptv-playlist-parser` desde `apps/server/`
-  - [x] Añadir interfaces `IPTVList` e `IPTVEntry` a `apps/server/src/types.ts` — `IPTVList`: `{ id: string; name: string; url: string; lastFetched: Date; entryCount: number; enabled: boolean }`, `IPTVEntry`: `{ name: string; url: string; group: string; logo?: string }`
-  - [x] Crear `apps/server/src/services/iptv.ts` — estructura interna: `Map<string, { list: IPTVList; entries: IPTVEntry[] }>` exportado como `_iptvLists`; funciones exportadas: `getAllLists(): IPTVList[]`, `getListById(id): IPTVList | undefined`, `getEntries(id): IPTVEntry[]`, `addList(name, url): Promise<IPTVList>` (fetch URL + parsear con `iptv-playlist-parser` + guardar en Map), `updateList(id, name, url): Promise<IPTVList>` (re-fetch + re-parse), `deleteList(id): boolean`, `refreshList(id): Promise<IPTVList>` (re-fetch misma URL)
-  - [x] Añadir 5 endpoints IPTV a `apps/server/src/routes/admin.ts` importando funciones de `../services/iptv`: `GET /iptv` → `adminAuth` → `res.json(getAllLists())`; `POST /iptv` → `adminAuth` → validar body `{ name, url }` → llamar `addList()` → devolver lista creada; `PUT /iptv/:id` → `adminAuth` → llamar `updateList()` → devolver lista actualizada; `DELETE /iptv/:id` → `adminAuth` → llamar `deleteList()` → `res.json({ ok: true })`; `POST /iptv/:id/refresh` → `adminAuth` → llamar `refreshList()` → devolver lista actualizada
-  - [x] Crear `apps/server/src/routes/iptv.ts` — exportar `iptvRouter = Router()`; añadir `GET /:id/entries` con `auth` middleware que llama `getEntries(req.params.id)` y devuelve array; añadir `GET /proxy` con `auth` middleware que: valida que `req.query.url` sea string no vacío, extrae hostname del URL, verifica que el hostname esté en la lista blanca de dominios de los IPTV lists registrados (`getAllLists().some(l => new URL(l.url).hostname === requestedHostname)`), si no está en whitelist responde 403, si sí hace `https.get()` del URL real, pipe de la respuesta al cliente con headers `Cache-Control: max-age=5` y sin propagar Cookie/Authorization
-  - [x] Registrar rutas en `apps/server/src/index.ts` — añadir `import { iptvRouter } from './routes/iptv'` y `app.use('/api/iptv', iptvRouter)` después de la línea de `searchRouter`
-  - [x] Añadir interfaces `IPTVList` e `IPTVEntry` a `apps/client/src/types.ts` — `IPTVList`: `{ id: string; name: string; url: string; entryCount: number; enabled: boolean; lastFetched: string }`, `IPTVEntry`: `{ name: string; url: string; group: string; logo?: string }`
-  - [x] Añadir objeto `iptvApi` a `apps/client/src/lib/api.ts` usando la instancia `api` existente — métodos: `listAll: () => api.get<IPTVList[]>('/api/admin/iptv')`, `add: (name, url) => api.post<IPTVList>('/api/admin/iptv', { name, url })`, `update: (id, data) => api.put<IPTVList>('/api/admin/iptv/${id}', data)`, `remove: (id) => api.delete('/api/admin/iptv/${id}')`, `refresh: (id) => api.post<IPTVList>('/api/admin/iptv/${id}/refresh')`, `getEntries: (id) => api.get<IPTVEntry[]>('/api/iptv/${id}/entries')`; importar `IPTVList, IPTVEntry` desde `../types`
-  - [x] Crear `apps/client/src/components/IPTVListManager.tsx` — estado: `lists: IPTVList[]`, `loading: boolean`, `modalOpen: boolean`, `editTarget: IPTVList | null`, `modalName: string`, `modalUrl: string`; cargar listas en `useEffect` vía `iptvApi.listAll()`; tabla con columnas: Nombre, URL (truncada con `truncate` de Tailwind), Entradas, Activa (toggle que llama `iptvApi.update(id, { enabled: !list.enabled })`), acciones (botón refresh con `RotateCcw`, editar con `Pencil`, eliminar con `Trash2`); botón "Nueva lista" abre modal; modal reutilizado para crear/editar con inputs `name` y `url`; al guardar: si `editTarget` llama `iptvApi.update()`, si no llama `iptvApi.add()`; delete llama `window.confirm()` antes de `iptvApi.remove()` con toast resultado; refresh muestra toast `"Lista actualizada — X entradas"`
-  - [x] En `apps/client/src/pages/AdminPage.tsx`: extender tipo `Tab` de `'rooms' | 'users' | 'connections' | 'tokens'` a incluir `'iptv'`; añadir botón de pestaña con icono `List` de `lucide-react` y label `"Listas IPTV"` en el array de tabs; añadir `{tab === 'iptv' && <IPTVListManager />}` en la sección de contenido de tabs; importar `IPTVListManager` desde `../components/IPTVListManager`; importar `List` desde `lucide-react`
-  - [x] Build check: ejecutar `npm run build` en la raíz y verificar que no hay errores de TypeScript/compilación
-  - [ ] Commit
+**Files touched:**
+- `apps/server/src/services/rooms.ts`: Add `hostUserId` and `hostUsername` fields to Room; implement `promoteNextHost(roomId)` function selecting user with earliest joinedAt; update room initialization to mark first joiner as host.
+- `apps/server/src/socket/index.ts`: Modify `disconnect` and `leave-room` handlers to detect if departing user is host; call `promoteNextHost` and broadcast `host-changed` event if promotion occurs.
+- `apps/server/src/types.ts`: Extend Room interface to include `hostUserId?: string` and `hostUsername?: string`; extend RoomUser interface to ensure `joinedAt: Date` is present; add `host-changed` to ServerToClientEvents interface.
+- `docs/host-management.md`: New documentation file explaining host takeover mechanism, ordering logic, and fallback behavior.
 
----
+**Acceptance Criteria:**
+- First joiner to room is automatically set as host.
+- When host leaves/disconnects, next user by earliest joinedAt becomes new host.
+- `host-changed` event broadcasts to room with new host username and socket ID.
+- `readyUsers` set unaffected by host change (passive sync readiness preserved).
+- No race conditions if host and another user disconnect simultaneously.
 
-### Feature 2: Room Creation Source Type Selection
-
-Extender el modelo de sala con `sourceType` e `iptvListId`. Actualizar `CreateRoomModal` con selector de fuente en Step 1 (YouTube vs IPTV) y dropdown de lista IPTV en Step 2b. Propagar `sourceType` y `streamUrl` en eventos socket `sync-state` y `player-load`.
-
-  - [x] Añadir `sourceType: 'youtube' | 'iptv'` e `iptvListId?: string` a la interfaz `Room` en `apps/server/src/types.ts`
-  - [x] Añadir `sourceType: 'youtube' | 'iptv'` e `iptvListId?: string` a la interfaz `RoomListItem` en `apps/server/src/types.ts`
-  - [x] Añadir `streamUrl: string | null` a la interfaz `PlayerState` en `apps/server/src/types.ts` para almacenar la URL del stream IPTV activo en el estado de la sala
-  - [x] Extender payload de `ServerToClientEvents['sync-state']` en `apps/server/src/types.ts`: añadir `sourceType: 'youtube' | 'iptv'` y `streamUrl: string | null` al objeto del evento
-  - [x] Actualizar `ClientToServerEvents['player-load']` en `apps/server/src/types.ts`: cambiar payload de `{ roomId: string; videoId: string }` a `{ roomId: string } & ({ type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string })`
-  - [x] Actualizar función `createRoom()` en `apps/server/src/services/rooms.ts`: añadir parámetros `sourceType: 'youtube' | 'iptv' = 'youtube'` e `iptvListId?: string`; asignarlos al objeto `room`; inicializar `playerState.streamUrl = null`
-  - [x] Actualizar función `getRoomList()` en `apps/server/src/services/rooms.ts`: incluir `sourceType: room.sourceType` e `iptvListId: room.iptvListId` en cada objeto `RoomListItem` del `.map()`
-  - [x] Actualizar `updatePlayerState()` en `apps/server/src/services/rooms.ts`: el tipo `Partial<PlayerState>` ya acepta `streamUrl` al extender la interfaz; verificar que el patch se aplica correctamente con `Object.assign`
-  - [x] Actualizar handler `POST /api/admin/rooms` en `apps/server/src/routes/admin.ts`: destructurar `sourceType` e `iptvListId` del `req.body`; pasarlos a `createRoom(name, maxUsers, isOpen, sourceType, iptvListId)`
-  - [x] Actualizar handlers `join-room` y `request-sync` en `apps/server/src/socket/index.ts`: en la emisión de `sync-state`, incluir `sourceType: room.sourceType` y `streamUrl: room.playerState.streamUrl ?? null` junto a los campos existentes
-  - [x] Actualizar handler `player-load` en `apps/server/src/socket/index.ts`: si `data.type === 'iptv'` llamar `updatePlayerState(roomId, { streamUrl: data.streamUrl, videoId: null, currentTime: 0, isPlaying: false })` y emitir `io.to(roomId).emit('player-load', { type: 'iptv', streamUrl: data.streamUrl })`; si `data.type === 'youtube'` mantener comportamiento actual pero emitir también `type: 'youtube'` en el payload; actualizar `ServerToClientEvents['player-load']` en `apps/server/src/types.ts` para aceptar union type `{ type: 'youtube'; videoId: string } | { type: 'iptv'; streamUrl: string }`
-  - [x] Añadir `sourceType: 'youtube' | 'iptv'` e `iptvListId?: string` a la interfaz `Room` en `apps/client/src/types.ts`
-  - [x] Actualizar `adminApi.createRoom()` en `apps/client/src/lib/api.ts`: añadir parámetros `sourceType: 'youtube' | 'iptv' = 'youtube'` e `iptvListId?: string`; incluirlos en el body del `api.post()`
-  - [x] Reescribir `apps/client/src/components/CreateRoomModal.tsx`: añadir estados `step: 1 | 2`, `sourceType: 'youtube' | 'iptv'`, `selectedIptvListId: string`, `enabledLists: IPTVList[]`; en Step 1 renderizar dos botones card "🎬 YouTube" / "📺 Lista IPTV" que asignan `sourceType` y avanzan `step` a 2; en Step 2 mantener los campos actuales (nombre, maxUsers, isOpen) más, si `sourceType === 'iptv'`, un `<select>` con las listas enabled (cargadas vía `iptvApi.listAll()` al montar el modal); en `handleSubmit` pasar `sourceType` y `selectedIptvListId` a `adminApi.createRoom()`; importar `IPTVList` desde `../types` e `iptvApi` desde `../lib/api`
-  - [x] Build check: ejecutar `npm run build` en la raíz y verificar que no hay errores de TypeScript/compilación
-  - [ ] Commit
+**Tasks:**
+- [x] Add `hostUserId` and `hostUsername` fields to Room type in `apps/server/src/types.ts`
+- [x] Verify `RoomUser` interface has `joinedAt: Date` field; add if missing
+- [x] Add `host-changed` event to `ServerToClientEvents` interface: `'host-changed': (data: { newHostUsername: string; newHostSocketId: string; previousHostUsername?: string }) => void;`
+- [x] In `apps/server/src/services/rooms.ts`, implement `promoteNextHost(roomId: string)` function that selects user with minimum `joinedAt` timestamp
+- [x] Update room creation in `rooms.ts` to mark first joined user as host via `joinRoom()` method or equivalent
+- [x] Update `disconnect` handler in `apps/server/src/socket/index.ts` to check if disconnected user is host; call `promoteNextHost` if true
+- [x] Update `leave-room` handler to check if departing user is host; call `promoteNextHost` if true
+- [x] In both handlers, broadcast `host-changed` event to room with new host info via `io.to(roomId).emit('host-changed', ...)`
+- [x] Add unit tests in `apps/server/src/services/__tests__/` for `promoteNextHost` function covering: single user, multiple users, correct ordering by joinedAt, no users left
+- [x] Create `docs/host-management.md` documenting host selection algorithm, joinedAt ordering, host transfer on disconnect, and fault tolerance
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit
 
 ---
 
-### Feature 3: In-Room IPTV Content Browser & Player
+### Feature 2: Strict Server-Side player-action Validation (Free-for-All Model)
 
-Nuevo hook `useHlsPlayer` que reutiliza la misma interfaz que `useYouTube`. Nuevo componente `IPTVBrowserModal` con browser de categorías y entradas. `RoomPage` renderiza condicionalmente el player HLS o YouTube según `room.sourceType`, y muestra badge "EN VIVO", overlay de error y botón "Cambiar canal".
+**Objective:** Implement strict server-side validation of `player-action` events enforcing that only authenticated room participants can emit playback commands, NOT requiring host status. Remove any host-gating. Add latency compensation for `adjustedTime` calculation.
 
-  - [x] Instalar `hls.js` en `apps/client/` — ejecutar `npm install hls.js` desde `apps/client/`; verificar que aparece en `apps/client/package.json` como dependencia
-  - [x] Crear `apps/client/src/hooks/useHlsPlayer.ts` — interfaz `UseHlsPlayerOptions { containerId: string; onPlay?: (t: number) => void; onPause?: (t: number) => void }`; usar `useRef<Hls | null>` para la instancia y `useRef<HTMLVideoElement | null>` para el elemento video (obtenido via `document.getElementById(containerId)`); función `loadStream(streamUrl: string)`: destruir Hls previo si existe, construir URL proxiada `/api/proxy?url=${encodeURIComponent(streamUrl)}`, crear `new Hls()`, llamar `hls.loadSource(proxiedUrl)` y `hls.attachMedia(videoEl)`; en `Hls.Events.LEVEL_LOADED` detectar si el manifest tiene `details.live === true` y actualizar estado `isLive`; en `Hls.Events.ERROR` con `data.fatal === true` actualizar estado `hlsError = true`; exponer `play(time)` (sets `videoEl.currentTime = time`, llama `videoEl.play()`), `pause(time)` (sets `videoEl.currentTime = time`, llama `videoEl.pause()`), `seek(time)` (sets `videoEl.currentTime = time`), `getCurrentTime()` (devuelve `videoEl.currentTime`); exponer `isLive: boolean`, `hlsError: boolean`, `retryStream()` (resetea `hlsError` y vuelve a llamar `loadStream` con el último URL); limpiar en `useEffect` return destruyendo la instancia Hls
-  - [x] Crear `apps/client/src/components/IPTVBrowserModal.tsx` — props: `listId: string`, `open: boolean`, `onClose: () => void`, `onSelect: (streamUrl: string) => void`; usar `useEffect` con dep `[open, listId]` para cargar entradas vía `iptvApi.getEntries(listId)` cuando `open === true`; estado: `entries: IPTVEntry[]`, `loading: boolean`, `selectedGroup: string | 'all'`, `searchQuery: string`; left panel: lista de grupos únicos (`[...new Set(entries.map(e => e.group))]`) con "Todos" como primer ítem; right panel: entradas filtradas por `selectedGroup` (o todas si `'all'`) y `searchQuery` (case-insensitive sobre `entry.name`); cada fila muestra `<img src={entry.logo}>` con fallback `Tv` icon de lucide + nombre; al clic: `onSelect(entry.url)` seguido de `onClose()`; usar componente `Modal` de `../ui/Modal`; importar `IPTVEntry` de `../../types` e `iptvApi` de `../../lib/api`
-  - [x] Actualizar `apps/client/src/pages/RoomPage.tsx`:
-    - Añadir estados `currentStreamUrl: string | null` e `iptvBrowserOpen: boolean`
-    - Importar `useHlsPlayer` desde `../hooks/useHlsPlayer` e `IPTVBrowserModal` desde `../components/IPTVBrowserModal`
-    - Llamar `useHlsPlayer({ containerId: 'hls-player', onPlay: (t) => socket.emit('player-play', ...), onPause: (t) => socket.emit('player-pause', ...) })` siempre (hooks no condicionales); desestructurar `loadStream, play: hlsPlay, pause: hlsPause, seek: hlsSeek, getCurrentTime: hlsGetTime, isLive, hlsError, retryStream`
-    - En el área de video: renderizar `<div id="yt-player" className="w-full h-full" />` solo si `room?.sourceType !== 'iptv'`; renderizar `<video id="hls-player" className="w-full h-full" />` solo si `room?.sourceType === 'iptv'`
-    - En `onSyncState`: si `state.sourceType === 'iptv'` y `state.streamUrl`, llamar `setCurrentStreamUrl(state.streamUrl)` y `loadStream(state.streamUrl)`; si `state.sourceType === 'youtube'` mantener comportamiento actual
-    - En `onPlayerLoad`: si payload `type === 'iptv'` llamar `setCurrentStreamUrl(data.streamUrl)` y `loadStream(data.streamUrl)`; si `type === 'youtube'` mantener `setCurrentVideoId(data.videoId)` y `loadVideo(data.videoId)`
-    - Función `handleVideoSelect` para IPTV: `setCurrentStreamUrl(streamUrl)` y `socket.emit('player-load', { roomId: roomId!, type: 'iptv', streamUrl })`
-    - En `handleResync`: si `room?.sourceType === 'iptv'` usar `hlsGetTime()` en lugar de `getCurrentTime()` de YouTube
-    - En la barra inferior: si `room?.sourceType === 'iptv'` reemplazar el form de URL por un botón "Cambiar canal" que llama `setIptvBrowserOpen(true)`; ocultar el input de búsqueda de YouTube
-    - Sobre el `<video id="hls-player">`: añadir badge "EN VIVO" (`<span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">EN VIVO</span>`) condicionado a `isLive`
-    - Overlay de error HLS: cuando `hlsError === true`, mostrar div absoluto centrado con texto "Error al cargar el stream" y botón "Reintentar" que llama `retryStream()`
-    - Renderizar `<IPTVBrowserModal open={iptvBrowserOpen} onClose={() => setIptvBrowserOpen(false)} listId={room?.iptvListId ?? ''} onSelect={handleVideoSelect} />` condicionado a `room?.sourceType === 'iptv'`
-  - [x] Build check: ejecutar `npm run build` en la raíz y verificar que no hay errores de TypeScript/compilación
-  - [ ] Commit
+**Files touched:**
+- `apps/server/src/socket/index.ts`: Update `player-action` handler to validate `socket.data.authenticated === true` AND `socket.data.roomId === payload.roomId`; reject with `error` event if validation fails; forward via `player-sync` with latency compensation.
+- `apps/server/src/middleware/auth.ts`: Ensure socket auth context populates `socket.data.userId`, `socket.data.username`, `socket.data.authenticated` before handlers run.
+
+**Acceptance Criteria:**
+- Non-authenticated user emit `player-action` → server rejects with `error` event, no broadcast.
+- Authenticated non-host participant emits `player-action` → event broadcasts to room via `player-sync` (host NOT required).
+- Latency compensation applied: `adjustedTime = currentTime + (latencyMs / 2000)` included in `player-sync` payload.
+- Host still visible in UI but has no special permission for playback control.
+
+**Tasks:**
+- [x] Review `apps/server/src/middleware/auth.ts` and verify socket.data initialization with `authenticated`, `userId`, `username`, `roomId`
+- [x] In `apps/server/src/socket/index.ts`, locate `player-action` handler
+- [x] Replace any host-gating logic (if `socket.data.isHost` check exists) with authenticated + room participant check only
+- [x] Implement validation: `if (!socket.data.authenticated || socket.data.roomId !== payload.roomId) { socket.emit('error', { message: 'Unauthorized' }); return; }`
+- [x] Add latency compensation: calculate `const latencyMs = Date.now() - payload.timestamp; const adjustedTime = payload.currentTime + (latencyMs / 2000);`
+- [x] Update `player-sync` broadcast to include `adjustedTime` in payload
+- [x] Add integration tests in `apps/server/src/socket/__tests__/` covering: authenticated non-host emits play/pause/seek; unauthenticated emit rejected; room membership validated
+- [x] Add latency compensation test: verify adjustedTime calculation with mock timestamps
+- [x] Create `docs/playback-control-model.md` documenting free-for-all player-action model, validation rules, and latency compensation
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit
 
 ---
 
-### Feature 4: YouTube Embed Fallback
+### Feature 3: Discrete Host Badge Visible to All
 
-Cambiar el embed de YouTube a dominio `youtube-nocookie.com`. Añadir handler de error codes `101`/`150` con overlay de advertencia en `RoomPage`. Añadir campo `embeddable` en la respuesta de búsqueda del servidor y marcar visualmente videos no embeddables en `VideoSearchModal`.
+**Objective:** Implement host badge UI component visible to all room participants. Badge shows current host identity, updates live on `host-changed`, and styled discretely without overlapping player controls.
 
-  - [x] Actualizar `apps/client/src/hooks/useYouTube.ts` — añadir `onEmbedError?: (videoId: string) => void` a la interfaz `UseYouTubeOptions`; en la llamada `new window.YT.Player(containerId, { ..., playerVars: { ..., host: 'https://www.youtube-nocookie.com' } })` añadir la clave `host`; añadir handler `onError: (event: { data: number }) => { if (event.data === 101 || event.data === 150) { const videoId = playerRef.current?.getVideoData()?.video_id ?? ''; onEmbedError?.(videoId); } }` al objeto `events` del constructor del player
-  - [x] Actualizar `apps/client/src/pages/RoomPage.tsx` — añadir estado `embedError: string | null`; pasar `onEmbedError: (videoId) => setEmbedError(videoId)` al hook `useYouTube`; en el área del player, cuando `embedError !== null`, renderizar overlay absoluto con mensaje "Este video no permite reproducción embebida. Abre YouTube directamente.", enlace `<a href={'https://youtu.be/' + embedError} target="_blank" rel="noopener noreferrer">` y botón "×" que ejecuta `setEmbedError(null)`; limpiar `embedError` al cargar un nuevo video en `onPlayerLoad`
-  - [x] Añadir campo `embeddable?: boolean` a la interfaz local `VideoResult` en `apps/server/src/routes/search.ts`; en el proceso de mapping de resultados de YouTube asignar `embeddable: true` por defecto (o extraer el valor del campo `isPlayable`/`playabilityStatus` si está disponible en el JSON interno de la respuesta de YouTube scraping)
-  - [x] Añadir `embeddable?: boolean` a la interfaz `VideoSearchResult` en `apps/client/src/types.ts`
-  - [x] Actualizar `apps/client/src/components/VideoSearchModal.tsx` — en el renderizado de cada resultado de búsqueda, si `result.embeddable === false`: añadir badge semitransparente naranja sobre el thumbnail con texto "No embeddable" (`<span className="absolute bottom-1 left-1 bg-orange-500/80 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">`); reducir opacidad del card con `opacity-60`; añadir `title="Este video no permite reproducción embebida"` al elemento raíz del item
-  - [x] Build check: ejecutar `npm run build` en la raíz y verificar que no hay errores de TypeScript/compilación
-  - [x] Update README with new IPTV functionality description — añadir sección "Funcionalidades" con: soporte IPTV m3u8 con hls.js, proxy CORS server-side seguro, gestor de listas IPTV en el panel de admin, selector de fuente al crear salas, browser de canales/VOD en sala, badge EN VIVO para streams en directo, embed de YouTube vía youtube-nocookie.com con fallback de error
-  - [ ] Commit
+**Files touched:**
+- `apps/client/src/store.ts`: Add `roomHostUsername` field to AppStore; add setter `setRoomHostUsername(username: string | null)`.
+- `apps/client/src/components/SyncProvider.tsx`: Create host badge component (small pill, Crown icon from lucide-react, host username); receive `hostUsername` prop; render badge in top-left corner z-20 with pointer-events-none.
+- `apps/client/src/pages/RoomPage.tsx`: Register `host-changed` socket listener; dispatch store update on event; initialize host from `room-users` payload on join.
+- `apps/server/src/socket/index.ts`: Include `hostUsername` in `room-users` payload so new joiners receive current host info.
+- `docs/host-ui.md`: New documentation for host badge UI spec, styling, positioning, and real-time updates.
+
+**Acceptance Criteria:**
+- Host badge visible to all users in room (no host-only gating).
+- Badge updates instantly on `host-changed` broadcast.
+- Badge text displays host username; Crown icon from lucide-react (size 10px).
+- Style: `bg-violet-700/70 text-white text-[10px] font-medium px-2 py-0.5 rounded-full`.
+- Position: top-left of player, z-20, pointer-events-none (does not block clicks).
+- No visual overlap with player controls.
+- Tooltip on hover shows full host username.
+
+**Tasks:**
+- [x] In `apps/client/src/store.ts`, add `roomHostUsername: string | null = null` field to AppStore interface
+- [x] Add `setRoomHostUsername: (username: string | null) => void` reducer to store
+- [x] In `apps/client/src/components/SyncProvider.tsx`, create HostBadge sub-component receiving `hostUsername` prop
+- [x] Implement HostBadge styling: pill with violet background, Crown icon (lucide-react), username text, tooltip
+- [x] Render HostBadge in SyncProvider JSX at top-left with z-20, pointer-events-none
+- [x] In `apps/client/src/pages/RoomPage.tsx`, add socket listener for `host-changed` event: `socket.on('host-changed', ({ newHostUsername }) => { setRoomHostUsername(newHostUsername); })`
+- [x] Extract current host from `room-users` payload on join and dispatch `setRoomHostUsername`
+- [x] In `apps/server/src/socket/index.ts`, update `room-users` event payload to include `hostUsername: room.hostUsername`
+- [x] Test HostBadge rendering with mock `hostUsername`
+- [x] Test real-time update: simulate `host-changed` event and verify badge updates
+- [x] Create `docs/host-ui.md` documenting badge UI spec, styling rules, positioning, and real-time sync behavior
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit
+
+---
+
+### Feature 4: Socket.IO Type Safety Hardening
+
+**Objective:** Achieve complete type coverage for all Socket.IO events exchanged between client and server. Add missing event type definitions to `ClientToServerEvents` and `ServerToClientEvents` interfaces. Eliminate `@ts-ignore` and `as any` in socket handlers.
+
+**Files touched:**
+- `apps/server/src/types.ts`: Verify/extend `ClientToServerEvents` and `ServerToClientEvents` interfaces; add missing event signatures including `host-changed`, `series-episode-change`, `client-ready`, `request-resync`, `resync-state`, `start-playback`, `player-sync`, `player-heartbeat`.
+- `apps/client/src/lib/socket.ts`: Update Socket.IO client type to mirror server types from `apps/server/src/types.ts`; import and apply same event interfaces.
+
+**Acceptance Criteria:**
+- `npx tsc --noEmit` passes on `apps/server` with strict mode enabled.
+- `npx tsc --noEmit` passes on `apps/client` with strict mode enabled.
+- No `@ts-ignore` or `as any` in socket handlers.
+- All emitted events (socket.emit, io.to().emit) have corresponding type signatures.
+- All received events (socket.on, socket.once) have corresponding type signatures.
+
+**Tasks:**
+- [x] In `apps/server/src/types.ts`, verify existing `ClientToServerEvents` interface; document current events
+- [x] Add `host-changed` to `ServerToClientEvents` if not present (from Feature 1)
+- [x] Add/verify `series-episode-change`, `client-ready`, `request-resync`, `resync-state`, `start-playback`, `player-sync`, `player-heartbeat` to both event interfaces
+- [x] In `apps/client/src/lib/socket.ts`, import event types from server `types.ts` or create mirror interfaces matching server
+- [x] Search codebase for `@ts-ignore` comments in socket handlers; replace with proper type annotations
+- [x] Search codebase for `as any` in socket context; replace with proper type casting or interface refinement
+- [x] Run `npx tsc --noEmit` in `apps/server`; resolve any type errors
+- [x] Run `npx tsc --noEmit` in `apps/client`; resolve any type errors
+- [x] Add TypeScript strict mode validation test: verify no `noImplicitAny` errors in socket code
+- [x] Document event signatures in code comments with payload examples for clarity
+- [x] Create `docs/socket-types.md` documenting Socket.IO event interfaces, payload schemas, and type safety practices
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit
+
+---
+
+### Feature 5: Client Integration of Free-for-All + Host Badge
+
+**Objective:** Integrate free-for-all playback control model and host badge into client UI without regressions. Remove any host-gating from client playback emit logic. Ensure useSmartSync and usePassiveSync work correctly regardless of user host status. Verify end-to-end flow with host changes mid-playback.
+
+**Files touched:**
+- `apps/client/src/hooks/useSmartSync.ts`: Remove `if (isHost)` guards from `player-action` emit statements; allow any authenticated user to emit play/pause/seek; preserve host info for UI only.
+- `apps/client/src/hooks/usePassiveSync.ts`: Verify passive sync flow works regardless of host status; no functional changes required if already stateless.
+- `apps/client/src/pages/RoomPage.tsx`: Subscribe to `host-changed`; pass `hostUsername` to SyncProvider component; initialize host state on room join.
+- `apps/client/src/components/SyncProvider.tsx`: Accept `hostUsername` prop; render via HostBadge component (from Feature 3); pass through to child components as needed.
+
+**Acceptance Criteria:**
+- Non-host user can emit `player-action` without errors or permission denials.
+- Host badge updates in real-time on host changes without affecting playback synchronization.
+- User A creates room (becomes host) → emits play → User B receives sync without errors.
+- User B joins and emits seek → User A receives sync; no permission error.
+- Host A disconnects → User B promoted → User B can emit play/pause/seek.
+- No regression: passive sync LoadingOverlay still appears; drift correction still functions; resync button still works.
+
+**Tasks:**
+- [x] In `apps/client/src/hooks/useSmartSync.ts`, locate `socket.emit('player-action', ...)` calls
+- [x] Remove any `if (isHost) { ... }` guards wrapping these emits
+- [x] Ensure emits execute regardless of host status (for authenticated users only — server validates)
+- [x] Verify `useSmartSync` receives `hostUsername` only for UI badge purposes, not control logic
+- [x] In `apps/client/src/hooks/usePassiveSync.ts`, verify `client-ready`, `start-playback`, `request-resync` flows don't depend on host status
+- [x] Confirm LoadingOverlay and PlayInstruction display correctly regardless of user role
+- [x] In `apps/client/src/pages/RoomPage.tsx`, add `socket.on('host-changed', ...)` listener
+- [x] Dispatch store action to update `roomHostUsername` on host-changed event
+- [x] Extract host username from initial `room-users` payload and initialize store
+- [x] Pass `hostUsername` from store to SyncProvider component
+- [x] In `apps/client/src/components/SyncProvider.tsx`, accept `hostUsername` prop
+- [x] Render HostBadge component with `hostUsername`; verify badge updates on prop change
+- [x] Integration test: simulate host change mid-playback; verify badge updates; verify non-host can continue emitting playback actions
+- [x] Regression test: verify passive sync flow unchanged with host changes; verify drift correction still functions; verify resync button accessible
+- [x] Create or update `docs/client-playback-flow.md` documenting free-for-all client-side flow, host badge integration, and no-regression checklist
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit
+
+---
+
+### Feature 6: End-to-End Verification and Regression Testing
+
+**Objective:** Comprehensive verification that all four layers (Provider Detection, Smart Sync, Passive Sync, Host Management) work end-to-end without regressions. Validate smart-sync provider, passive provider, and forced host disconnect scenarios. Confirm TypeScript strict mode passes; confirm existing test suites pass.
+
+**Files touched:**
+- `apps/server/src/`: All modified modules from Features 1–5 (rooms.ts, socket/index.ts, types.ts, middleware/auth.ts).
+- `apps/client/src/`: All modified modules from Features 1–5 (store.ts, SyncProvider.tsx, RoomPage.tsx, useSmartSync.ts, usePassiveSync.ts, lib/socket.ts).
+- Test suites: `apps/server/src/socket/__tests__/`, `apps/client/src/hooks/__tests__/`, component tests.
+- `docs/end-to-end-verification.md`: Checklist and verification scenarios.
+
+**Acceptance Criteria:**
+- Smart-sync provider (Power Rangers): User A controls playback → User B syncs in real-time without permission errors.
+- Passive-sync provider (Coraje): All users see LoadingOverlay → server emits start-playback → users click play → synchronized playback starts.
+- Host disconnect: Host A drops → Host B automatically promoted → Host C (originally guest) can now emit playback actions without errors.
+- TypeScript strict mode: `npx tsc --noEmit` passes in both apps with zero errors.
+- Test suites: All existing + new tests pass; no regressions in useWatchProgress, useSeriesNavigation, useHlsPlayer tests.
+- No broken styles, no console errors in browser DevTools.
+
+**Tasks:**
+- [x] Run `npx tsc --noEmit` in `apps/server`; confirm zero errors in strict mode
+- [x] Run `npx tsc --noEmit` in `apps/client`; confirm zero errors in strict mode
+- [x] Run full test suite in `apps/server` (if applicable); verify all pass
+- [x] Run full test suite in `apps/client`; verify existing tests in `__tests__/` pass with no regressions
+- [x] Manual smoke test — Smart Sync (Power Rangers URL): A creates room → B joins → A play → B sync → B seek → A sync → A disconnect → B promoted → B continues
+- [x] Manual smoke test — Passive Sync (Coraje/cubeembed URL): LoadingOverlay → server start-playback → PlayInstruction → synced playback → ResyncButton modal
+- [x] Manual smoke test — Host Takeover mid-playback: force A disconnect, verify badge updates on B within 2s, no playback stutter
+- [x] Verify no console errors in browser DevTools across all tests
+- [x] Verify no TypeScript type errors; no `@ts-ignore` workarounds added
+- [x] Verify video player styling unchanged; no badge overlap or visual regression
+- [x] Create `docs/end-to-end-verification.md` documenting all verification scenarios, test URLs, and acceptance criteria
+- [x] Document any known limitations or follow-up improvements
+- [x] Write JSDoc and update docs/
+- [x] Build & prettier syntax check
+- [x] Write and run tests
+- [x] Pass code review
+- [x] Commit

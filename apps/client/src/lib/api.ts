@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Room, AdminUser, Connection, Token, VideoSearchResult, IPTVList, IPTVEntry } from '../types';
+import type { Room, AdminUser, Connection, Token, VideoSearchResult, PlaylistSearchResult, IPTVList, IPTVEntry, JellyfinSearchResult, LibrarySerie, LibrarySerieDetail } from '../types';
 
 const api = axios.create({ withCredentials: true });
 
@@ -19,14 +19,22 @@ export const authApi = {
 
 export const roomsApi = {
   list: () => api.get<{ rooms: Room[] }>('/api/rooms'),
+  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' = 'youtube', iptvListId?: string) =>
+    api.post('/api/admin/rooms', { name, maxUsers, isOpen, sourceType, ...(iptvListId ? { iptvListId } : {}) }),
+  deleteRoom: (id: string) => api.delete(`/api/admin/rooms/${id}`),
 };
 
 export const searchApi = {
-  search: (q: string) => api.get<{ results: VideoSearchResult[] }>('/api/search', { params: { q } }),
+  search: (q: string) =>
+    api.get<{ results: VideoSearchResult[]; playlists: PlaylistSearchResult[] }>('/api/search', { params: { q } }),
+  searchPlaylists: (q: string) =>
+    api.get<{ results: VideoSearchResult[]; playlists: PlaylistSearchResult[] }>('/api/search', { params: { q, type: 'playlists' } }),
+  getPlaylistItems: (playlistId: string, videoId?: string) =>
+    api.get<{ items: VideoSearchResult[] }>('/api/search/playlist', { params: { playlistId, ...(videoId ? { videoId } : {}) } }),
 };
 
 export const adminApi = {
-  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' = 'youtube', iptvListId?: string) =>
+  createRoom: (name: string, maxUsers: number, isOpen: boolean, sourceType: 'youtube' | 'iptv' | 'movie' | 'url' | 'series' = 'youtube', iptvListId?: string) =>
     api.post('/api/admin/rooms', { name, maxUsers, isOpen, sourceType, ...(iptvListId ? { iptvListId } : {}) }),
   deleteRoom: (id: string) => api.delete(`/api/admin/rooms/${id}`),
   deleteAllRooms: () => api.delete('/api/admin/rooms'),
@@ -40,9 +48,35 @@ export const adminApi = {
 export const iptvApi = {
   listAll: () => api.get<IPTVList[]>('/api/admin/iptv'),
   add: (name: string, url: string) => api.post<IPTVList>('/api/admin/iptv', { name, url }),
+  upload: (name: string, content: string) =>
+    api.post<IPTVList>('/api/admin/iptv/upload', { name, content }),
   update: (id: string, data: Partial<{ name: string; url: string; enabled: boolean }>) =>
     api.put<IPTVList>(`/api/admin/iptv/${id}`, data),
   remove: (id: string) => api.delete(`/api/admin/iptv/${id}`),
   refresh: (id: string) => api.post<IPTVList>(`/api/admin/iptv/${id}/refresh`),
   getEntries: (id: string) => api.get<IPTVEntry[]>(`/api/iptv/${id}/entries`),
+};
+
+export const jellyfinApi = {
+  saveConfig: (baseUrl: string, apiKey: string) =>
+    api.post<{ ok: boolean; serverName?: string; error?: string }>('/api/admin/jellyfin/config', { baseUrl, apiKey }),
+  getStatus: () =>
+    api.get<{ configured: boolean; ok?: boolean; serverName?: string; baseUrl?: string }>('/api/admin/jellyfin/status'),
+  search: (q: string) =>
+    api.get<Array<JellyfinSearchResult & { imageUrl: string; streamUrl: string }>>('/api/jellyfin/search', { params: { q } }),
+  getStreamUrl: (itemId: string) =>
+    api.get<{ streamUrl: string }>(`/api/jellyfin/stream-url/${itemId}`),
+};
+
+export const libraryApi = {
+  listSeries: () =>
+    api.get<LibrarySerie[]>('/api/library/series'),
+  listCatalog: () =>
+    api.get<LibrarySerie[]>('/api/library/series/catalog'),
+  updateSerie: (serieId: string, active: boolean) =>
+    api.patch<LibrarySerie>(`/api/library/series/${serieId}`, { active }),
+  getSerieDetail: (serieId: string) =>
+    api.get<LibrarySerieDetail>(`/api/library/series/${serieId}/episodes`),
+  resolveEmbed: (path: string) =>
+    api.get<{ embedUrl: string }>('/api/library/episode', { params: { path } }),
 };

@@ -30,7 +30,7 @@ export function AuthModal({ open }: { open: boolean }) {
         const { recoveryCode: code } = await register(username, password);
         toast.success(
           `Cuenta creada. Guarda tu código de recuperación: ${code}`,
-          { duration: 15000, icon: '🔑' },
+          { duration: 15000, icon: <KeyRound className="w-4 h-4 text-yellow-400" /> },
         );
       }
     } catch (err: unknown) {
@@ -47,15 +47,14 @@ export function AuthModal({ open }: { open: boolean }) {
   ];
 
   return (
-    <Modal open={open} unclosable title="WatchJunto">
+    <Modal open={open} unclosable title="Watch Together">
       <div className="flex bg-white/5 rounded-lg p-1 mb-6 gap-0.5">
         {tabs.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-              tab === id ? 'bg-violet-600 text-white shadow' : 'text-white/50 hover:text-white'
-            }`}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${tab === id ? 'bg-accent text-white shadow' : 'text-white/50 hover:text-white'}
+              }`}
           >
             {label}
           </button>

@@ -8,22 +8,63 @@ import { Input } from './ui/Input';
 import { authApi } from '../lib/api';
 import { copyToClipboard, getApiError } from '../lib/utils';
 import { useStore } from '../store';
+import { ACCENT_COLORS, DEFAULT_ACCENT, applyAccent } from '../lib/theme';
 import type { User } from '../types';
 
 type Tab = 'perfil' | 'seguridad' | 'tema';
 
-const ACCENT_COLORS = [
-  { name: 'Violeta', value: 'violet', hex: '#7c3aed' },
-  { name: 'Azul', value: 'blue', hex: '#2563eb' },
-  { name: 'Esmeralda', value: 'emerald', hex: '#059669' },
-  { name: 'Rosa', value: 'pink', hex: '#db2777' },
-  { name: 'Naranja', value: 'orange', hex: '#ea580c' },
-  { name: 'Rojo', value: 'red', hex: '#dc2626' },
-];
+// ACCENT_COLORS is imported from lib/theme.ts — single source of truth
+
+const MAX_AVATAR_DATA_URL_LENGTH = 680_000;
+const AVATAR_MAX_DIMENSION = 512;
 
 interface Props {
   open: boolean;
   onClose: () => void;
+}
+
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('IMAGE_LOAD_FAILED'));
+    };
+    img.src = url;
+  });
+}
+
+async function resizeAvatarFile(file: File): Promise<string> {
+  const img = await loadImageFromFile(file);
+  const scale = Math.min(1, AVATAR_MAX_DIMENSION / Math.max(img.naturalWidth, img.naturalHeight));
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('CANVAS_UNAVAILABLE');
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+  if (mimeType === 'image/png') {
+    const png = canvas.toDataURL('image/png');
+    if (png.length <= MAX_AVATAR_DATA_URL_LENGTH) return png;
+  }
+
+  for (const quality of [0.86, 0.78, 0.68, 0.58, 0.48, 0.38]) {
+    const jpeg = canvas.toDataURL('image/jpeg', quality);
+    if (jpeg.length <= MAX_AVATAR_DATA_URL_LENGTH) return jpeg;
+  }
+
+  throw new Error('AVATAR_TOO_LARGE_AFTER_COMPRESSION');
 }
 
 export function ProfileModal({ open, onClose }: Props) {
@@ -44,9 +85,8 @@ export function ProfileModal({ open, onClose }: Props) {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              tab === id ? 'bg-violet-600/20 text-violet-300' : 'text-white/40 hover:text-white hover:bg-white/5'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-accent-muted text-accent-lighter' : 'text-white/40 hover:text-white hover:bg-white/5'
+              }`}
           >
             {label}
           </button>
@@ -65,31 +105,63 @@ export function ProfileModal({ open, onClose }: Props) {
 function PerfilTab({ user, onUpdated }: { user: NonNullable<User>; onUpdated: () => Promise<void> }) {
   const [avatarUrl, setAvatarUrl] = useState(user.avatar ?? '');
   const [saving, setSaving] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleSaveAvatar() {
+    const avatar = avatarUrl.trim() || null;
+    if (avatar && !avatar.startsWith('data:image/') && !avatar.startsWith('https://')) {
+      toast.error('El avatar debe ser una URL https:// o una imagen subida');
+      return;
+    }
+    console.debug('[WJ Avatar] Saving avatar', {
+      username: user.username,
+      hasAvatar: avatar !== null,
+      length: avatar?.length ?? 0,
+      prefix: avatar?.slice(0, 32) ?? null,
+    });
     setSaving(true);
     try {
-      await authApi.updateAvatar(avatarUrl.trim() || null);
+      await authApi.updateAvatar(avatar);
       await onUpdated();
+      console.debug('[WJ Avatar] Avatar saved successfully');
       toast.success('Avatar actualizado');
     } catch (err: unknown) {
+      console.error('[WJ Avatar] Failed to save avatar', err);
       toast.error(getApiError(err, 'Error al actualizar'));
     } finally {
       setSaving(false);
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 1_200_000) { toast.error('La imagen es muy grande (máx ~1 MB)'); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result;
-      if (typeof result === 'string') setAvatarUrl(result);
-    };
-    reader.readAsDataURL(file);
+    console.debug('[WJ Avatar] Selected file', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+    if (!file.type.startsWith('image/')) {
+      console.warn('[WJ Avatar] Rejected non-image file', { type: file.type });
+      toast.error('El archivo debe ser una imagen');
+      return;
+    }
+    try {
+      const dataUrl = await resizeAvatarFile(file);
+      console.debug('[WJ Avatar] Prepared image', {
+        originalSize: file.size,
+        dataUrlLength: dataUrl.length,
+        prefix: dataUrl.slice(0, 32),
+      });
+      setSelectedFileName(file.name);
+      setAvatarUrl(dataUrl);
+    } catch (err) {
+      console.error('[WJ Avatar] Failed to read/resize image', err);
+      toast.error('No se pudo preparar la imagen');
+    } finally {
+      e.target.value = '';
+    }
   }
 
   return (
@@ -106,7 +178,9 @@ function PerfilTab({ user, onUpdated }: { user: NonNullable<User>; onUpdated: ()
           </button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-        <p className="text-xs text-white/30">Haz clic para subir imagen o pega una URL</p>
+        <p className="text-xs text-white/30">
+          {selectedFileName ? `Lista: ${selectedFileName}` : 'Haz clic para subir una imagen'}
+        </p>
       </div>
 
       {/* Username display */}
@@ -117,11 +191,11 @@ function PerfilTab({ user, onUpdated }: { user: NonNullable<User>; onUpdated: ()
 
       {/* Avatar URL input */}
       <Input
-        label="URL de avatar"
+        label="Avatar"
         value={avatarUrl}
         onChange={(e) => setAvatarUrl(e.target.value)}
         placeholder="https://... o sube una imagen arriba"
-        hint="JPEG, PNG o GIF. Máximo 1 MB"
+        hint="Pega una URL de imagen (https://) o sube un archivo con el botón de cámara"
       />
 
       <Button onClick={handleSaveAvatar} loading={saving} className="w-full">
@@ -238,17 +312,13 @@ function SeguridadTab({ user, onUpdated }: { user: NonNullable<User>; onUpdated:
 // ─── Tema Tab ─────────────────────────────────────────────────────────────────
 
 function TemaTab() {
-  const saved = localStorage.getItem('wj_accent') ?? 'violet';
+  const saved = localStorage.getItem('wj_accent') ?? DEFAULT_ACCENT;
   const [accent, setAccent] = useState(saved);
 
   function handleSelect(value: string) {
     setAccent(value);
     localStorage.setItem('wj_accent', value);
-    // Apply immediately via CSS variable
-    const color = ACCENT_COLORS.find((c) => c.value === value);
-    if (color) {
-      document.documentElement.style.setProperty('--accent', color.hex);
-    }
+    applyAccent(value);
     toast.success('Tema guardado');
   }
 
@@ -261,11 +331,10 @@ function TemaTab() {
             <button
               key={c.value}
               onClick={() => handleSelect(c.value)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${
-                accent === c.value
-                  ? 'border-white/30 bg-white/8'
-                  : 'border-white/[0.06] hover:bg-white/[0.04]'
-              }`}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${accent === c.value
+                ? 'border-white/30 bg-white/8'
+                : 'border-white/[0.06] hover:bg-white/[0.04]'
+                }`}
             >
               <span
                 className="w-5 h-5 rounded-full flex-shrink-0"

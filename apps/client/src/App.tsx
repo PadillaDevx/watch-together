@@ -2,14 +2,17 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { LobbyPage } from './pages/LobbyPage';
+import { SalasPage } from './pages/SalasPage';
 import { RoomPage } from './pages/RoomPage';
 import { AdminPage } from './pages/AdminPage';
 import { AuthModal } from './components/AuthModal';
 import { useStore } from './store';
 import { socket } from './lib/socket';
+import { useTheme } from './hooks/useTheme';
 
 export default function App() {
   const { user, isLoading, fetchMe } = useStore();
+  useTheme();
 
   useEffect(() => {
     fetchMe();
@@ -25,9 +28,9 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0d0d1f]">
+      <div className="flex h-screen items-center justify-center bg-base">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center animate-pulse">
+          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center animate-pulse">
             <svg className="h-5 w-5 text-white fill-white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
           </div>
           <p className="text-white/30 text-sm">Cargando...</p>
@@ -52,6 +55,7 @@ export default function App() {
       {user && (
         <Routes>
           <Route path="/" element={<LobbyPage />} />
+          <Route path="/salas" element={<SalasPage />} />
           <Route path="/room/:id" element={<RoomPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

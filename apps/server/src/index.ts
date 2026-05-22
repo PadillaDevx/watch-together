@@ -8,34 +8,53 @@ import { authRouter } from './routes/auth';
 import { createAdminRouter } from './routes/admin';
 import { searchRouter } from './routes/search';
 import { iptvRouter } from './routes/iptv';
+import { adminRouter as jellyfinAdminRouter, userRouter as jellyfinUserRouter } from './routes/jellyfin';
+import { createLibraryRouter } from './routes/library';
 import { getRoomList } from './services/rooms';
 import { validateToken } from './services/tokens';
 import { setupSocket } from './socket/index';
 import { getLocalIP } from './utils';
+import { connectWithRetry } from './db/index';
+import { initRooms } from './services/rooms';
+import { initIptv } from './services/iptv';
+import { initJellyfin } from './services/jellyfin';
+import { initSessions } from './services/users';
 import type { ServerToClientEvents, ClientToServerEvents, SocketData } from './types';
 
-const PORT = Number(process.env['PORT'] ?? 3000);
+const PORT = Number(process.env['PORT'] ?? 3001);
 const isDev = process.env['NODE_ENV'] === 'development';
 
 const app = express();
 const httpServer = http.createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer, {
   cors: isDev
-    ? { origin: ['http://localhost:5173'], credentials: true }
+    ? { origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true }
     : { origin: false },
 });
 
 app.use(cookieParser());
 app.use(express.json({ limit: '2mb' }));
 
+// CSP: restrict frame-src to known embed domains
+app.use((_req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com cubeembed.rpmvid.com *.cubeembed.rpmvid.com"
+  );
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/admin', createAdminRouter(io));
+app.use('/api/admin/jellyfin', jellyfinAdminRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/iptv', iptvRouter);
+app.use('/api/jellyfin', jellyfinUserRouter);
+app.use('/api/library', createLibraryRouter());
 app.get('/api/rooms', (_req, res) => res.json({ rooms: getRoomList() }));
-app.get('/join/:token', (req, res) => {
-  validateToken(req.params['token'] ?? '');
+app.get('/join/:token', async (req, res) => {
+  await validateToken(req.params['token'] ?? '');
   res.redirect('/');
 });
 
@@ -48,7 +67,22 @@ if (!isDev) {
 
 setupSocket(io);
 
-httpServer.listen(PORT, () => {
-  const ip = getLocalIP();
-  console.log(`[WJ] Server →  http://localhost:${PORT}  |  http://${ip}:${PORT}`);
+async function main() {
+  await connectWithRetry();
+  await Promise.all([
+    initRooms(),
+    initIptv(),
+    initJellyfin(),
+    initSessions(),
+  ]);
+
+  httpServer.listen(PORT, () => {
+    const ip = getLocalIP();
+    console.log(`[WJ] Server →  http://localhost:${PORT}  |  http://${ip}:${PORT}`);
+  });
+}
+
+main().catch(err => {
+  console.error('[WJ] Fatal startup error:', err);
+  process.exit(1);
 });

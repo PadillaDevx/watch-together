@@ -13,29 +13,43 @@ const auth_1 = require("./routes/auth");
 const admin_1 = require("./routes/admin");
 const search_1 = require("./routes/search");
 const iptv_1 = require("./routes/iptv");
+const jellyfin_1 = require("./routes/jellyfin");
+const library_1 = require("./routes/library");
 const rooms_1 = require("./services/rooms");
 const tokens_1 = require("./services/tokens");
 const index_1 = require("./socket/index");
 const utils_1 = require("./utils");
-const PORT = Number(process.env['PORT'] ?? 3000);
+const index_2 = require("./db/index");
+const rooms_2 = require("./services/rooms");
+const iptv_2 = require("./services/iptv");
+const jellyfin_2 = require("./services/jellyfin");
+const PORT = Number(process.env['PORT'] ?? 3001);
 const isDev = process.env['NODE_ENV'] === 'development';
 const app = (0, express_1.default)();
 const httpServer = http_1.default.createServer(app);
 const io = new socket_io_1.Server(httpServer, {
     cors: isDev
-        ? { origin: ['http://localhost:5173'], credentials: true }
+        ? { origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true }
         : { origin: false },
 });
 app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json({ limit: '2mb' }));
+// CSP: restrict frame-src to known embed domains
+app.use((_req, res, next) => {
+    res.setHeader('Content-Security-Policy', "frame-src 'self' cubeembed.rpmvid.com *.cubeembed.rpmvid.com");
+    next();
+});
 // Routes
 app.use('/api/auth', auth_1.authRouter);
 app.use('/api/admin', (0, admin_1.createAdminRouter)(io));
+app.use('/api/admin/jellyfin', jellyfin_1.adminRouter);
 app.use('/api/search', search_1.searchRouter);
 app.use('/api/iptv', iptv_1.iptvRouter);
+app.use('/api/jellyfin', jellyfin_1.userRouter);
+app.use('/api/library', (0, library_1.createLibraryRouter)());
 app.get('/api/rooms', (_req, res) => res.json({ rooms: (0, rooms_1.getRoomList)() }));
-app.get('/join/:token', (req, res) => {
-    (0, tokens_1.validateToken)(req.params['token'] ?? '');
+app.get('/join/:token', async (req, res) => {
+    await (0, tokens_1.validateToken)(req.params['token'] ?? '');
     res.redirect('/');
 });
 // Serve built SPA in production
@@ -45,7 +59,19 @@ if (!isDev) {
     app.get('*', (_req, res) => res.sendFile(path_1.default.join(dist, 'index.html')));
 }
 (0, index_1.setupSocket)(io);
-httpServer.listen(PORT, () => {
-    const ip = (0, utils_1.getLocalIP)();
-    console.log(`[WJ] Server →  http://localhost:${PORT}  |  http://${ip}:${PORT}`);
+async function main() {
+    await (0, index_2.connectWithRetry)();
+    await Promise.all([
+        (0, rooms_2.initRooms)(),
+        (0, iptv_2.initIptv)(),
+        (0, jellyfin_2.initJellyfin)(),
+    ]);
+    httpServer.listen(PORT, () => {
+        const ip = (0, utils_1.getLocalIP)();
+        console.log(`[WJ] Server →  http://localhost:${PORT}  |  http://${ip}:${PORT}`);
+    });
+}
+main().catch(err => {
+    console.error('[WJ] Fatal startup error:', err);
+    process.exit(1);
 });
